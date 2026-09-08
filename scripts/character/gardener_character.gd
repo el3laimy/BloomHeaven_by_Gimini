@@ -52,12 +52,14 @@ var _on_arrival_callback: Callable = Callable()
 # --- Visual Nodes & Particles ---
 var _char_sprite: Sprite2D = null
 var _held_tool_sprite: Sprite2D = null
+var _hand_overlay_sprite: Sprite2D = null
 var _step_dust: CPUParticles2D = null
 var _tool_spray_particles: CPUParticles2D = null
 
 # --- Animation Textures (User Sequential Frames) ---
 var _tex_idle_front: Texture2D = null
 var _tex_idle_back: Texture2D = null
+var _tex_hand_overlay: Texture2D = null
 var _walk_down_frames: Array[Texture2D] = []
 var _walk_up_frames: Array[Texture2D] = []
 var _walk_side_frames: Array[Texture2D] = []
@@ -88,6 +90,8 @@ func _load_poses() -> void:
 	_tex_idle_front = load("res://assets/character/frames/lily_idle_front.png")
 	if ResourceLoader.exists("res://assets/character/frames/lily_idle_back.png"):
 		_tex_idle_back = load("res://assets/character/frames/lily_idle_back.png")
+	if ResourceLoader.exists("res://assets/character/frames/lily_hand_overlay.png"):
+		_tex_hand_overlay = load("res://assets/character/frames/lily_hand_overlay.png")
 
 	# Down Walk Cycle: authentic 4-beat cycle
 	var tex_down_1: Texture2D = null
@@ -198,6 +202,25 @@ func _setup_character_sprite() -> void:
 		_char_sprite.position = Vector2(0, 0)
 		add_child(_char_sprite)
 
+	if not is_instance_valid(_held_tool_sprite):
+		_held_tool_sprite = Sprite2D.new()
+		_held_tool_sprite.name = "HeldToolSprite"
+		_held_tool_sprite.centered = false
+		_held_tool_sprite.z_index = 1
+		add_child(_held_tool_sprite)
+
+	if not is_instance_valid(_hand_overlay_sprite):
+		_hand_overlay_sprite = Sprite2D.new()
+		_hand_overlay_sprite.name = "HandOverlaySprite"
+		_hand_overlay_sprite.texture = _tex_hand_overlay
+		_hand_overlay_sprite.centered = false
+		_hand_overlay_sprite.z_index = 2
+		if is_instance_valid(_char_sprite):
+			_char_sprite.add_child(_hand_overlay_sprite)
+			_hand_overlay_sprite.position = Vector2(25.0, -98.0)
+
+	_update_held_tool_visual()
+
 
 func _align_sprite_offset() -> void:
 	if not is_instance_valid(_char_sprite) or _char_sprite.texture == null:
@@ -209,14 +232,6 @@ func _align_sprite_offset() -> void:
 	else:
 		# 256x256 canvas: ground baseline is at y = 240
 		_char_sprite.offset = Vector2(-tex_size.x * 0.5, -240.0)
-
-	if not is_instance_valid(_held_tool_sprite):
-		_held_tool_sprite = Sprite2D.new()
-		_held_tool_sprite.name = "HeldToolSprite"
-		_held_tool_sprite.centered = true
-		_held_tool_sprite.z_index = 1
-		add_child(_held_tool_sprite)
-		_update_held_tool_visual()
 
 
 func walk_to(destination: Vector2, on_arrival: Callable = Callable()) -> void:
@@ -539,41 +554,65 @@ func _update_held_tool_visual() -> void:
 	if not is_instance_valid(_held_tool_sprite):
 		return
 
-	# When performing dedicated action poses, Lily already holds the tools in the authentic art
-	if is_tending:
+	# When performing dedicated action poses or facing away, hide held tool
+	if is_tending or facing_direction == Facing.UP:
 		_held_tool_sprite.visible = false
+		if is_instance_valid(_hand_overlay_sprite):
+			_hand_overlay_sprite.visible = false
 		return
 
 	var tool_to_show := current_held_tool if not current_held_tool.is_empty() else active_selected_tool
 	if tool_to_show.is_empty():
 		_held_tool_sprite.visible = false
+		if is_instance_valid(_hand_overlay_sprite):
+			_hand_overlay_sprite.visible = false
 		return
 
 	var is_left: bool = (facing_direction == Facing.LEFT)
 	var sign_x: float = -1.0 if is_left else 1.0
 
-	# Scale and position calibrated to Lily's natural hand level (y = -36)
+	# Hand grip anchor in world coordinates: (16.0 * sign_x, -41.0)
+	var hand_pos := Vector2(16.0 * sign_x, -41.0)
+
 	match tool_to_show:
 		"water":
 			_held_tool_sprite.visible = true
 			_held_tool_sprite.texture = _prop_watering_can
-			_held_tool_sprite.scale = Vector2(0.09 * sign_x, 0.09)
-			_held_tool_sprite.position = Vector2(15.0 * sign_x, -36.0)
-			_held_tool_sprite.rotation = 0.12 * sign_x
+			_held_tool_sprite.centered = false
+			# Grip at top copper handle (92, 42)
+			_held_tool_sprite.offset = Vector2(-92.0, -42.0)
+			_held_tool_sprite.scale = Vector2(0.060 * sign_x, 0.060)
+			_held_tool_sprite.position = hand_pos + Vector2(1.0 * sign_x, 2.0)
+			_held_tool_sprite.rotation = deg_to_rad(-5.0) * sign_x
+			if is_instance_valid(_hand_overlay_sprite):
+				_hand_overlay_sprite.visible = true
 		"prune":
 			_held_tool_sprite.visible = true
 			_held_tool_sprite.texture = _prop_shears
-			_held_tool_sprite.scale = Vector2(0.10 * sign_x, 0.10)
-			_held_tool_sprite.position = Vector2(14.0 * sign_x, -35.0)
-			_held_tool_sprite.rotation = -0.15 * sign_x
+			_held_tool_sprite.centered = false
+			# Grip at wooden handles (175, 145)
+			_held_tool_sprite.offset = Vector2(-175.0, -145.0)
+			_held_tool_sprite.scale = Vector2(0.064 * sign_x, 0.064)
+			_held_tool_sprite.position = hand_pos
+			_held_tool_sprite.rotation = deg_to_rad(-130.0) * sign_x
+			if is_instance_valid(_hand_overlay_sprite):
+				_hand_overlay_sprite.visible = true
 		"plant":
 			_held_tool_sprite.visible = true
 			_held_tool_sprite.texture = _prop_trowel
-			_held_tool_sprite.scale = Vector2(0.09 * sign_x, 0.09)
-			_held_tool_sprite.position = Vector2(14.0 * sign_x, -35.0)
-			_held_tool_sprite.rotation = 0.20 * sign_x
+			_held_tool_sprite.centered = false
+			# Grip at wooden handle center (183, 78)
+			_held_tool_sprite.offset = Vector2(-183.0, -78.0)
+			_held_tool_sprite.scale = Vector2(0.068 * sign_x, 0.068)
+			_held_tool_sprite.position = hand_pos
+			# -42 deg rotation hangs blade vertically down along skirt
+			_held_tool_sprite.rotation = deg_to_rad(-42.0) * sign_x
+			if is_instance_valid(_hand_overlay_sprite):
+				_hand_overlay_sprite.visible = true
 		_:
 			_held_tool_sprite.visible = false
+			if is_instance_valid(_hand_overlay_sprite):
+				_hand_overlay_sprite.visible = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
