@@ -1,0 +1,90 @@
+{
+  "requests": {
+    "order_1": {
+      "id": "order_1",
+      "customer_name": "Maya",
+      "customer_title": "Wedding Stylist",
+      "avatar_color": [0.85, 0.45, 0.65, 1.0],
+      "avatar_badge": "M",
+      "type": "flowers",
+      "required_items": {
+        "lavender": 2,
+        "sunflower": 1
+      },
+      "dialogue": "I'm styling a summer outdoor wedding altar. I need fragrant lavender and radiant sunflowers!",
+      "coin_reward": 25,
+      "reputation_reward": 10
+    },
+    "order_2": {
+      "id": "order_2",
+      "customer_name": "Lucian",
+      "customer_title": "Boutique Perfumer",
+      "avatar_color": [0.42, 0.68, 0.90, 1.0],
+      "avatar_badge": "L",
+      "type": "flowers",
+      "required_items": {
+        "rose": 2,
+        "lavender": 1
+      },
+      "dialogue": "My upcoming perfume line requires fresh velvety crimson roses distilled with aromatic lavender.",
+      "coin_reward": 30,
+      "reputation_reward": 15
+    },
+    "order_3": {
+      "id": "order_3",
+      "customer_name": "Clara",
+      "customer_title": "Artisan Café Owner",
+      "avatar_color": [0.95, 0.78, 0.30, 1.0],
+      "avatar_badge": "C",
+      "type": "bouquet",
+      "required_items": {
+        "garden_harmony": 1
+      },
+      "dialogue": "Our café tables need a centerpiece that captures the full joy of the garden. Please craft 1 Garden Harmony bouquet!",
+      "coin_reward": 50,
+      "reputation_reward": 25
+    },
+    "order_4": {
+      "id": "order_4",
+      "customer_name": "Madame Aurelia",
+      "customer_title": "Botanical Collector",
+      "avatar_color": [0.88, 0.40, 0.85, 1.0],
+      "avatar_badge": "A",
+      "type": "bouquet",
+      "required_items": {
+        "ethereal_lumina": 1
+      },
+      "dialogue": "I collect extraordinary botanical rarities. Assemble and bring me 1 glowing Ethereal Lumina bouquet!",
+      "coin_reward": 90,
+      "reputation_reward": 50
+    },
+    "order_5": {
+      "id": "order_5",
+      "customer_name": "Maya",
+      "customer_title": "Wedding Stylist",
+      "avatar_color": [0.85, 0.45, 0.65, 1.0],
+      "avatar_badge": "M",
+      "type": "bouquet",
+      "required_items": {
+        "spring_meadow": 1
+      },
+      "dialogue": "A springtime ceremony demands fresh daisies and golden tulips! Please bring me 1 Spring Meadow bouquet.",
+      "coin_reward": 65,
+      "reputation_reward": 30
+    },
+    "order_6": {
+      "id": "order_6",
+      "customer_name": "Madame Aurelia",
+      "customer_title": "Botanical Collector",
+      "avatar_color": [0.88, 0.40, 0.85, 1.0],
+      "avatar_badge": "A",
+      "type": "bouquet",
+      "required_items": {
+        "pure_elegance": 1
+      },
+      "dialogue": "Only the finest porcelain cream tea roses will suffice for the Grand Conservatory exhibit. Bring me 1 Pure Elegance bouquet.",
+      "coin_reward": 100,
+      "reputation_reward": 55
+    }
+  }
+}

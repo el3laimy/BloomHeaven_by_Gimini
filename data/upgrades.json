@@ -1,0 +1,59 @@
+{
+  "upgrades": [
+    {
+      "id": "swift_boots",
+      "name": "Swift Garden Boots",
+      "name_ar": "حذاء السرعة الفائقة",
+      "icon": "👢",
+      "description": "Increases Lily's walking speed by +35%",
+      "cost": 120,
+      "unlocked": false,
+      "effect_type": "speed_boost",
+      "effect_value": 1.35
+    },
+    {
+      "id": "double_sprinkler",
+      "name": "Golden Dual Sprinkler",
+      "name_ar": "المرشة الذهبية المزدوجة",
+      "icon": "🚿",
+      "description": "Waters the target plot AND the adjacent plot simultaneously",
+      "cost": 180,
+      "unlocked": false,
+      "effect_type": "dual_water",
+      "effect_value": 1.0
+    },
+    {
+      "id": "enriched_soil",
+      "name": "Enriched Forest Loam",
+      "name_ar": "خلطة التربة العضوية المعززة",
+      "icon": "🌱",
+      "description": "Doubles soil moisture retention time (Water lasts 50s)",
+      "cost": 220,
+      "unlocked": false,
+      "effect_type": "soil_retention",
+      "effect_value": 2.0
+    },
+    {
+      "id": "fertilizer_box",
+      "name": "Master Compost Elixir",
+      "name_ar": "صندوق السماد العضوي السريع",
+      "icon": "🧪",
+      "description": "Unlocks fertilizer tool to instantly cut 50% off remaining growth time",
+      "cost": 280,
+      "unlocked": false,
+      "effect_type": "fertilizer_unlock",
+      "effect_value": 0.5
+    },
+    {
+      "id": "expanded_satchel",
+      "name": "Botanist's Deep Satchel",
+      "name_ar": "حقيبة البذور الموسعة",
+      "icon": "🎒",
+      "description": "Adds bonus starter seeds and unlocks rare hybrid seed storage",
+      "cost": 350,
+      "unlocked": false,
+      "effect_type": "seed_satchel",
+      "effect_value": 3.0
+    }
+  ]
+}

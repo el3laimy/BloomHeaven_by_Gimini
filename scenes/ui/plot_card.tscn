@@ -1,0 +1,243 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/plot_card.gd" id="1_pc"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/parchment_plot_card.png" id="2_parch"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/header_plot_info.png" id="3_head"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/droplet_blue.png" id="4_drop_b"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/badge_pruned.png" id="5_prune"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/stage_sprout.png" id="6_sprout"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/stage_bush.png" id="7_bush"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/stage_bud.png" id="8_bud"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/stage_bloom.png" id="9_bloom"]
+[ext_resource type="Texture2D" path="res://assets/ui/plot_info/stage_active_box.png" id="10_box"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+bg_color = Color(0.2, 0.12, 0.08, 0.8)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="PlotCard" type="Control"]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -245.0
+offset_right = 244.0
+offset_bottom = -14.0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("1_pc")
+
+[node name="CardParchment" type="NinePatchRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_parch")
+patch_margin_left = 25
+patch_margin_top = 25
+patch_margin_right = 25
+patch_margin_bottom = 25
+
+[node name="Margin" type="MarginContainer" parent="CardParchment"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="CardParchment/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ContentHBox" type="HBoxContainer" parent="CardParchment/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FlowerPortrait" type="TextureRect" parent="CardParchment/Margin/VBox/ContentHBox"]
+custom_minimum_size = Vector2(62, 80)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DetailsVBox" type="VBoxContainer" parent="CardParchment/Margin/VBox/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="SpeciesName" type="Label" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.16, 0.1, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.95, 0.85, 0.7)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Red Rose"
+
+[node name="StageLevel" type="Label" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.38, 0.28, 1)
+theme_override_font_sizes/font_size = 10
+text = "Stage 3 · Bush"
+
+[node name="MoistureHBox" type="HBoxContainer" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="MoistLabel" type="Label" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox/MoistureHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.25, 0.18, 1)
+theme_override_font_sizes/font_size = 10
+text = "Moisture:"
+
+[node name="Droplets" type="HBoxContainer" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox/MoistureHBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Drop1" type="TextureRect" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox/MoistureHBox/Droplets"]
+custom_minimum_size = Vector2(12, 16)
+layout_mode = 2
+texture = ExtResource("4_drop_b")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Drop2" type="TextureRect" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox/MoistureHBox/Droplets"]
+custom_minimum_size = Vector2(12, 16)
+layout_mode = 2
+texture = ExtResource("4_drop_b")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Drop3" type="TextureRect" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox/MoistureHBox/Droplets"]
+custom_minimum_size = Vector2(12, 16)
+layout_mode = 2
+texture = ExtResource("4_drop_b")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Drop4" type="TextureRect" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox/MoistureHBox/Droplets"]
+custom_minimum_size = Vector2(12, 16)
+layout_mode = 2
+texture = ExtResource("4_drop_b")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PruneBadge" type="TextureRect" parent="CardParchment/Margin/VBox/ContentHBox/DetailsVBox"]
+custom_minimum_size = Vector2(68, 24)
+layout_mode = 2
+size_flags_horizontal = 0
+texture = ExtResource("5_prune")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HSeparator" type="HSeparator" parent="CardParchment/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TimelineVBox" type="Control" parent="CardParchment/Margin/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+
+[node name="TimelineTitle" type="Label" parent="CardParchment/Margin/VBox/TimelineVBox"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 14.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.3, 0.2, 1)
+theme_override_font_sizes/font_size = 10
+text = "Growth Stages"
+horizontal_alignment = 1
+
+[node name="StagesHBox" type="HBoxContainer" parent="CardParchment/Margin/VBox/TimelineVBox"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Stage1" type="TextureRect" parent="CardParchment/Margin/VBox/TimelineVBox/StagesHBox"]
+custom_minimum_size = Vector2(28, 38)
+layout_mode = 2
+texture = ExtResource("6_sprout")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Stage2" type="TextureRect" parent="CardParchment/Margin/VBox/TimelineVBox/StagesHBox"]
+custom_minimum_size = Vector2(28, 38)
+layout_mode = 2
+texture = ExtResource("7_bush")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Stage3" type="TextureRect" parent="CardParchment/Margin/VBox/TimelineVBox/StagesHBox"]
+custom_minimum_size = Vector2(28, 38)
+layout_mode = 2
+texture = ExtResource("8_bud")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Stage4" type="TextureRect" parent="CardParchment/Margin/VBox/TimelineVBox/StagesHBox"]
+custom_minimum_size = Vector2(28, 38)
+layout_mode = 2
+texture = ExtResource("9_bloom")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ActiveSelector" type="TextureRect" parent="CardParchment/Margin/VBox/TimelineVBox"]
+custom_minimum_size = Vector2(34, 44)
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 44.0
+mouse_filter = 2
+texture = ExtResource("10_box")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderPlaque" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(120, 32)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = 0.0
+offset_right = 60.0
+offset_bottom = 32.0
+grow_horizontal = 2
+texture = ExtResource("3_head")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloseBtn" type="Button" parent="."]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -20.0
+offset_top = 8.0
+offset_right = 0.0
+offset_bottom = 28.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+text = "✕"

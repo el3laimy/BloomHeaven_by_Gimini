@@ -1,0 +1,94 @@
+[gd_scene load_steps=4 format=3 uid="uid://c8main_menu_01"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/branding/bloomhaven_logo_512.png" id="2_logo"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="3_sett"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.08, 0.13, 0.09, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="LogoTexture" type="TextureRect" parent="Center/VBox"]
+custom_minimum_size = Vector2(256, 128)
+layout_mode = 2
+mouse_filter = 2
+size_flags_horizontal = 4
+texture = ExtResource("2_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="Center/VBox"]
+layout_mode = 2
+mouse_filter = 2
+text = "🌸 FINEST GARDEN 🌸"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+mouse_filter = 2
+text = "A Living Garden That Remembers"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Center/VBox"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ContinueBtn" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+mouse_filter = 0
+text = "🌿 Continue Garden"
+
+[node name="NewGameBtn" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+mouse_filter = 0
+text = "🌱 New Garden"
+
+[node name="SettingsBtn" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+mouse_filter = 0
+text = "⚙️ Settings"
+
+[node name="QuitBtn" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+mouse_filter = 0
+text = "🚪 Exit"
+
+[node name="SettingsMenu" parent="." instance=ExtResource("3_sett")]
+visible = false
+layout_mode = 1

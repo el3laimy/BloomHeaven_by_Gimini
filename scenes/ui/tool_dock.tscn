@@ -1,0 +1,174 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/tool_dock.gd" id="1_td"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/dock_base.png" id="2_base"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/token_trowel.png" id="3_trowel"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/token_watering_can.png" id="4_water"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/token_shears.png" id="5_shears"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/token_basket.png" id="6_basket"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/active_gold_ring.png" id="7_glow"]
+[ext_resource type="Texture2D" path="res://assets/ui/dock/lily_cameo_portrait.png" id="8_lily"]
+
+[node name="ToolDock" type="Control"]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -215.0
+offset_top = -96.0
+offset_right = 215.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("1_td")
+
+[node name="DockRow" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="DockContainer" type="Control" parent="DockRow"]
+custom_minimum_size = Vector2(310, 82)
+layout_mode = 2
+
+[node name="DockBase" type="NinePatchRect" parent="DockRow/DockContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_base")
+patch_margin_left = 35
+patch_margin_top = 18
+patch_margin_right = 35
+patch_margin_bottom = 18
+
+[node name="HBox" type="HBoxContainer" parent="DockRow/DockContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="PlantCol" type="VBoxContainer" parent="DockRow/DockContainer/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="PlantBtn" type="TextureButton" parent="DockRow/DockContainer/HBox/PlantCol"]
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+texture_normal = ExtResource("3_trowel")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PlantLabel" type="Label" parent="DockRow/DockContainer/HBox/PlantCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.90, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.05, 0.02, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 11
+text = "Plant"
+horizontal_alignment = 1
+
+[node name="WaterCol" type="VBoxContainer" parent="DockRow/DockContainer/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="WaterBtn" type="TextureButton" parent="DockRow/DockContainer/HBox/WaterCol"]
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+texture_normal = ExtResource("4_water")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="WaterLabel" type="Label" parent="DockRow/DockContainer/HBox/WaterCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.90, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.05, 0.02, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 11
+text = "Water"
+horizontal_alignment = 1
+
+[node name="PruneCol" type="VBoxContainer" parent="DockRow/DockContainer/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="PruneBtn" type="TextureButton" parent="DockRow/DockContainer/HBox/PruneCol"]
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+texture_normal = ExtResource("5_shears")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PruneLabel" type="Label" parent="DockRow/DockContainer/HBox/PruneCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.90, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.05, 0.02, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 11
+text = "Prune"
+horizontal_alignment = 1
+
+[node name="HarvestCol" type="VBoxContainer" parent="DockRow/DockContainer/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="HarvestBtn" type="TextureButton" parent="DockRow/DockContainer/HBox/HarvestCol"]
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+texture_normal = ExtResource("6_basket")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="HarvestLabel" type="Label" parent="DockRow/DockContainer/HBox/HarvestCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.90, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.05, 0.02, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 11
+text = "Harvest"
+horizontal_alignment = 1
+
+[node name="ActiveGlowRing" type="TextureRect" parent="DockRow/DockContainer"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 0
+offset_right = 58.0
+offset_bottom = 58.0
+mouse_filter = 2
+texture = ExtResource("7_glow")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LilyCol" type="VBoxContainer" parent="DockRow"]
+layout_mode = 2
+alignment = 1
+
+[node name="LilyBtn" type="TextureButton" parent="DockRow/LilyCol"]
+custom_minimum_size = Vector2(74, 82)
+layout_mode = 2
+texture_normal = ExtResource("8_lily")
+ignore_texture_size = true
+stretch_mode = 5

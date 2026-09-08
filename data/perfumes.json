@@ -1,0 +1,39 @@
+{
+  "perfumes": {
+    "lavender_mist": {
+      "id": "lavender_mist",
+      "display_name": "Calming Lavender Mist",
+      "ingredients": {
+        "lavender": 3
+      },
+      "distillation_seconds": 5.0,
+      "base_value": 75,
+      "primary_color": [0.72, 0.55, 0.90, 1.0],
+      "description": "Pure soothing herbal essence distilled from morning lavender florets."
+    },
+    "velvet_rose_elixir": {
+      "id": "velvet_rose_elixir",
+      "display_name": "Velvet Rose Elixir",
+      "ingredients": {
+        "rose": 2,
+        "roselight": 1
+      },
+      "distillation_seconds": 8.0,
+      "base_value": 140,
+      "primary_color": [0.90, 0.25, 0.45, 1.0],
+      "description": "A luxury perfume combining deep crimson rose essence with luminescent petals."
+    },
+    "solar_amber_essence": {
+      "id": "solar_amber_essence",
+      "display_name": "Solar Amber Essence",
+      "ingredients": {
+        "sunflower": 2,
+        "golden_rose": 1
+      },
+      "distillation_seconds": 10.0,
+      "base_value": 180,
+      "primary_color": [1.0, 0.75, 0.15, 1.0],
+      "description": "A radiant citrus-floral extract captured from golden summer blooms."
+    }
+  }
+}

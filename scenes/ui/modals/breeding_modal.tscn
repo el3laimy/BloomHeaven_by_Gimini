@@ -1,0 +1,296 @@
+[gd_scene load_steps=3 format=3 uid="uid://c8breeding_modal_01"]
+
+[ext_resource type="Theme" path="res://assets/ui/garden_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/modals/breeding_modal.gd" id="2_script"]
+
+[node name="BreedingModal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.06, 0.04, 0.78)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(740, 560)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/HeaderHBox/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "🏛️ Botanical Breeding Conservatory"
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/HeaderHBox/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.75, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "Cross-pollinate master species to discover rare hybrids, emergent traits & mutations"
+
+[node name="CloseBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/HeaderHBox"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "✕"
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="AltarSection" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SlotA" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection"]
+custom_minimum_size = Vector2(210, 160)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Header" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin/VBox"]
+layout_mode = 2
+
+[node name="Tag" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.85, 0.7, 1)
+theme_override_font_sizes/font_size = 10
+text = "PARENT A PEDESTAL"
+
+[node name="ClearBtnA" type="Button" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin/VBox/Header"]
+visible = false
+custom_minimum_size = Vector2(20, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "✕"
+
+[node name="Texture" type="TextureRect" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin/VBox"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Empty Slot"
+horizontal_alignment = 1
+
+[node name="TraitLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotA/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.75, 0.65, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "Select specimen below"
+horizontal_alignment = 1
+
+[node name="CenterCrucible" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="SymbolLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "✨  ×  ✨"
+horizontal_alignment = 1
+
+[node name="PreviewBox" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible"]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible/PreviewBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible/PreviewBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="OutcomeTag" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible/PreviewBox/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "PREDICTED OUTCOME"
+horizontal_alignment = 1
+
+[node name="PreviewTexture" type="TextureRect" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible/PreviewBox/Margin/VBox"]
+visible = false
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PreviewLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/CenterCrucible/PreviewBox/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Select two parent specimens to simulate cross-pollination."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SlotB" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection"]
+custom_minimum_size = Vector2(210, 160)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Header" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin/VBox"]
+layout_mode = 2
+
+[node name="Tag" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.85, 0.7, 1)
+theme_override_font_sizes/font_size = 10
+text = "PARENT B PEDESTAL"
+
+[node name="ClearBtnB" type="Button" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin/VBox/Header"]
+visible = false
+custom_minimum_size = Vector2(20, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "✕"
+
+[node name="Texture" type="TextureRect" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin/VBox"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Empty Slot"
+horizontal_alignment = 1
+
+[node name="TraitLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/AltarSection/SlotB/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.75, 0.65, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "Select specimen below"
+horizontal_alignment = 1
+
+[node name="ActionHBox" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BreedBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/ActionHBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+theme_override_font_sizes/font_size = 13
+text = "✨ Cross-Breed Hybrid Seed"
+
+[node name="ClearBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/ActionHBox"]
+custom_minimum_size = Vector2(90, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Clear All"
+
+[node name="CabinetHeader" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CabinetTitle" type="Label" parent="CenterContainer/Panel/Margin/VBox/CabinetHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.92, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "📂 Botanist's Specimen Cabinet:"
+
+[node name="TabBase" type="Button" parent="CenterContainer/Panel/Margin/VBox/CabinetHeader"]
+custom_minimum_size = Vector2(120, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "🌸 Garden Flowers"
+
+[node name="TabRoster" type="Button" parent="CenterContainer/Panel/Margin/VBox/CabinetHeader"]
+custom_minimum_size = Vector2(130, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "🏆 Preserved Roster"
+
+[node name="Scroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RosterGrid" type="GridContainer" parent="CenterContainer/Panel/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 4
+
+[node name="RosterVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/Scroll"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8

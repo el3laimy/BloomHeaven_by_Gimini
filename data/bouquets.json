@@ -1,0 +1,79 @@
+{
+  "bouquets": {
+    "garden_harmony": {
+      "id": "garden_harmony",
+      "display_name": "Garden Harmony",
+      "ingredients": {
+        "rose": 1,
+        "lavender": 1,
+        "sunflower": 1
+      },
+      "is_hybrid": false,
+      "base_value": 55,
+      "primary_color": [0.90, 0.78, 0.35, 1.0],
+      "description": "A balanced, sunny arrangement uniting red rose, fragrant lavender, and golden sunflower."
+    },
+    "crimson_romance": {
+      "id": "crimson_romance",
+      "display_name": "Crimson Romance",
+      "ingredients": {
+        "rose": 2,
+        "lavender": 1
+      },
+      "is_hybrid": false,
+      "base_value": 45,
+      "primary_color": [0.92, 0.28, 0.42, 1.0],
+      "description": "A classic romantic bouquet featuring velvety crimson roses accented by calming lavender."
+    },
+    "ethereal_lumina": {
+      "id": "ethereal_lumina",
+      "display_name": "Ethereal Lumina",
+      "ingredients": {
+        "roselight": 1,
+        "rose": 1
+      },
+      "is_hybrid": true,
+      "base_value": 90,
+      "primary_color": [0.92, 0.45, 0.88, 1.0],
+      "description": "A mesmerizing showcase bouquet pairing crimson rose elegance with glowing Roselight petals."
+    },
+    "solar_grandeur": {
+      "id": "solar_grandeur",
+      "display_name": "Solar Grandeur",
+      "ingredients": {
+        "golden_rose": 1,
+        "sunflower": 2
+      },
+      "is_hybrid": true,
+      "base_value": 110,
+      "primary_color": [1.0, 0.84, 0.20, 1.0],
+      "description": "A dazzling, opulent arrangement radiating warm sunburst energy and golden petals."
+    },
+    "spring_meadow": {
+      "id": "spring_meadow",
+      "display_name": "Spring Meadow",
+      "ingredients": {
+        "daisy": 2,
+        "tulip": 1,
+        "lavender": 1
+      },
+      "is_hybrid": false,
+      "base_value": 60,
+      "primary_color": [0.95, 0.90, 0.55, 1.0],
+      "description": "A lighthearted, breezy posy celebrating fresh white daisies, golden tulips, and calming lavender."
+    },
+    "pure_elegance": {
+      "id": "pure_elegance",
+      "display_name": "Pure Elegance",
+      "ingredients": {
+        "rose_cream": 2,
+        "tulip": 1,
+        "daisy": 1
+      },
+      "is_hybrid": false,
+      "base_value": 75,
+      "primary_color": [0.98, 0.95, 0.88, 1.0],
+      "description": "A luxurious, pristine arrangement blending porcelain cream tea roses with golden tulips and wild daisies."
+    }
+  }
+}

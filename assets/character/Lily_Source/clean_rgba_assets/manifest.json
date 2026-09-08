@@ -1,0 +1,213 @@
+{
+  "character_name": "Lily",
+  "source_sheets": {
+    "body": "lily_game_ready_sheet.jpg",
+    "faces_tools": "expressions_props_sheet.jpg"
+  },
+  "reference_canvas": {
+    "width": 320,
+    "height": 320,
+    "ground_baseline_y": 310
+  },
+  "display_scale": 0.28,
+  "bones_hierarchy": [
+    {
+      "name": "root",
+      "parent": null,
+      "pivot_offset": [
+        0,
+        0
+      ],
+      "description": "Ground contact position between feet"
+    },
+    {
+      "name": "pelvis",
+      "parent": "root",
+      "pivot_offset": [
+        0,
+        -28
+      ],
+      "layer": "pelvis.png",
+      "z_index": 0
+    },
+    {
+      "name": "spine",
+      "parent": "pelvis",
+      "pivot_offset": [
+        0,
+        -8
+      ],
+      "z_index": 1
+    },
+    {
+      "name": "torso",
+      "parent": "spine",
+      "pivot_offset": [
+        0,
+        -6
+      ],
+      "layer": "torso_shirt.png",
+      "z_index": 2
+    },
+    {
+      "name": "neck",
+      "parent": "torso",
+      "pivot_offset": [
+        0,
+        -18
+      ],
+      "z_index": 3
+    },
+    {
+      "name": "head",
+      "parent": "neck",
+      "pivot_offset": [
+        0,
+        -10
+      ],
+      "layer": "head_base.png",
+      "front_hair": "front_hair.png",
+      "hat": "straw_hat.png",
+      "z_index": 4
+    },
+    {
+      "name": "braid_base",
+      "parent": "head",
+      "pivot_offset": [
+        -8,
+        6
+      ],
+      "layer": "braid_upper.png",
+      "z_index": -1
+    },
+    {
+      "name": "braid_tip",
+      "parent": "braid_base",
+      "pivot_offset": [
+        4,
+        18
+      ],
+      "layer": "braid_tip.png",
+      "z_index": -1
+    },
+    {
+      "name": "leg_L",
+      "parent": "pelvis",
+      "pivot_offset": [
+        -7,
+        0
+      ],
+      "layer": "leg_L_upper.png",
+      "z_index": -2
+    },
+    {
+      "name": "foot_L",
+      "parent": "leg_L",
+      "pivot_offset": [
+        0,
+        16
+      ],
+      "layer": "boot_L.png",
+      "z_index": -2
+    },
+    {
+      "name": "leg_R",
+      "parent": "pelvis",
+      "pivot_offset": [
+        7,
+        0
+      ],
+      "layer": "leg_R_upper.png",
+      "z_index": 0
+    },
+    {
+      "name": "foot_R",
+      "parent": "leg_R",
+      "pivot_offset": [
+        0,
+        16
+      ],
+      "layer": "boot_R.png",
+      "z_index": 0
+    },
+    {
+      "name": "skirt",
+      "parent": "pelvis",
+      "pivot_offset": [
+        0,
+        -4
+      ],
+      "layer": "skirt_front.png",
+      "z_index": 1
+    },
+    {
+      "name": "arm_L_upper",
+      "parent": "torso",
+      "pivot_offset": [
+        -14,
+        -14
+      ],
+      "layer": "arm_L_upper.png",
+      "z_index": -3
+    },
+    {
+      "name": "arm_L_lower",
+      "parent": "arm_L_upper",
+      "pivot_offset": [
+        0,
+        14
+      ],
+      "layer": "arm_L_lower.png",
+      "hand": "hand_L.png",
+      "z_index": -3
+    },
+    {
+      "name": "arm_R_upper",
+      "parent": "torso",
+      "pivot_offset": [
+        14,
+        -14
+      ],
+      "layer": "arm_R_upper.png",
+      "z_index": 5
+    },
+    {
+      "name": "arm_R_lower",
+      "parent": "arm_R_upper",
+      "pivot_offset": [
+        0,
+        14
+      ],
+      "layer": "arm_R_lower.png",
+      "hand": "hand_R_open.png",
+      "z_index": 5
+    },
+    {
+      "name": "HandSocket",
+      "parent": "arm_R_lower",
+      "pivot_offset": [
+        14,
+        18
+      ],
+      "description": "Dynamic tool attachment socket",
+      "z_index": 6
+    }
+  ],
+  "repaired_fills": [
+    "arm_upper_occluded_fill.png",
+    "torso_behind_arms_fill.png",
+    "hair_under_hat_fill.png",
+    "legs_under_skirt_fill.png"
+  ],
+  "layers_merged_from_spec": {
+    "torso_shirt": "torso on game-ready sheet",
+    "overalls_bib": "apron_front on game-ready sheet",
+    "skirt_front": "skirt_outer on game-ready sheet",
+    "skirt_back": "skirt_under (white petticoat) on game-ready sheet",
+    "pelvis": "synthesized from torso_shirt lower 35%",
+    "hand_R_grip": "mirrored from hand_L (provisional)"
+  },
+  "provisional_assets": [
+    "shears.png (placeholder — no source on sheets, needs artist-provided asset)"
+  ]
+}

@@ -1,0 +1,26 @@
+# Godot 4+ specific ignores
+.godot/
+
+# Imported translations (if any)
+*.translation
+
+# Mono / C# (if applicable)
+.mono/
+data_*/
+mono_crash.*.json
+
+# Temporary & cache files
+__pycache__/
+*.pyc
+*.tmp
+*.log
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+.vscode/
+# Packages & archives
+*.deb
+*.iso
+*.tar.*
+

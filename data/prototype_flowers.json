@@ -1,0 +1,49 @@
+{
+  "flowers": [
+    {
+      "id": "rose",
+      "display_name": "Red Rose",
+      "is_hybrid": false,
+      "base_growth_seconds": 6.0,
+      "description": "A fragrant, classic crimson rose with velvety petals."
+    },
+    {
+      "id": "lavender",
+      "display_name": "Lavender",
+      "is_hybrid": false,
+      "base_growth_seconds": 8.0,
+      "description": "Calming, aromatic lavender stalks swaying gently in the breeze."
+    },
+    {
+      "id": "sunflower",
+      "display_name": "Sunflower",
+      "is_hybrid": false,
+      "base_growth_seconds": 10.0,
+      "description": "A tall, cheerful sunflower that faces the warm morning light."
+    },
+    {
+      "id": "roselight",
+      "display_name": "Roselight Bloom",
+      "is_hybrid": true,
+      "parents": ["rose", "lavender"],
+      "base_growth_seconds": 9.0,
+      "description": "An ethereal hybrid combining velvety rose petals with lavender hues and luminescent glow."
+    },
+    {
+      "id": "golden_rose",
+      "display_name": "Golden Rose",
+      "is_hybrid": true,
+      "parents": ["rose", "sunflower"],
+      "base_growth_seconds": 11.0,
+      "description": "A radiant cross between red rose elegance and solar sunflower energy."
+    },
+    {
+      "id": "sunflare_spike",
+      "display_name": "Sunflare Spike",
+      "is_hybrid": true,
+      "parents": ["lavender", "sunflower"],
+      "base_growth_seconds": 12.0,
+      "description": "Towering floral spike ablaze with golden flame florets."
+    }
+  ]
+}
