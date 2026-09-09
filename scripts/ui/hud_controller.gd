@@ -20,6 +20,8 @@ signal layout_preset_changed(preset: int)
 signal perspective_changed(mode: int)
 signal character_toggled(enabled: bool)
 signal upgrade_purchased(upgrade_id: String)
+signal quick_sell_requested(flower_id: String, count: int)
+signal sell_all_requested()
 
 @export var current_tool: String = "plant"
 @export var current_seed: String = "rose"
@@ -267,8 +269,9 @@ func _build_hud_ui() -> void:
 
 	var satchel_btn := Button.new()
 	satchel_btn.name = "SatchelBtn"
-	satchel_btn.text = "🎒 Satchel"
-	satchel_btn.custom_minimum_size = Vector2(80, 30)
+	satchel_btn.text = "🌸 Stand & Satchel"
+	satchel_btn.tooltip_text = "Flower Stand: Quick Sell harvested flowers for instant coins or inspect satchel"
+	satchel_btn.custom_minimum_size = Vector2(130, 30)
 	satchel_btn.add_theme_font_size_override("font_size", 11)
 	satchel_btn.pressed.connect(func():
 		if is_instance_valid(_inventory_drawer):
@@ -295,6 +298,14 @@ func _build_hud_ui() -> void:
 	# --- MODULAR STORYBOOK COMPONENTS ---
 	_inventory_drawer = preload("res://scenes/ui/hud/inventory_drawer.tscn").instantiate()
 	_inventory_drawer.visible = false
+	if _inventory_drawer.has_signal("quick_sell_requested"):
+		_inventory_drawer.connect("quick_sell_requested", func(f_id: String, count: int) -> void:
+			quick_sell_requested.emit(f_id, count)
+		)
+	if _inventory_drawer.has_signal("sell_all_requested"):
+		_inventory_drawer.connect("sell_all_requested", func() -> void:
+			sell_all_requested.emit()
+		)
 	_root_control.add_child(_inventory_drawer)
 
 	_side_order_rail = preload("res://scenes/ui/hud/side_order_rail.tscn").instantiate()

@@ -388,6 +388,10 @@ func _connect_signals() -> void:
 			hud.character_toggled.connect(_on_character_toggled)
 		if hud.has_signal("upgrade_purchased") and not hud.upgrade_purchased.is_connected(_on_upgrade_purchased):
 			hud.upgrade_purchased.connect(_on_upgrade_purchased)
+		if hud.has_signal("quick_sell_requested") and not hud.quick_sell_requested.is_connected(_on_quick_sell_requested):
+			hud.quick_sell_requested.connect(_on_quick_sell_requested)
+		if hud.has_signal("sell_all_requested") and not hud.sell_all_requested.is_connected(_on_sell_all_requested):
+			hud.sell_all_requested.connect(_on_sell_all_requested)
 
 
 func _sync_hud_state() -> void:
@@ -803,6 +807,25 @@ func quick_sell_flower(flower_id: String, count: int = 1, quality: int = 1) -> i
 			spawn_p = character.get_global_transform_with_canvas().origin + Vector2(0, -50)
 		hud.show_floating_reward(reward_str, spawn_p, Color(1.0, 0.9, 0.3))
 
+	return total_earned
+
+
+func _on_quick_sell_requested(flower_id: String, count: int) -> void:
+	quick_sell_flower(flower_id, count)
+
+
+func _on_sell_all_requested() -> void:
+	quick_sell_all_flowers()
+
+
+## Sells all harvestable flowers currently stored in inventory.
+func quick_sell_all_flowers() -> int:
+	var total_earned: int = 0
+	var flower_ids := inventory.keys()
+	for f_id in flower_ids:
+		var count := int(inventory.get(f_id, 0))
+		if count > 0:
+			total_earned += quick_sell_flower(f_id, count)
 	return total_earned
 
 
