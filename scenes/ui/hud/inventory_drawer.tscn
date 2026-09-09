@@ -1,10 +1,27 @@
-[gd_scene load_steps=3 format=3 uid="uid://cxinvdrawer01"]
+[gd_scene load_steps=8 format=3 uid="uid://cxinvdrawer01"]
 
 [ext_resource type="Theme" path="res://assets/ui/garden_theme.tres" id="1_theme"]
 [ext_resource type="Script" path="res://scripts/ui/hud/inventory_drawer.gd" id="2_inv"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand/ui_flower_stand_bg.png" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand/ui_awning_canopy.png" id="4_canopy"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand/ui_coin_drawer_icon.png" id="5_coin"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand/ui_btn_sell_entire_harvest.png" id="6_grand"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+bg_color = Color(0.24, 0.16, 0.1, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.72, 0.35, 0.95)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [node name="InventoryDrawer" type="Control"]
 visible = false
+z_index = 50
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,48 +31,146 @@ grow_vertical = 2
 theme = ExtResource("1_theme")
 script = ExtResource("2_inv")
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Backdrop" type="ColorRect" parent="."]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
+anchors_preset = 15
 anchor_right = 1.0
-offset_left = -640.0
-offset_top = 48.0
-offset_right = -240.0
-offset_bottom = 360.0
-grow_horizontal = 0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.06, 0.04, 0.82)
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
-layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+[node name="StandContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -390.0
+offset_top = -342.0
+offset_right = 390.0
+offset_bottom = 278.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 8
+[node name="StandBg" type="TextureRect" parent="StandContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="HeaderHBox" type="HBoxContainer" parent="Panel/Margin/VBox"]
-layout_mode = 2
+[node name="Awning" type="TextureRect" parent="StandContainer"]
+layout_mode = 0
+offset_left = -12.0
+offset_top = -88.0
+offset_right = 792.0
+offset_bottom = 150.0
+texture = ExtResource("4_canopy")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="Title" type="Label" parent="Panel/Margin/VBox/HeaderHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.98, 0.92, 0.75, 1)
-theme_override_font_sizes/font_size = 13
-text = "🌸 Flower Stand & Satchel"
+[node name="SignTitle" type="Label" parent="StandContainer/Awning"]
+layout_mode = 0
+offset_left = 265.0
+offset_top = 160.0
+offset_right = 540.0
+offset_bottom = 222.0
+theme_override_colors/font_color = Color(0.98, 0.94, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0.16, 0.1, 0.04, 0.95)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+text = "The Cottage Flower Stand"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="CloseBtn" type="Button" parent="Panel/Margin/VBox/HeaderHBox"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
+[node name="CloseBtn" type="Button" parent="StandContainer/Awning"]
+layout_mode = 0
+offset_left = 752.0
+offset_top = 22.0
+offset_right = 784.0
+offset_bottom = 54.0
+theme_override_colors/font_color = Color(1, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
 text = "✕"
 
-[node name="HSeparator" type="HSeparator" parent="Panel/Margin/VBox"]
-layout_mode = 2
+[node name="CrateScroll" type="ScrollContainer" parent="StandContainer"]
+layout_mode = 0
+offset_left = 96.0
+offset_top = 126.0
+offset_right = 684.0
+offset_bottom = 404.0
+horizontal_scroll_mode = 0
 
-[node name="Grid" type="GridContainer" parent="Panel/Margin/VBox"]
+[node name="CrateGrid" type="GridContainer" parent="StandContainer/CrateScroll"]
 layout_mode = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
-columns = 1
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="FooterArea" type="Control" parent="StandContainer"]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 436.0
+offset_right = 700.0
+offset_bottom = 576.0
+
+[node name="CoinDrawerIcon" type="TextureRect" parent="StandContainer/FooterArea"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 118.0
+offset_bottom = 111.0
+texture = ExtResource("5_coin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SellAllHarvestBtn" type="TextureButton" parent="StandContainer/FooterArea"]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 32.0
+offset_right = 590.0
+offset_bottom = 96.0
+texture_normal = ExtResource("6_grand")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SellAllHarvestLabel" type="Label" parent="StandContainer/FooterArea/SellAllHarvestBtn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
+theme_override_colors/font_shadow_color = Color(0.18, 0.1, 0.04, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.08, 0.04, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 12
+text = "💰 Quick Sell All Harvested"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EmptyLabel" type="Label" parent="StandContainer/FooterArea"]
+visible = false
+layout_mode = 0
+offset_left = 130.0
+offset_top = 40.0
+offset_right = 590.0
+offset_bottom = 88.0
+theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "🌿 All shelves are empty! Harvest blooming flowers from your garden."
+horizontal_alignment = 1
+vertical_alignment = 1
