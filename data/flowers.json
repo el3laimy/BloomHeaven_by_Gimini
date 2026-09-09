@@ -7,15 +7,46 @@
       "parents": [],
       "base_growth_seconds": 35.0,
       "base_value": 10,
-      "primary_color": [0.92, 0.22, 0.28, 1.0],
-      "secondary_color": [0.72, 0.12, 0.18, 1.0],
-      "accent_color": [1.0, 0.45, 0.50, 1.0],
-      "stem_color": [0.24, 0.52, 0.28, 1.0],
-      "leaf_color": [0.18, 0.44, 0.22, 1.0],
+      "primary_color": [
+        0.92,
+        0.22,
+        0.28,
+        1.0
+      ],
+      "secondary_color": [
+        0.72,
+        0.12,
+        0.18,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.45,
+        0.5,
+        1.0
+      ],
+      "stem_color": [
+        0.24,
+        0.52,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.18,
+        0.44,
+        0.22,
+        1.0
+      ],
       "bloom_size": 24.0,
-      "stages": ["Seed Mounded", "Tiny Sprout", "Rose Bush Bud", "Blooming Rose"],
+      "stages": [
+        "Seed Mounded",
+        "Tiny Sprout",
+        "Rose Bush Bud",
+        "Blooming Rose"
+      ],
       "master_sprite": "res://assets/flowers/master_rose.png",
-      "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage."
+      "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage.",
+      "status": "cvp_base"
     },
     "lavender": {
       "id": "lavender",
@@ -24,15 +55,46 @@
       "parents": [],
       "base_growth_seconds": 45.0,
       "base_value": 12,
-      "primary_color": [0.68, 0.50, 0.88, 1.0],
-      "secondary_color": [0.48, 0.32, 0.70, 1.0],
-      "accent_color": [0.85, 0.75, 0.98, 1.0],
-      "stem_color": [0.32, 0.56, 0.36, 1.0],
-      "leaf_color": [0.26, 0.48, 0.30, 1.0],
+      "primary_color": [
+        0.68,
+        0.5,
+        0.88,
+        1.0
+      ],
+      "secondary_color": [
+        0.48,
+        0.32,
+        0.7,
+        1.0
+      ],
+      "accent_color": [
+        0.85,
+        0.75,
+        0.98,
+        1.0
+      ],
+      "stem_color": [
+        0.32,
+        0.56,
+        0.36,
+        1.0
+      ],
+      "leaf_color": [
+        0.26,
+        0.48,
+        0.3,
+        1.0
+      ],
       "bloom_size": 20.0,
-      "stages": ["Seed Mounded", "Silver Sprout", "Tall Stalk", "Flowering Spike"],
+      "stages": [
+        "Seed Mounded",
+        "Silver Sprout",
+        "Tall Stalk",
+        "Flowering Spike"
+      ],
       "master_sprite": "res://assets/flowers/master_lavender.png",
-      "description": "Calming, aromatic lavender stalks that sway gently in the afternoon breeze."
+      "description": "Calming, aromatic lavender stalks that sway gently in the afternoon breeze.",
+      "status": "cvp_base"
     },
     "sunflower": {
       "id": "sunflower",
@@ -41,69 +103,202 @@
       "parents": [],
       "base_growth_seconds": 50.0,
       "base_value": 15,
-      "primary_color": [1.0, 0.82, 0.14, 1.0],
-      "secondary_color": [0.42, 0.25, 0.12, 1.0],
-      "accent_color": [1.0, 0.94, 0.40, 1.0],
-      "stem_color": [0.28, 0.58, 0.25, 1.0],
-      "leaf_color": [0.22, 0.50, 0.20, 1.0],
+      "primary_color": [
+        1.0,
+        0.82,
+        0.14,
+        1.0
+      ],
+      "secondary_color": [
+        0.42,
+        0.25,
+        0.12,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.94,
+        0.4,
+        1.0
+      ],
+      "stem_color": [
+        0.28,
+        0.58,
+        0.25,
+        1.0
+      ],
+      "leaf_color": [
+        0.22,
+        0.5,
+        0.2,
+        1.0
+      ],
       "bloom_size": 28.0,
-      "stages": ["Seed Mounded", "Heart Sprout", "Broad-Leaf Stalk", "Radiant Sunbloom"],
+      "stages": [
+        "Seed Mounded",
+        "Heart Sprout",
+        "Broad-Leaf Stalk",
+        "Radiant Sunbloom"
+      ],
       "master_sprite": "res://assets/flowers/master_sunflower.png",
-      "description": "A tall, cheerful sunflower that turns its radiant face toward warm daylight."
+      "description": "A tall, cheerful sunflower that turns its radiant face toward warm daylight.",
+      "status": "legacy"
     },
     "roselight": {
       "id": "roselight",
       "display_name": "Roselight Bloom",
       "is_hybrid": true,
-      "parents": ["rose", "lavender"],
+      "parents": [
+        "rose",
+        "lavender"
+      ],
       "base_growth_seconds": 55.0,
       "base_value": 28,
-      "primary_color": [0.88, 0.35, 0.78, 1.0],
-      "secondary_color": [0.55, 0.18, 0.65, 1.0],
-      "accent_color": [0.98, 0.70, 0.95, 1.0],
-      "stem_color": [0.26, 0.54, 0.32, 1.0],
-      "leaf_color": [0.20, 0.46, 0.25, 1.0],
+      "primary_color": [
+        0.88,
+        0.35,
+        0.78,
+        1.0
+      ],
+      "secondary_color": [
+        0.55,
+        0.18,
+        0.65,
+        1.0
+      ],
+      "accent_color": [
+        0.98,
+        0.7,
+        0.95,
+        1.0
+      ],
+      "stem_color": [
+        0.26,
+        0.54,
+        0.32,
+        1.0
+      ],
+      "leaf_color": [
+        0.2,
+        0.46,
+        0.25,
+        1.0
+      ],
       "bloom_size": 26.0,
-      "stages": ["Mystery Seed", "Tender Sprout", "Luminescent Bud", "Roselight Bloom"],
+      "stages": [
+        "Mystery Seed",
+        "Tender Sprout",
+        "Luminescent Bud",
+        "Roselight Bloom"
+      ],
       "botanical_clue": "One parent is a classic crimson bloom with velvety petals. The other is a soothing aromatic stalk.",
       "master_sprite": "res://assets/flowers/master_roselight.png",
-      "description": "An ethereal hybrid combining velvety rose petals with fragrant lavender hues and a subtle luminescent glow."
+      "description": "An ethereal hybrid combining velvety rose petals with fragrant lavender hues and a subtle luminescent glow.",
+      "status": "legacy"
     },
     "golden_rose": {
       "id": "golden_rose",
       "display_name": "Golden Rose",
       "is_hybrid": true,
-      "parents": ["rose", "sunflower"],
+      "parents": [
+        "rose",
+        "sunflower"
+      ],
       "base_growth_seconds": 60.0,
       "base_value": 35,
-      "primary_color": [0.98, 0.75, 0.18, 1.0],
-      "secondary_color": [0.85, 0.42, 0.10, 1.0],
-      "accent_color": [1.0, 0.95, 0.60, 1.0],
-      "stem_color": [0.30, 0.55, 0.22, 1.0],
-      "leaf_color": [0.24, 0.48, 0.18, 1.0],
+      "primary_color": [
+        0.98,
+        0.75,
+        0.18,
+        1.0
+      ],
+      "secondary_color": [
+        0.85,
+        0.42,
+        0.1,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.95,
+        0.6,
+        1.0
+      ],
+      "stem_color": [
+        0.3,
+        0.55,
+        0.22,
+        1.0
+      ],
+      "leaf_color": [
+        0.24,
+        0.48,
+        0.18,
+        1.0
+      ],
       "bloom_size": 27.0,
-      "stages": ["Mystery Seed", "Golden Sprout", "Sunburst Bud", "Golden Rose"],
+      "stages": [
+        "Mystery Seed",
+        "Golden Sprout",
+        "Sunburst Bud",
+        "Golden Rose"
+      ],
       "botanical_clue": "A union between the garden's classic red queen and a tall seeker of the warm golden sun.",
       "master_sprite": "res://assets/flowers/master_golden_rose.png",
-      "description": "A breathtaking cross between red rose elegance and solar sunflower energy, shimmering with golden amber warmth."
+      "description": "A breathtaking cross between red rose elegance and solar sunflower energy, shimmering with golden amber warmth.",
+      "status": "legacy"
     },
     "sunflare_spike": {
       "id": "sunflare_spike",
       "display_name": "Sunflare Spike",
       "is_hybrid": true,
-      "parents": ["lavender", "sunflower"],
+      "parents": [
+        "lavender",
+        "sunflower"
+      ],
       "base_growth_seconds": 60.0,
       "base_value": 40,
-      "primary_color": [1.0, 0.60, 0.12, 1.0],
-      "secondary_color": [0.78, 0.30, 0.50, 1.0],
-      "accent_color": [1.0, 0.90, 0.45, 1.0],
-      "stem_color": [0.34, 0.58, 0.28, 1.0],
-      "leaf_color": [0.26, 0.50, 0.22, 1.0],
+      "primary_color": [
+        1.0,
+        0.6,
+        0.12,
+        1.0
+      ],
+      "secondary_color": [
+        0.78,
+        0.3,
+        0.5,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.9,
+        0.45,
+        1.0
+      ],
+      "stem_color": [
+        0.34,
+        0.58,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.26,
+        0.5,
+        0.22,
+        1.0
+      ],
       "bloom_size": 29.0,
-      "stages": ["Mystery Seed", "Flame Sprout", "Sunflare Stalk", "Sunflare Spike"],
+      "stages": [
+        "Mystery Seed",
+        "Flame Sprout",
+        "Sunflare Stalk",
+        "Sunflare Spike"
+      ],
       "botanical_clue": "Slender aromatic purple stalks touched by the fiery golden brilliance of solar florets.",
       "master_sprite": "res://assets/flowers/master_sunflare_spike.png",
-      "description": "A towering floral spike ablaze with fiery golden florets and calming herbal fragrance."
+      "description": "A towering floral spike ablaze with fiery golden florets and calming herbal fragrance.",
+      "status": "legacy"
     },
     "tulip": {
       "id": "tulip",
@@ -112,14 +307,45 @@
       "parents": [],
       "base_growth_seconds": 30.0,
       "base_value": 14,
-      "primary_color": [0.98, 0.65, 0.12, 1.0],
-      "secondary_color": [0.85, 0.42, 0.08, 1.0],
-      "accent_color": [1.0, 0.85, 0.35, 1.0],
-      "stem_color": [0.26, 0.54, 0.26, 1.0],
-      "leaf_color": [0.20, 0.48, 0.20, 1.0],
+      "primary_color": [
+        0.98,
+        0.65,
+        0.12,
+        1.0
+      ],
+      "secondary_color": [
+        0.85,
+        0.42,
+        0.08,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.85,
+        0.35,
+        1.0
+      ],
+      "stem_color": [
+        0.26,
+        0.54,
+        0.26,
+        1.0
+      ],
+      "leaf_color": [
+        0.2,
+        0.48,
+        0.2,
+        1.0
+      ],
       "bloom_size": 22.0,
-      "stages": ["Seed Mounded", "Spear Sprout", "Cupped Bud", "Golden Tulip"],
-      "description": "A regal spring tulip with cupped golden-orange petals and smooth emerald lanceolate leaves."
+      "stages": [
+        "Seed Mounded",
+        "Spear Sprout",
+        "Cupped Bud",
+        "Golden Tulip"
+      ],
+      "description": "A regal spring tulip with cupped golden-orange petals and smooth emerald lanceolate leaves.",
+      "status": "cvp_base"
     },
     "daisy": {
       "id": "daisy",
@@ -128,14 +354,45 @@
       "parents": [],
       "base_growth_seconds": 20.0,
       "base_value": 8,
-      "primary_color": [0.96, 0.96, 0.94, 1.0],
-      "secondary_color": [0.98, 0.78, 0.15, 1.0],
-      "accent_color": [1.0, 0.90, 0.40, 1.0],
-      "stem_color": [0.28, 0.56, 0.25, 1.0],
-      "leaf_color": [0.22, 0.48, 0.22, 1.0],
+      "primary_color": [
+        0.96,
+        0.96,
+        0.94,
+        1.0
+      ],
+      "secondary_color": [
+        0.98,
+        0.78,
+        0.15,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.9,
+        0.4,
+        1.0
+      ],
+      "stem_color": [
+        0.28,
+        0.56,
+        0.25,
+        1.0
+      ],
+      "leaf_color": [
+        0.22,
+        0.48,
+        0.22,
+        1.0
+      ],
       "bloom_size": 20.0,
-      "stages": ["Seed Mounded", "Clover Sprout", "Button Bud", "White Daisy"],
-      "description": "A cheerful cottage garden daisy with radiant white ray petals surrounding a sunny golden central disc."
+      "stages": [
+        "Seed Mounded",
+        "Clover Sprout",
+        "Button Bud",
+        "White Daisy"
+      ],
+      "description": "A cheerful cottage garden daisy with radiant white ray petals surrounding a sunny golden central disc.",
+      "status": "cvp_base"
     },
     "rose_cream": {
       "id": "rose_cream",
@@ -144,14 +401,547 @@
       "parents": [],
       "base_growth_seconds": 35.0,
       "base_value": 16,
-      "primary_color": [0.96, 0.92, 0.82, 1.0],
-      "secondary_color": [0.88, 0.78, 0.62, 1.0],
-      "accent_color": [1.0, 0.96, 0.88, 1.0],
-      "stem_color": [0.26, 0.52, 0.28, 1.0],
-      "leaf_color": [0.20, 0.45, 0.22, 1.0],
+      "primary_color": [
+        0.96,
+        0.92,
+        0.82,
+        1.0
+      ],
+      "secondary_color": [
+        0.88,
+        0.78,
+        0.62,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.96,
+        0.88,
+        1.0
+      ],
+      "stem_color": [
+        0.26,
+        0.52,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.2,
+        0.45,
+        0.22,
+        1.0
+      ],
       "bloom_size": 25.0,
-      "stages": ["Seed Mounded", "Ivory Sprout", "Porcelain Bud", "Cream Tea Rose"],
-      "description": "An exquisite heirloom tea rose with layered porcelain-cream petals and a delicate sweet honey fragrance."
+      "stages": [
+        "Seed Mounded",
+        "Ivory Sprout",
+        "Porcelain Bud",
+        "Cream Tea Rose"
+      ],
+      "description": "An exquisite heirloom tea rose with layered porcelain-cream petals and a delicate sweet honey fragrance.",
+      "status": "legacy"
+    },
+    "crimson_rose": {
+      "id": "crimson_rose",
+      "display_name": "Crimson Rose",
+      "is_hybrid": false,
+      "parents": [],
+      "base_growth_seconds": 35.0,
+      "base_value": 10,
+      "primary_color": [
+        0.92,
+        0.22,
+        0.28,
+        1.0
+      ],
+      "secondary_color": [
+        0.72,
+        0.12,
+        0.18,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.45,
+        0.5,
+        1.0
+      ],
+      "stem_color": [
+        0.24,
+        0.52,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.18,
+        0.44,
+        0.22,
+        1.0
+      ],
+      "bloom_size": 24.0,
+      "stages": [
+        "Seed Mounded",
+        "Tiny Sprout",
+        "Rose Bush Bud",
+        "Blooming Rose"
+      ],
+      "master_sprite": "res://assets/flowers/master_rose.png",
+      "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage.",
+      "status": "cvp_base"
+    },
+    "sunny_daisy": {
+      "id": "sunny_daisy",
+      "display_name": "Sunny Daisy",
+      "is_hybrid": false,
+      "parents": [],
+      "base_growth_seconds": 20.0,
+      "base_value": 8,
+      "primary_color": [
+        0.96,
+        0.96,
+        0.94,
+        1.0
+      ],
+      "secondary_color": [
+        0.98,
+        0.78,
+        0.15,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.9,
+        0.4,
+        1.0
+      ],
+      "stem_color": [
+        0.28,
+        0.56,
+        0.25,
+        1.0
+      ],
+      "leaf_color": [
+        0.22,
+        0.48,
+        0.22,
+        1.0
+      ],
+      "bloom_size": 20.0,
+      "stages": [
+        "Seed Mounded",
+        "Clover Sprout",
+        "Button Bud",
+        "White Daisy"
+      ],
+      "description": "A cheerful cottage garden daisy with radiant white ray petals surrounding a sunny golden central disc.",
+      "status": "cvp_base"
+    },
+    "english_lavender": {
+      "id": "english_lavender",
+      "display_name": "English Lavender",
+      "is_hybrid": false,
+      "parents": [],
+      "base_growth_seconds": 45.0,
+      "base_value": 12,
+      "primary_color": [
+        0.68,
+        0.5,
+        0.88,
+        1.0
+      ],
+      "secondary_color": [
+        0.48,
+        0.32,
+        0.7,
+        1.0
+      ],
+      "accent_color": [
+        0.85,
+        0.75,
+        0.98,
+        1.0
+      ],
+      "stem_color": [
+        0.32,
+        0.56,
+        0.36,
+        1.0
+      ],
+      "leaf_color": [
+        0.26,
+        0.48,
+        0.3,
+        1.0
+      ],
+      "bloom_size": 20.0,
+      "stages": [
+        "Seed Mounded",
+        "Silver Sprout",
+        "Tall Stalk",
+        "Flowering Spike"
+      ],
+      "master_sprite": "res://assets/flowers/master_lavender.png",
+      "description": "Calming, aromatic lavender stalks that sway gently in the afternoon breeze.",
+      "status": "cvp_base"
+    },
+    "pastel_tulip": {
+      "id": "pastel_tulip",
+      "display_name": "Pastel Tulip",
+      "is_hybrid": false,
+      "parents": [],
+      "base_growth_seconds": 30.0,
+      "base_value": 14,
+      "primary_color": [
+        0.98,
+        0.65,
+        0.12,
+        1.0
+      ],
+      "secondary_color": [
+        0.85,
+        0.42,
+        0.08,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.85,
+        0.35,
+        1.0
+      ],
+      "stem_color": [
+        0.26,
+        0.54,
+        0.26,
+        1.0
+      ],
+      "leaf_color": [
+        0.2,
+        0.48,
+        0.2,
+        1.0
+      ],
+      "bloom_size": 22.0,
+      "stages": [
+        "Seed Mounded",
+        "Spear Sprout",
+        "Cupped Bud",
+        "Golden Tulip"
+      ],
+      "description": "A regal spring tulip with cupped golden-orange petals and smooth emerald lanceolate leaves.",
+      "status": "cvp_base"
+    },
+    "blushbell": {
+      "id": "blushbell",
+      "display_name": "Blushbell",
+      "is_hybrid": true,
+      "status": "cvp_hybrid",
+      "parents": [
+        "rose",
+        "daisy"
+      ],
+      "base_growth_seconds": 40.0,
+      "base_value": 24,
+      "primary_color": [
+        0.95,
+        0.55,
+        0.7,
+        1.0
+      ],
+      "secondary_color": [
+        0.85,
+        0.35,
+        0.55,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.8,
+        0.9,
+        1.0
+      ],
+      "stem_color": [
+        0.26,
+        0.54,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.2,
+        0.46,
+        0.22,
+        1.0
+      ],
+      "bloom_size": 22.0,
+      "stages": [
+        "Mystery Seed",
+        "Tiny Sprout",
+        "Blushbell Bud",
+        "Blushbell Bloom"
+      ],
+      "botanical_clue": "A graceful union of velvety crimson petals and cheerful meadow sunshine.",
+      "master_sprite": "res://assets/flowers/master_roselight.png",
+      "description": "A charming bell-shaped pink bloom blending the elegance of a rose with the cheer of a daisy."
+    },
+    "velvet_dusk": {
+      "id": "velvet_dusk",
+      "display_name": "Velvet Dusk",
+      "is_hybrid": true,
+      "status": "cvp_hybrid",
+      "parents": [
+        "rose",
+        "lavender"
+      ],
+      "base_growth_seconds": 50.0,
+      "base_value": 30,
+      "primary_color": [
+        0.6,
+        0.25,
+        0.65,
+        1.0
+      ],
+      "secondary_color": [
+        0.4,
+        0.15,
+        0.5,
+        1.0
+      ],
+      "accent_color": [
+        0.85,
+        0.45,
+        0.9,
+        1.0
+      ],
+      "stem_color": [
+        0.24,
+        0.5,
+        0.26,
+        1.0
+      ],
+      "leaf_color": [
+        0.18,
+        0.42,
+        0.2,
+        1.0
+      ],
+      "bloom_size": 25.0,
+      "stages": [
+        "Mystery Seed",
+        "Tender Sprout",
+        "Dusk Bud",
+        "Velvet Dusk Bloom"
+      ],
+      "botanical_clue": "Rich velvety crimson softened by calming twilight purple.",
+      "master_sprite": "res://assets/flowers/master_roselight.png",
+      "description": "An enchanting deep-violet bloom with velvet petals and a soothing evening scent."
+    },
+    "twilight_bell": {
+      "id": "twilight_bell",
+      "display_name": "Twilight Bell",
+      "is_hybrid": true,
+      "status": "cvp_hybrid",
+      "parents": [
+        "lavender",
+        "tulip"
+      ],
+      "base_growth_seconds": 48.0,
+      "base_value": 28,
+      "primary_color": [
+        0.55,
+        0.45,
+        0.85,
+        1.0
+      ],
+      "secondary_color": [
+        0.35,
+        0.25,
+        0.65,
+        1.0
+      ],
+      "accent_color": [
+        0.8,
+        0.7,
+        1.0,
+        1.0
+      ],
+      "stem_color": [
+        0.26,
+        0.52,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.2,
+        0.45,
+        0.22,
+        1.0
+      ],
+      "bloom_size": 23.0,
+      "stages": [
+        "Mystery Seed",
+        "Spear Sprout",
+        "Twilight Bud",
+        "Twilight Bell"
+      ],
+      "botanical_clue": "Scented purple spikes crossed with graceful cupped spring petals.",
+      "master_sprite": "res://assets/flowers/master_lavender.png",
+      "description": "A slender bell-shaped indigo blossom carrying a whisper of twilight breeze."
+    },
+    "sunburst_daisy": {
+      "id": "sunburst_daisy",
+      "display_name": "Sunburst Daisy",
+      "is_hybrid": true,
+      "status": "cvp_hybrid",
+      "parents": [
+        "daisy",
+        "tulip"
+      ],
+      "base_growth_seconds": 42.0,
+      "base_value": 25,
+      "primary_color": [
+        1.0,
+        0.75,
+        0.15,
+        1.0
+      ],
+      "secondary_color": [
+        0.88,
+        0.45,
+        0.1,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.9,
+        0.5,
+        1.0
+      ],
+      "stem_color": [
+        0.28,
+        0.56,
+        0.25,
+        1.0
+      ],
+      "leaf_color": [
+        0.22,
+        0.48,
+        0.2,
+        1.0
+      ],
+      "bloom_size": 24.0,
+      "stages": [
+        "Mystery Seed",
+        "Clover Sprout",
+        "Sunburst Bud",
+        "Sunburst Daisy"
+      ],
+      "botanical_clue": "White ray petals enriched with vibrant golden-orange morning warmth.",
+      "master_sprite": "res://assets/flowers/master_sunflower.png",
+      "description": "A brilliant golden-yellow daisy with fiery orange petal tips radiating like a miniature sun."
+    },
+    "crown_petal": {
+      "id": "crown_petal",
+      "display_name": "Crown Petal",
+      "is_hybrid": true,
+      "status": "cvp_hybrid",
+      "parents": [
+        "rose",
+        "tulip"
+      ],
+      "base_growth_seconds": 52.0,
+      "base_value": 32,
+      "primary_color": [
+        0.9,
+        0.18,
+        0.35,
+        1.0
+      ],
+      "secondary_color": [
+        0.7,
+        0.1,
+        0.25,
+        1.0
+      ],
+      "accent_color": [
+        1.0,
+        0.5,
+        0.65,
+        1.0
+      ],
+      "stem_color": [
+        0.25,
+        0.52,
+        0.28,
+        1.0
+      ],
+      "leaf_color": [
+        0.19,
+        0.45,
+        0.22,
+        1.0
+      ],
+      "bloom_size": 26.0,
+      "stages": [
+        "Mystery Seed",
+        "Spear Sprout",
+        "Coronet Bud",
+        "Crown Petal"
+      ],
+      "botanical_clue": "The stately form of a royal tulip joined with lush layered crimson rose petals.",
+      "master_sprite": "res://assets/flowers/master_rose.png",
+      "description": "A majestic regal blossom whose layered cupped petals form an exquisite royal coronet."
+    },
+    "meadow_mist": {
+      "id": "meadow_mist",
+      "display_name": "Meadow Mist",
+      "is_hybrid": true,
+      "status": "cvp_hybrid",
+      "parents": [
+        "daisy",
+        "lavender"
+      ],
+      "base_growth_seconds": 44.0,
+      "base_value": 26,
+      "primary_color": [
+        0.75,
+        0.85,
+        0.95,
+        1.0
+      ],
+      "secondary_color": [
+        0.55,
+        0.65,
+        0.8,
+        1.0
+      ],
+      "accent_color": [
+        0.9,
+        0.95,
+        1.0,
+        1.0
+      ],
+      "stem_color": [
+        0.3,
+        0.56,
+        0.32,
+        1.0
+      ],
+      "leaf_color": [
+        0.24,
+        0.48,
+        0.26,
+        1.0
+      ],
+      "bloom_size": 21.0,
+      "stages": [
+        "Mystery Seed",
+        "Silver Sprout",
+        "Misty Bud",
+        "Meadow Mist"
+      ],
+      "botanical_clue": "Delicate meadow daisies kissed by the cool violet dew of the morning.",
+      "master_sprite": "res://assets/flowers/master_lavender.png",
+      "description": "A delicate, airy cluster of pale misty-blue florets that glisten like early morning meadow dew."
     }
   }
 }

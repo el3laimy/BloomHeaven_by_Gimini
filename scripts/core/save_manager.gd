@@ -4,48 +4,66 @@ extends RefCounted
 ## Save & Load Manager V1 for Finest Garden.
 ## Handles schema versioning, serialization, deserialization, and auto-save.
 
-const SAVE_PATH: String = "user://finest_garden_save_v1.json"
-const CURRENT_VERSION: int = 1
+const SAVE_PATH_V2: String = "user://bloomhaven_save_v2.json"
+const SAVE_PATH_V1: String = "user://finest_garden_save_v1.json"
+const SAVE_PATH: String = SAVE_PATH_V2
+const CURRENT_VERSION: int = 2
+
+
+static func get_active_save_path() -> String:
+	if FileAccess.file_exists(SAVE_PATH_V2):
+		return SAVE_PATH_V2
+	elif FileAccess.file_exists(SAVE_PATH_V1):
+		return SAVE_PATH_V1
+	return SAVE_PATH_V2
 
 
 static func has_save() -> bool:
-	return FileAccess.file_exists(SAVE_PATH)
+	return FileAccess.file_exists(SAVE_PATH_V2) or FileAccess.file_exists(SAVE_PATH_V1)
 
 
 static func delete_save() -> bool:
-	if has_save():
-		var err := DirAccess.remove_absolute(SAVE_PATH)
-		return err == OK
-	return true
+	var success: bool = true
+	if FileAccess.file_exists(SAVE_PATH_V2):
+		var err := DirAccess.remove_absolute(SAVE_PATH_V2)
+		if err != OK:
+			success = false
+	if FileAccess.file_exists(SAVE_PATH_V1):
+		var err := DirAccess.remove_absolute(SAVE_PATH_V1)
+		if err != OK:
+			success = false
+	return success
 
 
 static func save_game(state_data: Dictionary) -> bool:
 	var payload: Dictionary = {
 		"version": CURRENT_VERSION,
 		"timestamp": Time.get_unix_time_from_system(),
+		"game_title": "BloomHaven CVP",
 		"data": state_data
 	}
 
 	var json_str := JSON.stringify(payload, "\t")
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(SAVE_PATH_V2, FileAccess.WRITE)
 	if file == null:
-		printerr("SaveManager: Failed to open save file for writing: %s" % SAVE_PATH)
+		printerr("SaveManager: Failed to open save file for writing: %s" % SAVE_PATH_V2)
 		return false
 
 	file.store_string(json_str)
 	file.close()
-	print("✓ [SAVE] Game state saved successfully to %s." % SAVE_PATH)
+	print("✓ [SAVE] Game state saved successfully to %s (v%d)." % [SAVE_PATH_V2, CURRENT_VERSION])
 	return true
 
 
 static func load_game() -> Dictionary:
 	if not has_save():
-		print("[SAVE] No save file found at %s. Starting fresh." % SAVE_PATH)
+		print("[SAVE] No save file found. Starting fresh.")
 		return {}
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var load_path := get_active_save_path()
+	var file := FileAccess.open(load_path, FileAccess.READ)
 	if file == null:
-		printerr("SaveManager: Failed to open save file for reading: %s" % SAVE_PATH)
+		printerr("SaveManager: Failed to open save file for reading: %s" % load_path)
 		return {}
 
 	var text := file.get_as_text()
@@ -69,7 +87,7 @@ static func load_game() -> Dictionary:
 		return {}
 
 	var raw_data: Dictionary = root_dict.get("data", {})
-	print("✓ [LOAD] Game state loaded successfully (v%d)." % version)
+	print("✓ [LOAD] Game state loaded successfully (%s - v%d)." % [load_path.get_file(), version])
 	return raw_data
 
 

@@ -39,10 +39,22 @@ static func _ensure_initialized() -> void:
 	_is_initialized = true
 
 
+const ALIASES: Dictionary = {
+	"crimson_rose": "rose",
+	"rose_crimson": "rose",
+	"sunny_daisy": "daisy",
+	"english_lavender": "lavender",
+	"pastel_tulip": "tulip"
+}
+
+
 static func get_flower(flower_id: String) -> Dictionary:
 	_ensure_initialized()
 	if _cached_flowers.has(flower_id):
 		return _cached_flowers[flower_id]
+	var alias_id: String = ALIASES.get(flower_id, "")
+	if not alias_id.is_empty() and _cached_flowers.has(alias_id):
+		return _cached_flowers[alias_id]
 	return _cached_flowers.get("rose", {})
 
 
@@ -72,14 +84,28 @@ static func get_all_flower_ids() -> Array[String]:
 	return res
 
 
-## Deterministic breeding cross resolver
+## Deterministic breeding cross resolver for CVP Handcrafted Hybrids & Legacy Crosses
 static func get_breeding_result(parent_a: String, parent_b: String) -> String:
 	_ensure_initialized()
+	parent_a = ALIASES.get(parent_a, parent_a)
+	parent_b = ALIASES.get(parent_b, parent_b)
 	var pair := [parent_a, parent_b]
 	pair.sort()
 
-	if pair == ["lavender", "rose"]:
-		return "roselight"
+	# CVP Curated 6 Handcrafted Hybrids
+	if pair == ["daisy", "rose"]:
+		return "blushbell"
+	elif pair == ["lavender", "rose"]:
+		return "velvet_dusk"
+	elif pair == ["lavender", "tulip"]:
+		return "twilight_bell"
+	elif pair == ["daisy", "tulip"]:
+		return "sunburst_daisy"
+	elif pair == ["rose", "tulip"]:
+		return "crown_petal"
+	elif pair == ["daisy", "lavender"]:
+		return "meadow_mist"
+	# Legacy cross pairs
 	elif pair == ["rose", "sunflower"]:
 		return "golden_rose"
 	elif pair == ["lavender", "sunflower"]:

@@ -151,7 +151,7 @@ func _ready() -> void:
 	if not SaveManagerScript.has_save() and _tutorial_overlay != null:
 		_tutorial_overlay.show_step(0)
 	else:
-		hud.show_toast("🌸 Welcome to BloomHaven! Fiona Finch management mode active.", Color(0.65, 0.95, 0.75))
+		hud.show_toast("🌸 Welcome to BloomHaven!", Color(0.65, 0.95, 0.75))
 
 
 func _process(delta: float) -> void:
@@ -159,8 +159,11 @@ func _process(delta: float) -> void:
 		hud.update_plot_info(garden_grid.selected_plot)
 
 	# Order patience and combo decay managed by OrderManager
+	# During FTUE onboarding, patience decay is paused to eliminate stress
 	if order_manager != null:
-		order_manager.tick(delta)
+		var is_ftue_active: bool = (_tutorial_overlay != null and _tutorial_overlay.visible)
+		if not is_ftue_active:
+			order_manager.tick(delta)
 
 	# Auto-save every 30 seconds
 	_auto_save_timer += delta
@@ -753,12 +756,54 @@ func _on_fulfill_request_requested(order_id: String) -> void:
 		var reward_str := "+%d 🪙" % total_earned
 		if tip_earned > 0:
 			reward_str += " (+%d Tip!)" % tip_earned
-		var spawn_p: Vector2 = get_viewport_rect().size * 0.5
-		if is_instance_valid(character):
+		var spawn_p: Vector2 = get_viewport_rect().size * 0.5 if is_inside_tree() else Vector2(640, 360)
+		if is_instance_valid(character) and character.is_inside_tree():
 			spawn_p = character.get_global_transform_with_canvas().origin + Vector2(0, -50)
 		hud.show_floating_reward(reward_str, spawn_p, Color(1.0, 0.9, 0.3))
 
 	_save_game_state()
+
+
+## Quick Sell foundation for BloomHaven CVP Flower Stand economy.
+## Sells flowers directly from inventory for an immediate fixed coin baseline.
+## Supports quality multipliers (Normal = 1.0x, Fine = 1.25x, Perfect = 1.5x, Hero = 2.5x).
+func quick_sell_flower(flower_id: String, count: int = 1, quality: int = 1) -> int:
+	if not inventory.has(flower_id) or inventory[flower_id] < count or count <= 0:
+		hud.show_toast("Not enough flowers to sell!", Color(0.9, 0.4, 0.4))
+		return 0
+
+	var flower_data: Dictionary = FlowerData.get_flower(flower_id)
+	var base_val: int = int(flower_data.get("base_value", 10))
+	var quality_mult: float = 1.0
+	match quality:
+		2: quality_mult = 1.25
+		3: quality_mult = 1.5
+		4: quality_mult = 2.5
+		_: quality_mult = 1.0
+
+	var price_per_unit: int = int(round(base_val * quality_mult))
+	var total_earned: int = price_per_unit * count
+
+	inventory[flower_id] -= count
+	if inventory[flower_id] <= 0:
+		inventory.erase(flower_id)
+
+	coins += total_earned
+	_play_sfx("coin")
+	_sync_hud_state()
+	_save_game_state()
+
+	var disp_name: String = flower_data.get("display_name", flower_id.capitalize())
+	hud.show_toast("🌸 Sold %d %s for +%d Coins!" % [count, disp_name, total_earned], Color(0.98, 0.88, 0.35))
+
+	if is_instance_valid(hud) and hud.has_method("show_floating_reward"):
+		var reward_str := "+%d 🪙" % total_earned
+		var spawn_p: Vector2 = get_viewport_rect().size * 0.5 if is_inside_tree() else Vector2(640, 360)
+		if is_instance_valid(character) and character.is_inside_tree():
+			spawn_p = character.get_global_transform_with_canvas().origin + Vector2(0, -50)
+		hud.show_floating_reward(reward_str, spawn_p, Color(1.0, 0.9, 0.3))
+
+	return total_earned
 
 
 func _on_zoom_in() -> void:

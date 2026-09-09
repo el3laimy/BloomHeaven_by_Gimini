@@ -86,6 +86,8 @@ static func get_layout_positions(preset: LayoutPreset = LayoutPreset.BLOOMHAVEN_
 			positions.append(hero_plot)
 
 	# Pad or trim to count
+	if positions.size() > count:
+		positions = positions.slice(0, count)
 	while positions.size() < count:
 		var idx := positions.size()
 		positions.append(Vector2((idx % 4 - 1.5) * 110.0, (int(idx / 4) - 1.0) * 80.0 * y_scale))

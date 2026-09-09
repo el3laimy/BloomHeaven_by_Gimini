@@ -17,7 +17,7 @@ signal plot_relocated(plot_index: int, new_pos: Vector2)
 
 const GardenLayoutManagerScript := preload("res://scripts/garden/garden_layout_manager.gd")
 
-@export var total_plots: int = 25
+@export var total_plots: int = 6
 
 var plots: Array[GardenPlot] = []
 var selected_plot: GardenPlot = null

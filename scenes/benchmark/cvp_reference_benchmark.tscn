@@ -1,0 +1,31 @@
+[gd_scene load_steps=7 format=3 uid="uid://cvp_benchmark_ref_001"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/garden/garden_environment.gd" id="2_env"]
+[ext_resource type="Script" path="res://scripts/garden/garden_grid.gd" id="3_grid"]
+[ext_resource type="Script" path="res://scripts/character/gardener_character.gd" id="4_char"]
+[ext_resource type="Script" path="res://scripts/camera/garden_camera.gd" id="5_cam"]
+[ext_resource type="Script" path="res://scripts/ui/hud_controller.gd" id="6_hud"]
+
+[node name="CVPReferenceBenchmark" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_main")
+
+[node name="GardenEnvironment" type="Node2D" parent="."]
+y_sort_enabled = true
+script = ExtResource("2_env")
+
+[node name="GardenGrid" type="Node2D" parent="."]
+y_sort_enabled = true
+script = ExtResource("3_grid")
+
+[node name="GardenerCharacter" type="CharacterBody2D" parent="."]
+position = Vector2(0, 80)
+script = ExtResource("4_char")
+
+[node name="GardenCamera" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+script = ExtResource("5_cam")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("6_hud")

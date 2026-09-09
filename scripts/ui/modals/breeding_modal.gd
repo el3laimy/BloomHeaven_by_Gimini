@@ -456,7 +456,7 @@ func _update_slots_ui() -> void:
 					_breed_btn.text = "✨ Pollinate Purebred %s Seed 🌾" % sp_name
 			else:
 				# Incompatible cross
-				_preview_label.text = "⚠️ Incompatible Cross\nThese species cannot pollinate together. Try:\n🌹 Rose + 🪻 Lavender (Roselight)\n🌹 Rose + 🌻 Sunflower (Golden Rose)\n🪻 Lavender + 🌻 Sunflower (Sunflare)"
+				_preview_label.text = "⚠️ Incompatible Cross\nThese species cannot pollinate together. Try:\n🌹 Rose + 🌼 Daisy (Blushbell)\n🌹 Rose + 🪻 Lavender (Velvet Dusk)\n🪻 Lavender + 🌷 Tulip (Twilight Bell)\n🌼 Daisy + 🌷 Tulip (Sunburst Daisy)\n🌹 Rose + 🌷 Tulip (Crown Petal)\n🌼 Daisy + 🪻 Lavender (Meadow Mist)"
 				_preview_label.add_theme_color_override("font_color", Color(1.0, 0.65, 0.4))
 				if _preview_tex != null:
 					_preview_tex.visible = false

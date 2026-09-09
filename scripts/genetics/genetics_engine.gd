@@ -49,23 +49,7 @@ static var _specimen_counter: int = 100
 
 
 static func resolve_species(species_a: String, species_b: String) -> String:
-	# Same-species breeding -> retains species
-	if species_a == species_b:
-		return species_a
-
-	# Defined cross pairs from discovery table
-	var pair: Array[String] = [species_a, species_b]
-	pair.sort()
-
-	if pair == ["lavender", "rose"]:
-		return "roselight"
-	elif pair == ["rose", "sunflower"]:
-		return "golden_rose"
-	elif pair == ["lavender", "sunflower"]:
-		return "sunflare_spike"
-
-	# Undefined cross -> Blocked
-	return ""
+	return FlowerData.get_breeding_result(species_a, species_b)
 
 
 static func resolve_phenotype(genotype: FlowerGenotype, species_id: String) -> FlowerPhenotype:
