@@ -4,7 +4,7 @@ extends SceneTree
 
 var frame_count: int = 0
 var main_node: MainGame = null
-var output_dir: String = "/home/el3laimy/.gemini/antigravity-ide/brain/eb1af34d-36d1-4c02-afee-20db3b1389ab"
+var output_dir: String = "/home/el3laimy/.gemini/antigravity/brain/c18f39df-35cc-4bc9-9225-9e72dac391af"
 
 
 func _init() -> void:

@@ -1,90 +1,98 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3 uid="uid://c7sideordrail01"]
 
 [ext_resource type="Script" path="res://scripts/ui/hud/side_order_rail.gd" id="1_rail"]
-[ext_resource type="Texture2D" path="res://assets/ui/orders/parchment_orders_board.png" id="2_board"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_corkboard_rail.png" id="2_corkboard"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
-bg_color = Color(0.2, 0.12, 0.08, 0.8)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+bg_color = Color(0.25, 0.15, 0.08, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.35, 0.95)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber"]
+bg_color = Color(0.65, 0.5, 0.28, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="SideOrderRail" type="Control"]
 layout_mode = 3
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -285.0
+offset_left = -314.0
 offset_top = 14.0
-offset_right = -14.0
-offset_bottom = 345.0
+offset_right = -10.0
+offset_bottom = 454.0
 grow_horizontal = 0
 mouse_filter = 2
 script = ExtResource("1_rail")
 
-[node name="ParchmentBoard" type="NinePatchRect" parent="."]
+[node name="Corkboard" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_board")
-patch_margin_left = 25
-patch_margin_top = 40
-patch_margin_right = 25
-patch_margin_bottom = 25
+texture = ExtResource("2_corkboard")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="HeaderLabel" type="Label" parent="ParchmentBoard"]
+[node name="HeaderLabel" type="Label" parent="Corkboard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 10.0
-offset_bottom = 28.0
+offset_top = 14.0
+offset_bottom = 46.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.3, 0.18, 0.1, 1)
-theme_override_colors/font_shadow_color = Color(1, 0.95, 0.85, 0.8)
+theme_override_colors/font_color = Color(0.96, 0.9, 0.78, 1)
+theme_override_colors/font_shadow_color = Color(0.18, 0.12, 0.06, 0.95)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 12
 text = "Customer Orders"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="CloseBtn" type="Button" parent="ParchmentBoard"]
-custom_minimum_size = Vector2(20, 20)
+[node name="CloseBtn" type="Button" parent="Corkboard"]
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -26.0
-offset_top = 10.0
-offset_right = -6.0
-offset_bottom = 30.0
+offset_left = -36.0
+offset_top = 16.0
+offset_right = -14.0
+offset_bottom = 38.0
 grow_horizontal = 0
-theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+theme_override_colors/font_color = Color(1, 0.95, 0.85, 1)
 theme_override_font_sizes/font_size = 10
 theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
 text = "✕"
 
-[node name="Margin" type="MarginContainer" parent="ParchmentBoard"]
+[node name="Scroll" type="ScrollContainer" parent="Corkboard"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 32.0
+offset_left = 20.0
+offset_top = 52.0
+offset_right = -20.0
+offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="Scroll" type="ScrollContainer" parent="ParchmentBoard/Margin"]
-layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="TicketsVBox" type="VBoxContainer" parent="ParchmentBoard/Margin/Scroll"]
+[node name="TicketsVBox" type="VBoxContainer" parent="Corkboard/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
