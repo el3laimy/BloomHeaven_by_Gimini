@@ -36,7 +36,10 @@ var quality: int = 1
 
 var is_hovered: bool = false
 var is_selected: bool = false
-var is_hero_showcase: bool = false
+var is_hero_showcase: bool = false:
+	set(value):
+		is_hero_showcase = value
+		_update_bed_visual()
 var _prune_badge_time: float = 0.0
 var _thirsty_badge_time: float = 0.0
 var _prune_alerted: bool = false
@@ -48,6 +51,11 @@ var _soil_node: Node2D = null
 var _water_particles: CPUParticles2D = null
 var _harvest_particles: CPUParticles2D = null
 var _plant_particles: CPUParticles2D = null
+
+const SOIL_DRY_TEX := preload("res://assets/environment/plots/soil_dry.png")
+const SOIL_WET_TEX := preload("res://assets/environment/plots/soil_wet.png")
+const SOIL_HERO_DRY_TEX := preload("res://assets/environment/plots/soil_seeded.png")
+const SOIL_HERO_WET_TEX := preload("res://assets/environment/plots/soil_mature.png")
 
 const PLOT_WIDTH: float = 64.0
 const PLOT_HEIGHT: float = 44.0
@@ -62,10 +70,20 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	_update_bed_visual()
 	queue_redraw()
 
 
 func _setup_nodes() -> void:
+	if not is_instance_valid(_bed_sprite):
+		_bed_sprite = Sprite2D.new()
+		_bed_sprite.name = "BedSprite"
+		_bed_sprite.centered = true
+		_bed_sprite.position = Vector2(0, 0)
+		_bed_sprite.z_index = -1
+		add_child(_bed_sprite)
+		_update_bed_visual()
+
 	if not is_instance_valid(_flower_visual):
 		_flower_visual = FlowerVisual.new()
 		_flower_visual.name = "FlowerVisual"
@@ -129,12 +147,24 @@ func _setup_nodes() -> void:
 	add_child(_harvest_particles)
 
 
+func _update_bed_visual() -> void:
+	if not is_instance_valid(_bed_sprite):
+		return
+	if is_hero_showcase:
+		_bed_sprite.texture = SOIL_HERO_WET_TEX if is_watered else SOIL_HERO_DRY_TEX
+		_bed_sprite.scale = Vector2(0.12, 0.12)
+	else:
+		_bed_sprite.texture = SOIL_WET_TEX if is_watered else SOIL_DRY_TEX
+		_bed_sprite.scale = Vector2(0.18, 0.18)
+
+
 func _process(delta: float) -> void:
 	if is_watered:
 		water_duration_remaining -= delta
 		if water_duration_remaining <= 0.0:
 			is_watered = false
 			water_duration_remaining = 0.0
+			_update_bed_visual()
 			queue_redraw()
 
 	if state == State.GROWING:
@@ -236,6 +266,7 @@ func plant(new_flower_id: String, mystery: bool = false, specimen: FlowerSpecime
 func water() -> bool:
 	is_watered = true
 	water_duration_remaining = WATER_EFFECT_DURATION * water_duration_multiplier
+	_update_bed_visual()
 
 	# Splash particle & bounce
 	_water_particles.restart()
@@ -420,41 +451,42 @@ func _draw() -> void:
 	elif is_hovered:
 		_draw_custom_ellipse(center, (w * 0.5) + 6.0, (h * 0.5) + 5.0, Color(0.65, 0.95, 0.75, 0.30))
 
-	# 3. Outer Wooden Planter Timber Frame
-	var wood_dark := Color(0.38, 0.25, 0.14)
-	var wood_mid := Color(0.48, 0.32, 0.18)
-	var wood_light := Color(0.58, 0.40, 0.24)
-	var corner_peg_color := Color(0.62, 0.45, 0.28)
+	# 3. Outer Wooden Planter Timber Frame & Loam Soil (Fallback if sprite texture not active)
+	if not is_instance_valid(_bed_sprite) or _bed_sprite.texture == null:
+		var wood_dark := Color(0.38, 0.25, 0.14)
+		var wood_mid := Color(0.48, 0.32, 0.18)
+		var wood_light := Color(0.58, 0.40, 0.24)
+		var corner_peg_color := Color(0.62, 0.45, 0.28)
 
-	var frame_rect := Rect2(-w * 0.5 - 2, -h * 0.5 - 2, w + 4, h + 4)
-	draw_rect(frame_rect, wood_dark, true)
-	draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), wood_mid, true)
+		var frame_rect := Rect2(-w * 0.5 - 2, -h * 0.5 - 2, w + 4, h + 4)
+		draw_rect(frame_rect, wood_dark, true)
+		draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), wood_mid, true)
 
-	# 4. Corner Round Wooden Pegs
-	draw_circle(Vector2(-w * 0.5, -h * 0.5), 3.5, corner_peg_color)
-	draw_circle(Vector2(w * 0.5, -h * 0.5), 3.5, corner_peg_color)
-	draw_circle(Vector2(-w * 0.5, h * 0.5), 3.5, corner_peg_color)
-	draw_circle(Vector2(w * 0.5, h * 0.5), 3.5, corner_peg_color)
+		# 4. Corner Round Wooden Pegs
+		draw_circle(Vector2(-w * 0.5, -h * 0.5), 3.5, corner_peg_color)
+		draw_circle(Vector2(w * 0.5, -h * 0.5), 3.5, corner_peg_color)
+		draw_circle(Vector2(-w * 0.5, h * 0.5), 3.5, corner_peg_color)
+		draw_circle(Vector2(w * 0.5, h * 0.5), 3.5, corner_peg_color)
 
-	# 5. Inner Loam Soil Basin
-	var base_soil_color := Color(0.24, 0.16, 0.10, 0.98)
-	var wet_soil_color := Color(0.12, 0.08, 0.05, 0.99)
-	var soil_col: Color = wet_soil_color if is_watered else base_soil_color
+		# 5. Inner Loam Soil Basin
+		var base_soil_color := Color(0.24, 0.16, 0.10, 0.98)
+		var wet_soil_color := Color(0.12, 0.08, 0.05, 0.99)
+		var soil_col: Color = wet_soil_color if is_watered else base_soil_color
 
-	var soil_rect := Rect2(-w * 0.5 + 4, -h * 0.5 + 4, w - 8, h - 8)
-	draw_rect(soil_rect, soil_col, true)
+		var soil_rect := Rect2(-w * 0.5 + 4, -h * 0.5 + 4, w - 8, h - 8)
+		draw_rect(soil_rect, soil_col, true)
 
-	# Rich Soil Texture Details
-	var speck_color: Color = Color(0.35, 0.25, 0.16, 0.8) if not is_watered else Color(0.18, 0.13, 0.09, 0.9)
-	draw_circle(center + Vector2(-16, -4), 1.8, speck_color)
-	draw_circle(center + Vector2(14, 6), 2.2, speck_color)
-	draw_circle(center + Vector2(-6, 8), 1.6, speck_color)
-	draw_circle(center + Vector2(18, -6), 1.8, speck_color)
+		# Rich Soil Texture Details
+		var speck_color: Color = Color(0.35, 0.25, 0.16, 0.8) if not is_watered else Color(0.18, 0.13, 0.09, 0.9)
+		draw_circle(center + Vector2(-16, -4), 1.8, speck_color)
+		draw_circle(center + Vector2(14, 6), 2.2, speck_color)
+		draw_circle(center + Vector2(-6, 8), 1.6, speck_color)
+		draw_circle(center + Vector2(18, -6), 1.8, speck_color)
 
-	# 6. Moisture Sheen Overlay if Watered
-	if is_watered:
-		var sheen_color := Color(0.35, 0.70, 1.0, 0.22)
-		draw_rect(Rect2(-w * 0.5 + 6, -h * 0.5 + 6, w - 12, h - 12), sheen_color, true)
+		# 6. Moisture Sheen Overlay if Watered
+		if is_watered:
+			var sheen_color := Color(0.35, 0.70, 1.0, 0.22)
+			draw_rect(Rect2(-w * 0.5 + 6, -h * 0.5 + 6, w - 12, h - 12), sheen_color, true)
 
 	# 7. Hero Showcase Pedestal & Placard Stake (Plot #24)
 	if is_hero_showcase:

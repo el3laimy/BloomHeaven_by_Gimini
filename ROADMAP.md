@@ -18,6 +18,7 @@
 | **المرحلة 3** | **سلسلة التصنيع، العطور، والوراثة** (Breeding Lab, Bouquets, Genetics G2 Engine, Perfumes Data) | محققة بنسبة 75% 🟡 |
 | **المرحلة 4** | **الطلبات والترقيات واقتصاد الحديقة** (Timed VIP Orders, Combo Rush, Upgrades Shop, Lily Character) | محققة بنسبة 70% 🟡 |
 | **بوابة الصقل**| **صقل وتثبيت ما تم إنجازه (Polish & Hardening Gate)** (Persistence, Audio Cues, Gating, Validator) | مكتملة بنجاح 💎 |
+| **المسار البيئي الجديد**| **مجموعة بيئة حديقة الكوخ ونظام التموضع الحر (Garden Cottage Kit & Free Placement Sandbox)** (مفصل في `docs/GARDEN_COTTAGE_ENVIRONMENT_KIT.md`) | 🚀 جاري التأسيس |
 | **المرحلة 5** | **جاهزية الموبايل، التعريب، والتسليم** (Touch Gestures, RTL Arabic/English Localization, Android AAB) | 📋 مخطط |
 
 ---

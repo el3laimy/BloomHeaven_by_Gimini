@@ -2,18 +2,42 @@ class_name GardenEnvironment
 extends Node2D
 
 ## Living Garden Environmental Architecture & Ambient Presentation for BloomHaven.
-## Recreates the complete Hero Style Frame:
-## - Ancient Oak Tree with birdhouse, warm lantern, and roots (Top-Left)
-## - Outdoor Potting Workbench with terracotta pots, clay jars, and seedlings (Top-Left)
-## - Rustic White Picket Fence with Climbing Rose Trellises & Birdhouses (Background)
-## - Wooden Wheelbarrow with watering can and blooming blue hydrangeas (Bottom-Right)
-## - Golden-brown earthen walking paths separating the 4 raised beds and encircling the Hero Plot
-## - Ambient drifting petals, pollen motes, and interactive destination click ripples
+## Assembles the complete 2.5D Isometric Handcrafted Architecture:
+## - 2.5D Meadow Island terrain base with natural soil paths & stone borders
+## - Layered Cottage (walls + see-through occluded roof on Lily approach)
+## - Ancient Oak Tree (Y-sorted trunk + breeze-swayed canopy)
+## - Interactive Beehive Landmark with orbiting golden bee motes
+## - Modular rustic white/wood fences & open boundary gate
+## - Botanical foliage shrubs (flowering, boxwood, low shrub, round, ivy)
+## - Foreground leafy canopy vignette framing the top screen
+## - Ambient drifting petals, firefly motes, and interactive destination ripples
 
 signal decor_moved(decor_name: String, new_pos: Vector2)
 
 @export var ambient_enabled: bool = true
 @export var perspective_mode: int = 1 # 3/4 Angled BloomHaven view
+
+# Master 2.5D Environmental Sprites
+const TEX_ISLAND := preload("res://assets/environment/terrain/terrain_island_meadow.png")
+const TEX_COTTAGE_BASE := preload("res://assets/environment/cottage/cottage_base.png")
+const TEX_COTTAGE_ROOF := preload("res://assets/environment/cottage/cottage_roof.png")
+const TEX_OAK_TRUNK := preload("res://assets/environment/trees/oak_trunk.png")
+const TEX_OAK_CANOPY := preload("res://assets/environment/trees/oak_canopy.png")
+const TEX_VIGNETTE := preload("res://assets/environment/trees/foreground_canopy_vignette.png")
+const TEX_BEEHIVE := preload("res://assets/environment/plots/decor_beehive.png")
+
+# Foliage Bushes
+const TEX_BUSH_FLOWERING := preload("res://assets/environment/foliage/bush_flowering.png")
+const TEX_BUSH_BOXWOOD := preload("res://assets/environment/foliage/bush_boxwood_sphere.png")
+const TEX_BUSH_LOW := preload("res://assets/environment/foliage/bush_low_shrub.png")
+const TEX_BUSH_ROUND := preload("res://assets/environment/foliage/bush_round_dense.png")
+const TEX_BUSH_IVY := preload("res://assets/environment/foliage/bush_ivy_patch.png")
+
+# Fences & Gates
+const TEX_FENCE_STRAIGHT := preload("res://assets/environment/fences/fence_straight.png")
+const TEX_FENCE_CORNER_LEFT := preload("res://assets/environment/fences/fence_corner_left.png")
+const TEX_FENCE_CORNER_RIGHT := preload("res://assets/environment/fences/fence_corner_right.png")
+const TEX_GATE_OPEN := preload("res://assets/environment/fences/gate_open.png")
 
 var _anim_time: float = 0.0
 var _falling_petals: CPUParticles2D = null
@@ -21,12 +45,172 @@ var _firefly_motes: CPUParticles2D = null
 var _destination_marker_pos: Vector2 = Vector2.INF
 var _destination_marker_alpha: float = 0.0
 
+# 2.5D Node References
+var _spr_island: Sprite2D = null
+var _cottage_node: Node2D = null
+var _cottage_base: Sprite2D = null
+var _cottage_roof: Sprite2D = null
+var _oak_node: Node2D = null
+var _oak_trunk: Sprite2D = null
+var _oak_canopy: Sprite2D = null
+var _beehive: Sprite2D = null
+var _bee_particles: CPUParticles2D = null
+var _vignette: Sprite2D = null
+var _foliage_container: Node2D = null
+var _fence_container: Node2D = null
+
 
 func _ready() -> void:
-	z_index = -2
+	z_index = 0
 	z_as_relative = true
+	_setup_environment_sprites()
 	_setup_ambient_particles()
 	queue_redraw()
+
+
+func _setup_environment_sprites() -> void:
+	# 1. Meadow Island Base (Deep background under all plots, paths, and flowers)
+	_spr_island = Sprite2D.new()
+	_spr_island.name = "MeadowIsland"
+	_spr_island.texture = TEX_ISLAND
+	_spr_island.centered = true
+	_spr_island.position = Vector2(0, 15)
+	_spr_island.scale = Vector2(0.90, 0.90)
+	_spr_island.z_index = -5
+	_spr_island.z_as_relative = false
+	add_child(_spr_island)
+
+	# 2. Rustic Fences Container
+	_fence_container = Node2D.new()
+	_fence_container.name = "Fences"
+	_fence_container.z_index = -1
+	_fence_container.z_as_relative = false
+	add_child(_fence_container)
+
+	_create_sprite(_fence_container, TEX_FENCE_CORNER_LEFT, Vector2(-260, -180), Vector2(0.18, 0.18), Vector2(0, -50))
+	_create_sprite(_fence_container, TEX_FENCE_STRAIGHT, Vector2(-160, -185), Vector2(0.18, 0.18), Vector2(0, -50))
+	_create_sprite(_fence_container, TEX_GATE_OPEN, Vector2(0, -185), Vector2(0.18, 0.18), Vector2(0, -50))
+	_create_sprite(_fence_container, TEX_FENCE_STRAIGHT, Vector2(160, -185), Vector2(0.18, 0.18), Vector2(0, -50))
+	_create_sprite(_fence_container, TEX_FENCE_CORNER_RIGHT, Vector2(250, -180), Vector2(0.18, 0.18), Vector2(0, -50))
+
+	# 3. Foliage Bushes Container
+	_foliage_container = Node2D.new()
+	_foliage_container.name = "Foliage"
+	_foliage_container.y_sort_enabled = true
+	_foliage_container.z_index = 0
+	add_child(_foliage_container)
+
+	_create_sprite(_foliage_container, TEX_BUSH_FLOWERING, Vector2(-360, -20), Vector2(0.16, 0.16), Vector2(0, -80))
+	_create_sprite(_foliage_container, TEX_BUSH_BOXWOOD, Vector2(-45, -185), Vector2(0.14, 0.14), Vector2(0, -80))
+	_create_sprite(_foliage_container, TEX_BUSH_BOXWOOD, Vector2(45, -185), Vector2(0.14, 0.14), Vector2(0, -80))
+	_create_sprite(_foliage_container, TEX_BUSH_LOW, Vector2(-280, 210), Vector2(0.16, 0.16), Vector2(0, -50))
+	_create_sprite(_foliage_container, TEX_BUSH_ROUND, Vector2(290, 210), Vector2(0.16, 0.16), Vector2(0, -80))
+	_create_sprite(_foliage_container, TEX_BUSH_IVY, Vector2(245, -150), Vector2(0.15, 0.15), Vector2(0, -60))
+
+	# 4. Interactive Beehive Landmark
+	_beehive = Sprite2D.new()
+	_beehive.name = "Beehive"
+	_beehive.texture = TEX_BEEHIVE
+	_beehive.centered = true
+	_beehive.position = Vector2(320, 60)
+	_beehive.offset = Vector2(0, -120)
+	_beehive.scale = Vector2(0.16, 0.16)
+	_beehive.z_index = 0
+	add_child(_beehive)
+
+	_bee_particles = CPUParticles2D.new()
+	_bee_particles.name = "BeeParticles"
+	_bee_particles.position = Vector2(320, 42)
+	_bee_particles.amount = 6
+	_bee_particles.lifetime = 1.8
+	_bee_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	_bee_particles.emission_sphere_radius = 16.0
+	_bee_particles.direction = Vector2(0, -1)
+	_bee_particles.spread = 180.0
+	_bee_particles.gravity = Vector2(0, 0)
+	_bee_particles.initial_velocity_min = 10.0
+	_bee_particles.initial_velocity_max = 22.0
+	_bee_particles.damping_min = 15.0
+	_bee_particles.damping_max = 25.0
+	_bee_particles.scale_amount_min = 2.0
+	_bee_particles.scale_amount_max = 3.5
+	_bee_particles.color = Color(1.0, 0.88, 0.25, 0.9)
+	add_child(_bee_particles)
+
+	# 5. Ancient Oak Tree (Top-Left)
+	_oak_node = Node2D.new()
+	_oak_node.name = "AncientOakTree"
+	_oak_node.position = Vector2(-330, -140)
+	_oak_node.y_sort_enabled = true
+	add_child(_oak_node)
+
+	_oak_trunk = Sprite2D.new()
+	_oak_trunk.name = "OakTrunk"
+	_oak_trunk.texture = TEX_OAK_TRUNK
+	_oak_trunk.centered = true
+	_oak_trunk.offset = Vector2(0, -350)
+	_oak_trunk.scale = Vector2(0.22, 0.22)
+	_oak_trunk.z_index = 0
+	_oak_node.add_child(_oak_trunk)
+
+	_oak_canopy = Sprite2D.new()
+	_oak_canopy.name = "OakCanopy"
+	_oak_canopy.texture = TEX_OAK_CANOPY
+	_oak_canopy.centered = true
+	_oak_canopy.offset = Vector2(0, -350)
+	_oak_canopy.scale = Vector2(0.22, 0.22)
+	_oak_canopy.z_index = 3
+	_oak_canopy.z_as_relative = false
+	_oak_node.add_child(_oak_canopy)
+
+	# 6. Layered Cottage (Top-Right)
+	_cottage_node = Node2D.new()
+	_cottage_node.name = "LayeredCottage"
+	_cottage_node.position = Vector2(275, -150)
+	_cottage_node.y_sort_enabled = true
+	add_child(_cottage_node)
+
+	_cottage_base = Sprite2D.new()
+	_cottage_base.name = "CottageBase"
+	_cottage_base.texture = TEX_COTTAGE_BASE
+	_cottage_base.centered = true
+	_cottage_base.offset = Vector2(0, -350)
+	_cottage_base.scale = Vector2(0.20, 0.20)
+	_cottage_base.z_index = 0
+	_cottage_node.add_child(_cottage_base)
+
+	_cottage_roof = Sprite2D.new()
+	_cottage_roof.name = "CottageRoof"
+	_cottage_roof.texture = TEX_COTTAGE_ROOF
+	_cottage_roof.centered = true
+	_cottage_roof.offset = Vector2(0, -350)
+	_cottage_roof.scale = Vector2(0.20, 0.20)
+	_cottage_roof.z_index = 2
+	_cottage_roof.z_as_relative = false
+	_cottage_node.add_child(_cottage_roof)
+
+	# 7. Foreground Canopy Vignette (Screen Framing)
+	_vignette = Sprite2D.new()
+	_vignette.name = "ForegroundCanopyVignette"
+	_vignette.texture = TEX_VIGNETTE
+	_vignette.centered = true
+	_vignette.position = Vector2(0, -220)
+	_vignette.scale = Vector2(0.85, 0.85)
+	_vignette.z_index = 10
+	_vignette.z_as_relative = false
+	_vignette.modulate = Color(1.0, 1.0, 1.0, 0.95)
+	add_child(_vignette)
+
+
+func _create_sprite(parent: Node, tex: Texture2D, pos: Vector2, scl: Vector2, off: Vector2 = Vector2.ZERO) -> Sprite2D:
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = true
+	s.position = pos
+	s.scale = scl
+	s.offset = off
+	parent.add_child(s)
+	return s
 
 
 func _setup_ambient_particles() -> void:
@@ -73,28 +257,38 @@ func _process(delta: float) -> void:
 		_anim_time += delta * 1.5
 		if _destination_marker_alpha > 0.0:
 			_destination_marker_alpha = max(0.0, _destination_marker_alpha - delta * 2.0)
+
+		# Tree Canopy Breeze Sway
+		if is_instance_valid(_oak_canopy):
+			_oak_canopy.rotation = sin(_anim_time * 0.9) * 0.02
+			_oak_canopy.position = Vector2(sin(_anim_time * 0.7) * 1.5, 0)
+
+		# Layered Cottage Roof See-through Occlusion when Lily approaches
+		if is_instance_valid(_cottage_roof) and is_instance_valid(_cottage_node):
+			var target_alpha := 1.0
+			var parent := get_parent()
+			if parent != null:
+				var lily := parent.get_node_or_null("GardenerCharacter")
+				if lily != null:
+					var dist: float = lily.global_position.distance_to(_cottage_node.global_position + Vector2(-30, 40))
+					if dist < 150.0:
+						target_alpha = 0.35
+			_cottage_roof.modulate.a = lerp(_cottage_roof.modulate.a, target_alpha, delta * 4.0)
+
 		queue_redraw()
 
 
 func _draw() -> void:
-	var y_scale := 0.85 if perspective_mode == 1 else 1.0
+	# Fallback to vector terrain only if sprite island was not instantiated
+	if not is_instance_valid(_spr_island):
+		var y_scale := 0.85 if perspective_mode == 1 else 1.0
+		_draw_garden_terrain(y_scale)
+		_draw_background_fence_and_trellises(y_scale)
+		_draw_oak_tree_and_bench(y_scale)
+		_draw_wheelbarrow_and_hydrangeas(y_scale)
+		_draw_fence_corner(y_scale)
 
-	# 1. Base Garden Meadow & Earthen Paths
-	_draw_garden_terrain(y_scale)
-
-	# 2. Background White Picket Fence & Climbing Trellises
-	_draw_background_fence_and_trellises(y_scale)
-
-	# 3. Ancient Oak Tree & Potting Workbench (Top-Left)
-	_draw_oak_tree_and_bench(y_scale)
-
-	# 4. Wheelbarrow & Blue Hydrangeas (Bottom-Right)
-	_draw_wheelbarrow_and_hydrangeas(y_scale)
-
-	# 5. Picket Fence Corner (Bottom-Left)
-	_draw_fence_corner(y_scale)
-
-	# 6. Destination Marker Ripple
+	# Destination Marker Ripple
 	if _destination_marker_alpha > 0.0 and _destination_marker_pos != Vector2.INF:
 		var progress: float = 1.0 - _destination_marker_alpha
 		var outer_rad: float = 12.0 + progress * 22.0
