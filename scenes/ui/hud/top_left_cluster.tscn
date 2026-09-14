@@ -94,6 +94,7 @@ stretch_mode = 5
 [node name="SatchelPill" type="Control" parent="VBox"]
 custom_minimum_size = Vector2(175, 36)
 layout_mode = 2
+tooltip_text = "Cottage Flower Stand [S]: Quick Sell flowers for instant coins"
 
 [node name="NinePatch" type="NinePatchRect" parent="VBox/SatchelPill"]
 layout_mode = 1
@@ -115,6 +116,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 12
@@ -122,12 +124,14 @@ theme_override_constants/margin_bottom = 3
 
 [node name="HBox" type="HBoxContainer" parent="VBox/SatchelPill/Margin"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
 [node name="LeafIcon" type="TextureRect" parent="VBox/SatchelPill/Margin/HBox"]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 texture = ExtResource("6_leaf")
 expand_mode = 1
 stretch_mode = 5
@@ -135,21 +139,33 @@ stretch_mode = 5
 [node name="SatchelVal" type="Label" parent="VBox/SatchelPill/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.85, 0.98, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.05, 0.02, 0.9)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 13
-text = "128"
+text = "Stand [S]"
 vertical_alignment = 1
 
 [node name="PlusBtn" type="TextureButton" parent="VBox/SatchelPill/Margin/HBox"]
 custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 texture_normal = ExtResource("5_plus")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="PillClickBtn" type="Button" parent="VBox/SatchelPill"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+flat = true
 
 [node name="SettingsBtn" type="TextureButton" parent="VBox"]
 custom_minimum_size = Vector2(34, 34)

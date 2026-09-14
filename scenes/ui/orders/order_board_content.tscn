@@ -1,0 +1,1641 @@
+[gd_scene load_steps=32 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/orders/order_board_content.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_board_shell.png" id="2_shell"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_header_progress_bar_bg.png" id="3_progbg"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_header_progress_fill.png" id="4_progfill"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_header_satchel.png" id="5_satchel"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_order_card_bg_large.png" id="6_cardbg"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/portraits/circ_customer_baker.png" id="7_pbaker"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_heart_filled.png" id="8_heartf"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_heart_empty.png" id="9_hearte"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/portraits/circ_customer_botanist.png" id="10_pbotanist"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_golden_pin_clean.png" id="11_pin"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/flowers/flower_icon_hybrid_purple.png" id="12_lavender"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_order_action_btn_green.png" id="13_btngreen"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_order_action_btn_neutral.png" id="14_btnneutral"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_reward_coin_stack_small.png" id="15_coins"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_carousel_arrow_left.png" id="16_arrl"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_carousel_arrow_right.png" id="17_arrr"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_order_timer_watch_hollow.png" id="17_watch_hollow"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_status_check_stamp_green.png" id="18_stamp"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_order_slot_empty_dashed.png" id="19_dashed"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_orders_header_mail_charm.png" id="20_mailcharm"]
+[ext_resource type="Script" path="res://scripts/ui/orders/watch_timer_dial.gd" id="21_watchdial"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/portraits/circ_customer_postman.png" id="22_paurelia"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/flowers/flower_icon_marigold_yellow.png" id="23_marigold"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/flowers/flower_icon_rosebud_red.png" id="24_rose"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_01_florist.png" id="25_pflorist"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_02_gardener.png" id="26_pgardener"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_03_elf_florist.png" id="27_pelf"]
+[ext_resource type="Texture2D" path="res://assets/ui/customer_orders/ui_order_portrait_gold_rim.png" id="28_goldrim"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_04_baker.png" id="29_pbaker_circ"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_08_cat_courier.png" id="30_pcat_circ"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_07_seamstress.png" id="31_pseamstress_circ"]
+[ext_resource type="Texture2D" path="res://assets/ui/orders/customers/circular/circ_customer_10_garden_apprentice.png" id="32_papprentice_circ"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_prog_bg"]
+bg_color = Color(0.08, 0.18, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.7, 0.38, 0.9)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0.05, 0.08, 0.05, 0.5)
+shadow_size = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_prog_fill"]
+bg_color = Color(0.42, 0.72, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.85, 0.38, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+bg_color = Color(0.24, 0.15, 0.08, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.92, 0.82, 0.45, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+bg_color = Color(0.18, 0.46, 0.18, 0.95)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_minicard"]
+bg_color = Color(0.99, 0.97, 0.92, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.77, 0.65, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.15, 0.08, 0.03, 0.2)
+shadow_size = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_minicard_sel"]
+bg_color = Color(1, 0.98, 0.93, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.76, 0.35, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.85, 0.65, 0.2, 0.35)
+shadow_size = 3
+
+[node name="OrderBoardContent" type="Control"]
+custom_minimum_size = Vector2(410, 660)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="ShellBackground" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_shell")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderArea" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 125.0
+grow_horizontal = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="HeaderArea"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 88.0
+offset_right = 174.0
+offset_bottom = 106.0
+theme_override_styles/background = SubResource("StyleBoxFlat_prog_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_prog_fill")
+value = 66.0
+show_percentage = false
+
+[node name="ProgressLabel" type="Label" parent="HeaderArea/ProgressBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.98, 0.9, 1)
+theme_override_colors/font_shadow_color = Color(0.08, 0.14, 0.06, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
+text = "4 / 6 Orders"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+
+[node name="MailCharm" type="TextureRect" parent="HeaderArea"]
+layout_mode = 0
+offset_left = 187.0
+offset_top = 84.0
+offset_right = 223.0
+offset_bottom = 120.0
+mouse_filter = 2
+texture = ExtResource("20_mailcharm")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloseBtn" type="Button" parent="HeaderArea"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -46.0
+offset_top = 22.0
+offset_right = -20.0
+offset_bottom = 48.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
+text = "✕"
+
+[node name="CardsVBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 124.0
+offset_right = 382.0
+offset_bottom = 530.0
+theme_override_constants/separation = -14
+[node name="OrderCard_01" type="Control" parent="CardsVBox"]
+custom_minimum_size = Vector2(354, 144)
+layout_mode = 2
+pivot_offset = Vector2(177, 72)
+rotation = -0.007
+
+[node name="CardBg" type="TextureRect" parent="CardsVBox/OrderCard_01"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_cardbg")
+expand_mode = 1
+
+[node name="Portrait" type="TextureRect" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 18.0
+offset_right = 117.0
+offset_bottom = 98.0
+texture = ExtResource("25_pflorist")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PortraitRim" type="TextureRect" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 18.0
+offset_right = 117.0
+offset_bottom = 98.0
+mouse_filter = 2
+texture = ExtResource("28_goldrim")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeartsRow" type="HBoxContainer" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 101.0
+offset_right = 116.0
+offset_bottom = 117.0
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="H0" type="TextureRect" parent="CardsVBox/OrderCard_01/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H1" type="TextureRect" parent="CardsVBox/OrderCard_01/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H2" type="TextureRect" parent="CardsVBox/OrderCard_01/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H3" type="TextureRect" parent="CardsVBox/OrderCard_01/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("9_hearte")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H4" type="TextureRect" parent="CardsVBox/OrderCard_01/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("9_hearte")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RequirementsRow" type="HBoxContainer" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 122.0
+offset_top = 34.0
+offset_right = 270.0
+offset_bottom = 84.0
+theme_override_constants/separation = 4
+
+[node name="Slot0" type="Control" parent="CardsVBox/OrderCard_01/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot0"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("12_lavender")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot0/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "1/1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot1" type="Control" parent="CardsVBox/OrderCard_01/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot1"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("23_marigold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot1/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "1/1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot2" type="Control" parent="CardsVBox/OrderCard_01/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot2"]
+visible = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_01/RequirementsRow/Slot2/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ActionArea" type="Control" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 127.0
+offset_top = 85.0
+offset_right = 264.0
+offset_bottom = 115.0
+
+[node name="ActionBtn" type="TextureButton" parent="CardsVBox/OrderCard_01/ActionArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture_normal = ExtResource("13_btngreen")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="BtnLabel" type="Label" parent="CardsVBox/OrderCard_01/ActionArea/ActionBtn"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.2, 0.1, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Deliver"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WatchContainer" type="Control" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 289.0
+offset_top = 43.0
+offset_right = 321.0
+offset_bottom = 75.0
+
+[node name="WatchDial" type="Control" parent="CardsVBox/OrderCard_01/WatchContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("21_watchdial")
+progress_ratio = 0.25
+is_completed = false
+pie_color = Color(0.92, 0.72, 0.25, 1)
+
+[node name="RewardCluster" type="HBoxContainer" parent="CardsVBox/OrderCard_01"]
+layout_mode = 0
+offset_left = 265.0
+offset_top = 86.0
+offset_right = 322.0
+offset_bottom = 122.0
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="RewardCoins" type="TextureRect" parent="CardsVBox/OrderCard_01/RewardCluster"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("15_coins")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinsLabel" type="Label" parent="CardsVBox/OrderCard_01/RewardCluster"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.18, 0.06, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.96, 0.88, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "+25g"
+vertical_alignment = 1
+
+[node name="StatusStamp" type="TextureRect" parent="CardsVBox/OrderCard_01"]
+visible = false
+layout_mode = 0
+offset_left = 320.0
+offset_top = 68.0
+offset_right = 376.0
+offset_bottom = 124.0
+pivot_offset = Vector2(28, 28)
+rotation = -0.05
+mouse_filter = 2
+texture = ExtResource("18_stamp")
+expand_mode = 1
+stretch_mode = 5
+[node name="OrderCard_02" type="Control" parent="CardsVBox"]
+custom_minimum_size = Vector2(354, 144)
+layout_mode = 2
+pivot_offset = Vector2(177, 72)
+rotation = 0.005
+
+[node name="CardBg" type="TextureRect" parent="CardsVBox/OrderCard_02"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_cardbg")
+expand_mode = 1
+
+[node name="Portrait" type="TextureRect" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 18.0
+offset_right = 117.0
+offset_bottom = 98.0
+texture = ExtResource("26_pgardener")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PortraitRim" type="TextureRect" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 18.0
+offset_right = 117.0
+offset_bottom = 98.0
+mouse_filter = 2
+texture = ExtResource("28_goldrim")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeartsRow" type="HBoxContainer" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 101.0
+offset_right = 116.0
+offset_bottom = 117.0
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="H0" type="TextureRect" parent="CardsVBox/OrderCard_02/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H1" type="TextureRect" parent="CardsVBox/OrderCard_02/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H2" type="TextureRect" parent="CardsVBox/OrderCard_02/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("9_hearte")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H3" type="TextureRect" parent="CardsVBox/OrderCard_02/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("9_hearte")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H4" type="TextureRect" parent="CardsVBox/OrderCard_02/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("9_hearte")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RequirementsRow" type="HBoxContainer" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 122.0
+offset_top = 34.0
+offset_right = 270.0
+offset_bottom = 84.0
+theme_override_constants/separation = 4
+
+[node name="Slot0" type="Control" parent="CardsVBox/OrderCard_02/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot0"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("24_rose")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot0/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "2/2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot1" type="Control" parent="CardsVBox/OrderCard_02/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot1"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("12_lavender")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot1/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "1/1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot2" type="Control" parent="CardsVBox/OrderCard_02/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot2"]
+visible = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_02/RequirementsRow/Slot2/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ActionArea" type="Control" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 127.0
+offset_top = 85.0
+offset_right = 264.0
+offset_bottom = 115.0
+
+[node name="ActionBtn" type="TextureButton" parent="CardsVBox/OrderCard_02/ActionArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture_normal = ExtResource("13_btngreen")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="BtnLabel" type="Label" parent="CardsVBox/OrderCard_02/ActionArea/ActionBtn"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.2, 0.1, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Deliver"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WatchContainer" type="Control" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 289.0
+offset_top = 43.0
+offset_right = 321.0
+offset_bottom = 75.0
+
+[node name="WatchDial" type="Control" parent="CardsVBox/OrderCard_02/WatchContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("21_watchdial")
+progress_ratio = 0.5
+is_completed = false
+pie_color = Color(0.92, 0.54, 0.16, 1)
+
+[node name="RewardCluster" type="HBoxContainer" parent="CardsVBox/OrderCard_02"]
+layout_mode = 0
+offset_left = 265.0
+offset_top = 86.0
+offset_right = 322.0
+offset_bottom = 122.0
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="RewardCoins" type="TextureRect" parent="CardsVBox/OrderCard_02/RewardCluster"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("15_coins")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinsLabel" type="Label" parent="CardsVBox/OrderCard_02/RewardCluster"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.18, 0.06, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.96, 0.88, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "+30g"
+vertical_alignment = 1
+
+[node name="StatusStamp" type="TextureRect" parent="CardsVBox/OrderCard_02"]
+visible = false
+layout_mode = 0
+offset_left = 320.0
+offset_top = 68.0
+offset_right = 376.0
+offset_bottom = 124.0
+pivot_offset = Vector2(28, 28)
+rotation = -0.05
+mouse_filter = 2
+texture = ExtResource("18_stamp")
+expand_mode = 1
+stretch_mode = 5
+[node name="OrderCard_03" type="Control" parent="CardsVBox"]
+custom_minimum_size = Vector2(354, 144)
+layout_mode = 2
+pivot_offset = Vector2(177, 72)
+rotation = -0.0035
+
+[node name="CardBg" type="TextureRect" parent="CardsVBox/OrderCard_03"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_cardbg")
+expand_mode = 1
+
+[node name="Portrait" type="TextureRect" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 18.0
+offset_right = 117.0
+offset_bottom = 98.0
+texture = ExtResource("27_pelf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PortraitRim" type="TextureRect" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 18.0
+offset_right = 117.0
+offset_bottom = 98.0
+mouse_filter = 2
+texture = ExtResource("28_goldrim")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeartsRow" type="HBoxContainer" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 101.0
+offset_right = 116.0
+offset_bottom = 117.0
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="H0" type="TextureRect" parent="CardsVBox/OrderCard_03/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H1" type="TextureRect" parent="CardsVBox/OrderCard_03/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H2" type="TextureRect" parent="CardsVBox/OrderCard_03/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H3" type="TextureRect" parent="CardsVBox/OrderCard_03/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="H4" type="TextureRect" parent="CardsVBox/OrderCard_03/HeartsRow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+texture = ExtResource("9_hearte")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RequirementsRow" type="HBoxContainer" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 122.0
+offset_top = 34.0
+offset_right = 270.0
+offset_bottom = 84.0
+theme_override_constants/separation = 4
+
+[node name="Slot0" type="Control" parent="CardsVBox/OrderCard_03/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot0"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("24_rose")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot0"]
+visible = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot0/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "1/1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot1" type="Control" parent="CardsVBox/OrderCard_03/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot1"]
+visible = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot1"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot1"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot1"]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot1/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot2" type="Control" parent="CardsVBox/OrderCard_03/RequirementsRow"]
+custom_minimum_size = Vector2(46, 50)
+layout_mode = 2
+
+[node name="EmptyDashed" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot2"]
+visible = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("19_dashed")
+expand_mode = 1
+
+[node name="Pin" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 9.0
+grow_horizontal = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+
+[node name="FlowerIcon" type="TextureRect" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -22.0
+offset_right = 24.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot2"]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -17.0
+offset_top = -11.0
+offset_right = 0.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Label" type="Label" parent="CardsVBox/OrderCard_03/RequirementsRow/Slot2/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ActionArea" type="Control" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 127.0
+offset_top = 85.0
+offset_right = 264.0
+offset_bottom = 115.0
+
+[node name="ActionBtn" type="TextureButton" parent="CardsVBox/OrderCard_03/ActionArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture_normal = ExtResource("14_btnneutral")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="BtnLabel" type="Label" parent="CardsVBox/OrderCard_03/ActionArea/ActionBtn"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.2, 0.1, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Delivered"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WatchContainer" type="Control" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 289.0
+offset_top = 43.0
+offset_right = 321.0
+offset_bottom = 75.0
+
+[node name="WatchDial" type="Control" parent="CardsVBox/OrderCard_03/WatchContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("21_watchdial")
+progress_ratio = 0.0
+is_completed = true
+pie_color = Color(0.97, 0.94, 0.88, 1)
+
+[node name="RewardCluster" type="HBoxContainer" parent="CardsVBox/OrderCard_03"]
+layout_mode = 0
+offset_left = 265.0
+offset_top = 86.0
+offset_right = 322.0
+offset_bottom = 122.0
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="RewardCoins" type="TextureRect" parent="CardsVBox/OrderCard_03/RewardCluster"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("15_coins")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinsLabel" type="Label" parent="CardsVBox/OrderCard_03/RewardCluster"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.18, 0.06, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.96, 0.88, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "+50g"
+vertical_alignment = 1
+
+[node name="StatusStamp" type="TextureRect" parent="CardsVBox/OrderCard_03"]
+visible = true
+layout_mode = 0
+offset_left = 320.0
+offset_top = 68.0
+offset_right = 376.0
+offset_bottom = 124.0
+pivot_offset = Vector2(28, 28)
+rotation = -0.05
+mouse_filter = 2
+texture = ExtResource("18_stamp")
+expand_mode = 1
+stretch_mode = 5
+[node name="BottomCarousel" type="Control" parent="."]
+layout_mode = 0
+offset_top = 530.0
+offset_right = 410.0
+offset_bottom = 610.0
+
+[node name="ArrowLeft" type="TextureButton" parent="BottomCarousel"]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 27.0
+offset_right = 59.0
+offset_bottom = 65.0
+texture_normal = ExtResource("16_arrl")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ArrowRight" type="TextureButton" parent="BottomCarousel"]
+layout_mode = 0
+offset_left = 351.0
+offset_top = 27.0
+offset_right = 389.0
+offset_bottom = 65.0
+texture_normal = ExtResource("17_arrr")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="MiniCardsRow" type="HBoxContainer" parent="BottomCarousel"]
+layout_mode = 0
+offset_left = 66.0
+offset_top = 12.0
+offset_right = 344.0
+offset_bottom = 72.0
+theme_override_constants/separation = 4
+alignment = 1
+[node name="MiniCard0" type="PanelContainer" parent="BottomCarousel/MiniCardsRow"]
+custom_minimum_size = Vector2(65, 58)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minicard_sel")
+
+[node name="Margin" type="MarginContainer" parent="BottomCarousel/MiniCardsRow/MiniCard0"]
+layout_mode = 2
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentHBox" type="HBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LeftVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("29_pbaker_circ")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Heart" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RightVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Pin" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Flower" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard0/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("12_lavender")
+expand_mode = 1
+stretch_mode = 5
+[node name="MiniCard1" type="PanelContainer" parent="BottomCarousel/MiniCardsRow"]
+custom_minimum_size = Vector2(65, 58)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minicard")
+
+[node name="Margin" type="MarginContainer" parent="BottomCarousel/MiniCardsRow/MiniCard1"]
+layout_mode = 2
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentHBox" type="HBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LeftVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("30_pcat_circ")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Heart" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RightVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Pin" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Flower" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard1/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("24_rose")
+expand_mode = 1
+stretch_mode = 5
+[node name="MiniCard2" type="PanelContainer" parent="BottomCarousel/MiniCardsRow"]
+custom_minimum_size = Vector2(65, 58)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minicard")
+
+[node name="Margin" type="MarginContainer" parent="BottomCarousel/MiniCardsRow/MiniCard2"]
+layout_mode = 2
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentHBox" type="HBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LeftVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("31_pseamstress_circ")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Heart" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RightVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Pin" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Flower" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard2/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("12_lavender")
+expand_mode = 1
+stretch_mode = 5
+[node name="MiniCard3" type="PanelContainer" parent="BottomCarousel/MiniCardsRow"]
+custom_minimum_size = Vector2(65, 58)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minicard")
+
+[node name="Margin" type="MarginContainer" parent="BottomCarousel/MiniCardsRow/MiniCard3"]
+layout_mode = 2
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentHBox" type="HBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LeftVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("32_papprentice_circ")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Heart" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin/ContentHBox/LeftVBox"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+texture = ExtResource("8_heartf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RightVBox" type="VBoxContainer" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Pin" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+texture = ExtResource("11_pin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Flower" type="TextureRect" parent="BottomCarousel/MiniCardsRow/MiniCard3/Margin/ContentHBox/RightVBox"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+texture = ExtResource("24_rose")
+expand_mode = 1
+stretch_mode = 5

@@ -15,6 +15,12 @@ __pycache__/
 *.tmp
 *.log
 
+# Temporary test captures & debug crops
+tools/*.png
+tools/*.png.import
+tools/portraits_crop_test/
+tools/portraits_inspect/
+
 # OS & Editor generated files
 .DS_Store
 Thumbs.db

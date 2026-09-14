@@ -6,11 +6,13 @@ extends Control
 signal tool_changed(tool_name: String)
 signal seeds_toggle_requested()
 signal lily_hub_toggle_requested()
+signal flower_stand_toggle_requested()
 
 @onready var plant_btn: TextureButton = $DockRow/DockContainer/HBox/PlantCol/PlantBtn
 @onready var water_btn: TextureButton = $DockRow/DockContainer/HBox/WaterCol/WaterBtn
 @onready var prune_btn: TextureButton = $DockRow/DockContainer/HBox/PruneCol/PruneBtn
 @onready var harvest_btn: TextureButton = $DockRow/DockContainer/HBox/HarvestCol/HarvestBtn
+@onready var stand_btn: TextureButton = $DockRow/DockContainer/HBox/StandCol/StandBtn
 @onready var lily_btn: TextureButton = $DockRow/LilyCol/LilyBtn
 @onready var active_glow: TextureRect = $DockRow/DockContainer/ActiveGlowRing
 
@@ -34,6 +36,11 @@ func _ready() -> void:
 		prune_btn.pressed.connect(func(): select_tool("prune"))
 	if harvest_btn:
 		harvest_btn.pressed.connect(func(): select_tool("harvest"))
+	if stand_btn:
+		stand_btn.pressed.connect(func():
+			flower_stand_toggle_requested.emit()
+			_play_click()
+		)
 	if lily_btn:
 		lily_btn.pressed.connect(func():
 			lily_hub_toggle_requested.emit()

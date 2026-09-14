@@ -1,0 +1,148 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/flower_stand/flower_stand_v2.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand_v2/ui_flower_stand_shell.png" id="2_shell"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand_v2/ui_flower_stand_awning.png" id="3_awning"]
+[ext_resource type="Texture2D" path="res://assets/ui/flower_stand_v2/ui_flower_stand_header_plaque.png" id="4_plaque"]
+
+[node name="FlowerStandV2" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="BackdropDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.07, 0.05, 0.72)
+
+[node name="StandRoot" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -325.0
+offset_right = 400.0
+offset_bottom = 325.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StandShell" type="TextureRect" parent="StandRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_shell")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Awning" type="TextureRect" parent="StandRoot"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 0.0
+offset_right = -12.0
+offset_bottom = 255.0
+grow_horizontal = 2
+texture = ExtResource("3_awning")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Header" type="Control" parent="StandRoot"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -215.0
+offset_top = 70.0
+offset_right = 215.0
+offset_bottom = 160.0
+grow_horizontal = 2
+
+[node name="HeaderPlaque" type="TextureRect" parent="StandRoot/Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("4_plaque")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="StandRoot/Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 18.0
+offset_right = -30.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.98, 0.94, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0.18, 0.1, 0.04, 0.95)
+theme_override_colors/font_outline_color = Color(0.15, 0.09, 0.04, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 17
+text = "The Cottage Flower Stand"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ProductsArea" type="GridContainer" parent="StandRoot"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -125.0
+offset_right = 240.0
+offset_bottom = 145.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 2
+
+[node name="HarvestFooter" type="Control" parent="StandRoot"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -310.0
+offset_top = -175.0
+offset_right = 310.0
+offset_bottom = -35.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="CloseButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -60.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 56.0
+grow_horizontal = 0
+text = "✕"

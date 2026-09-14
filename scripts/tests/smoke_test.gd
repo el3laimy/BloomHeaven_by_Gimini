@@ -392,6 +392,7 @@ func _init() -> void:
 		if up_boot.is_empty():
 			errors.append("UpgradeManager failed to get swift_boots definition.")
 
+		um.active_upgrades["fertilizer_box"] = false
 		var p_res := um.purchase("fertilizer_box", 500)
 		if not p_res.get("success", false) or not um.is_unlocked("fertilizer_box"):
 			errors.append("UpgradeManager purchase execution failed.")

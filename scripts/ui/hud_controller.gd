@@ -36,7 +36,7 @@ const SideOrderRailScript := preload("res://scripts/ui/hud/side_order_rail.gd")
 const LilyHubPopupScript := preload("res://scripts/ui/hud/lily_hub_popup.gd")
 const InventoryDrawerScript := preload("res://scripts/ui/hud/inventory_drawer.gd")
 
-var _side_order_rail: Control = null
+var _side_order_rail: SideOrderRail = null
 var _lily_hub: Control = null
 var _inventory_drawer: Control = null
 
@@ -401,6 +401,17 @@ func _build_hud_ui() -> void:
 	_seed_bar_instance.seed_changed.connect(func(s_id: String):
 		_on_seed_btn_pressed(s_id)
 	)
+	if is_instance_valid(_side_order_rail):
+		_side_order_rail.closed.connect(func():
+			if is_instance_valid(_seed_bar_instance):
+				_seed_bar_instance.visible = not _is_beauty_mode
+		)
+		_side_order_rail.opened.connect(func():
+			if is_instance_valid(_seed_bar_instance):
+				_seed_bar_instance.visible = false
+		)
+		if _side_order_rail._is_open:
+			_seed_bar_instance.visible = false
 
 	# 4. Bottom Left Weathered Parchment Plot Info Card
 	_plot_card_instance = preload("res://scenes/ui/plot_card.tscn").instantiate()
