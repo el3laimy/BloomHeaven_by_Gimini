@@ -1,0 +1,580 @@
+{
+	"data": {
+		"active_upgrades": {
+			"double_sprinkler": true,
+			"enriched_soil": false,
+			"expanded_satchel": false,
+			"fertilizer_box": false,
+			"swift_boots": true
+		},
+		"bouquet_inventory": {
+			"garden_harmony": 2.0,
+			"pure_elegance": 0.0,
+			"spring_meadow": 0.0
+		},
+		"breeding_roster": [
+			{
+				"generation": 0,
+				"genotype": {
+					"color": [
+						"Cr",
+						"Cr"
+					],
+					"fragrance": [
+						"F+",
+						"f-"
+					],
+					"petal": [
+						"Pr",
+						"Pp"
+					],
+					"vigor": [
+						"V+",
+						"v-"
+					]
+				},
+				"nickname": "Rose #R-001",
+				"origin_seed": 0,
+				"parent_a_id": "",
+				"parent_b_id": "",
+				"phenotype": {
+					"color_name": "Crimson Red",
+					"color_tint": "eb3847ff",
+					"fragrance_name": "Fragrant",
+					"fragrance_rating": 3,
+					"petal_form": "round",
+					"petal_form_name": "Round Petals",
+					"vigor_name": "Robust Vigor",
+					"vigor_tier": 2,
+					"visual_scale": 1.05
+				},
+				"species_id": "rose",
+				"specimen_id": "R-001"
+			},
+			{
+				"generation": 0,
+				"genotype": {
+					"color": [
+						"Cp",
+						"Cp"
+					],
+					"fragrance": [
+						"F+",
+						"F+"
+					],
+					"petal": [
+						"Ps",
+						"Pr"
+					],
+					"vigor": [
+						"v-",
+						"v-"
+					]
+				},
+				"nickname": "Lavender #L-001",
+				"origin_seed": 0,
+				"parent_a_id": "",
+				"parent_b_id": "",
+				"phenotype": {
+					"color_name": "Soft Lavender",
+					"color_tint": "ad80e0ff",
+					"fragrance_name": "Intense Fragrance",
+					"fragrance_rating": 4,
+					"petal_form": "star",
+					"petal_form_name": "Star Petals",
+					"vigor_name": "Standard Vigor",
+					"vigor_tier": 1,
+					"visual_scale": 0.95
+				},
+				"species_id": "lavender",
+				"specimen_id": "L-001"
+			},
+			{
+				"generation": 0,
+				"genotype": {
+					"color": [
+						"Cy",
+						"Cy"
+					],
+					"fragrance": [
+						"f-",
+						"f-"
+					],
+					"petal": [
+						"Pr",
+						"Pr"
+					],
+					"vigor": [
+						"V+",
+						"V+"
+					]
+				},
+				"nickname": "Sunflower #S-001",
+				"origin_seed": 0,
+				"parent_a_id": "",
+				"parent_b_id": "",
+				"phenotype": {
+					"color_name": "Golden Yellow",
+					"color_tint": "ffd124ff",
+					"fragrance_name": "Mild Fragrance",
+					"fragrance_rating": 1,
+					"petal_form": "round",
+					"petal_form_name": "Round Petals",
+					"vigor_name": "Exceptional Vigor",
+					"vigor_tier": 3,
+					"visual_scale": 1.15
+				},
+				"species_id": "sunflower",
+				"specimen_id": "S-001"
+			}
+		],
+		"coins": 537,
+		"combo_count": 0,
+		"combo_timer": 0.0,
+		"completed_requests": {
+			"order_1": true,
+			"order_2": false,
+			"order_3": true,
+			"order_4": false,
+			"order_5": true,
+			"order_6": true
+		},
+		"discovered_flowers": {
+			"daisy": true,
+			"golden_rose": false,
+			"lavender": true,
+			"rose": true,
+			"rose_cream": true,
+			"roselight": true,
+			"sunflare_spike": false,
+			"sunflower": true,
+			"tulip": true
+		},
+		"inventory": {
+			"daisy": 2.0,
+			"lavender": 1.0,
+			"rose": 10.0,
+			"rose_cream": 1.0,
+			"roselight": 7.0,
+			"sunflower": 1.0,
+			"tulip": 1.0
+		},
+		"live_orders_patience": {
+			"order_1": 75.0,
+			"order_2": 0.0,
+			"order_3": 75.0,
+			"order_4": 0.0,
+			"order_5": 75.0,
+			"order_6": 75.0
+		},
+		"perfume_inventory": {
+			"lavender_mist": 1.0
+		},
+		"plots": [
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 0,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 1,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 2,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 3,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 4,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 5,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 6,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 7,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 8,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 9,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 10,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 11,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 12,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 13,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "rose",
+				"growth_progress": 1.0,
+				"index": 14,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": true,
+				"is_revealed": true,
+				"is_watered": false,
+				"quality": 3,
+				"specimen": {
+					"generation": 0,
+					"genotype": {
+						"color": [
+							"Cr",
+							"Cr"
+						],
+						"fragrance": [
+							"F+",
+							"f-"
+						],
+						"petal": [
+							"Pr",
+							"Pp"
+						],
+						"vigor": [
+							"V+",
+							"v-"
+						]
+					},
+					"nickname": "Rose #R-103",
+					"origin_seed": 0,
+					"parent_a_id": "",
+					"parent_b_id": "",
+					"phenotype": {
+						"color_name": "Crimson Red",
+						"color_tint": "eb3847ff",
+						"fragrance_name": "Fragrant",
+						"fragrance_rating": 3,
+						"petal_form": "round",
+						"petal_form_name": "Round Petals",
+						"vigor_name": "Robust Vigor",
+						"vigor_tier": 2,
+						"visual_scale": 1.05
+					},
+					"species_id": "rose",
+					"specimen_id": "R-103"
+				},
+				"state": 2,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 15,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 16,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 17,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 18,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 19,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 20,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 21,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 22,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "rose",
+				"growth_progress": 1.0,
+				"index": 23,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": true,
+				"is_watered": false,
+				"quality": 1,
+				"specimen": {
+					"generation": 0,
+					"genotype": {
+						"color": [
+							"Cr",
+							"Cr"
+						],
+						"fragrance": [
+							"F+",
+							"f-"
+						],
+						"petal": [
+							"Pr",
+							"Pp"
+						],
+						"vigor": [
+							"V+",
+							"v-"
+						]
+					},
+					"nickname": "Rose #R-107",
+					"origin_seed": 0,
+					"parent_a_id": "",
+					"parent_b_id": "",
+					"phenotype": {
+						"color_name": "Crimson Red",
+						"color_tint": "eb3847ff",
+						"fragrance_name": "Fragrant",
+						"fragrance_rating": 3,
+						"petal_form": "round",
+						"petal_form_name": "Round Petals",
+						"vigor_name": "Robust Vigor",
+						"vigor_tier": 2,
+						"visual_scale": 1.05
+					},
+					"species_id": "rose",
+					"specimen_id": "R-107"
+				},
+				"state": 2,
+				"water_duration_remaining": 0.0
+			},
+			{
+				"flower_id": "",
+				"growth_progress": 0.0,
+				"index": 24,
+				"is_fertilized": false,
+				"is_mystery_seed": false,
+				"is_pruned": false,
+				"is_revealed": false,
+				"is_watered": false,
+				"quality": 1,
+				"state": 0,
+				"water_duration_remaining": 0.0
+			}
+		],
+		"unknown_hybrid_seeds": []
+	},
+	"timestamp": 1788959022.27796,
+	"version": 1
+}
