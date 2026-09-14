@@ -10,7 +10,7 @@ extends Node2D
 
 signal plot_selected(plot: GardenPlot)
 signal plot_action_requested(plot: GardenPlot)
-signal flower_harvested(flower_id: String, count: int)
+signal flower_harvested(flower_id: String, count: int, quality: int)
 signal flower_revealed(flower_id: String, plot: GardenPlot)
 signal prune_window_opened(plot: GardenPlot)
 signal plot_relocated(plot_index: int, new_pos: Vector2)
@@ -93,8 +93,8 @@ func _on_plot_hovered(plot: GardenPlot, is_hover: bool) -> void:
 		hovered_plot = null
 
 
-func _on_flower_harvested(flower_id: String, count: int) -> void:
-	emit_signal("flower_harvested", flower_id, count)
+func _on_flower_harvested(flower_id: String, count: int, quality: int = FlowerQuality.Tier.NORMAL) -> void:
+	emit_signal("flower_harvested", flower_id, count, quality)
 
 
 func _on_flower_revealed(flower_id: String, plot: GardenPlot) -> void:

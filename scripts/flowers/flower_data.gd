@@ -55,7 +55,7 @@ static func get_flower(flower_id: String) -> Dictionary:
 	var alias_id: String = ALIASES.get(flower_id, "")
 	if not alias_id.is_empty() and _cached_flowers.has(alias_id):
 		return _cached_flowers[alias_id]
-	return _cached_flowers.get("rose", {})
+	return {}
 
 
 static func get_base_flower_ids() -> Array[String]:

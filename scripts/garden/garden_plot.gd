@@ -7,7 +7,7 @@ extends Node2D
 
 signal plot_clicked(plot: GardenPlot)
 signal plot_hovered(plot: GardenPlot, is_hover: bool)
-signal flower_harvested(flower_id: String, count: int)
+signal flower_harvested(flower_id: String, count: int, quality: int)
 signal flower_revealed(flower_id: String, plot: GardenPlot)
 signal specimen_preserved(specimen: FlowerSpecimen, plot: GardenPlot)
 signal prune_window_opened(plot: GardenPlot)
@@ -60,6 +60,8 @@ const SOIL_HERO_WET_TEX := preload("res://assets/environment/plots/soil_mature.p
 const PLOT_WIDTH: float = 64.0
 const PLOT_HEIGHT: float = 44.0
 const WATER_EFFECT_DURATION: float = 25.0 # Seconds plot stays wet
+const PRUNE_WINDOW_START: float = 0.60
+const PRUNE_WINDOW_END: float = 0.85
 
 
 func _init() -> void:
@@ -176,7 +178,7 @@ func _process(delta: float) -> void:
 		growth_progress = min(1.0, growth_progress + rate * delta)
 		_update_growth_stage()
 
-		if growth_progress >= 0.60 and growth_progress <= 0.85 and not is_pruned:
+		if growth_progress >= PRUNE_WINDOW_START and growth_progress <= PRUNE_WINDOW_END and not is_pruned:
 			_prune_badge_time += delta * 4.0
 			if not _prune_alerted:
 				_prune_alerted = true
@@ -264,6 +266,9 @@ func plant(new_flower_id: String, mystery: bool = false, specimen: FlowerSpecime
 
 
 func water() -> bool:
+	if state != State.GROWING or is_watered:
+		return false
+
 	is_watered = true
 	water_duration_remaining = WATER_EFFECT_DURATION * water_duration_multiplier
 	_update_bed_visual()
@@ -274,8 +279,9 @@ func water() -> bool:
 	_play_sfx("water")
 
 	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2(1.05, 0.95), 0.08)
-	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.12).set_trans(Tween.TRANS_ELASTIC)
+	if tween:
+		tween.tween_property(self, "scale", Vector2(1.05, 0.95), 0.08)
+		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.12).set_trans(Tween.TRANS_ELASTIC)
 
 	queue_redraw()
 	return true
@@ -296,14 +302,18 @@ func apply_fertilizer() -> bool:
 	return true
 
 
+func can_prune() -> bool:
+	return state == State.GROWING and not is_pruned and growth_progress >= PRUNE_WINDOW_START and growth_progress <= PRUNE_WINDOW_END
+
+
 func prune() -> bool:
 	# Pruning mechanic: Trims side shoots at Stage 2 / Vegetative to focus energy into a Hero Bloom (★★★)
-	if state != State.GROWING or is_pruned:
+	if not can_prune():
 		return false
 
 	is_pruned = true
 	_prune_alerted = false
-	quality = 3
+	quality = FlowerQuality.Tier.PERFECT
 	if is_instance_valid(_flower_visual):
 		_flower_visual.is_pruned = true
 
@@ -313,8 +323,9 @@ func prune() -> bool:
 	_play_sfx("prune")
 
 	var tween := create_tween()
-	scale = Vector2(1.12, 1.12)
-	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BACK)
+	if tween:
+		scale = Vector2(1.12, 1.12)
+		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BACK)
 
 	_spawn_floating_text("✂️ Hero Bloom (★★★)!", Color(1.0, 0.88, 0.35))
 	queue_redraw()
@@ -325,6 +336,31 @@ func set_highlight(val: bool) -> void:
 	set_hovered(val)
 
 
+func reset_to_empty_state() -> void:
+	state = State.EMPTY
+	current_flower_id = ""
+	current_specimen = null
+	growth_progress = 0.0
+	is_watered = false
+	water_duration_remaining = 0.0
+	is_mystery_seed = false
+	is_revealed = false
+	is_pruned = false
+	is_fertilized = false
+	quality = FlowerQuality.Tier.NORMAL
+	_prune_alerted = false
+
+	if is_instance_valid(_flower_visual):
+		_flower_visual.is_mystery = false
+		_flower_visual.is_revealed = false
+		_flower_visual.is_pruned = false
+		_flower_visual.phenotype = null
+		_flower_visual.visible = false
+
+	_update_bed_visual()
+	queue_redraw()
+
+
 func harvest() -> Dictionary:
 	if state != State.MATURE:
 		return {}
@@ -332,28 +368,16 @@ func harvest() -> Dictionary:
 	var harvested_id := current_flower_id
 	var harvested_quality := quality
 	var harvested_specimen := current_specimen
+	var harvest_count := 2 if harvested_quality >= FlowerQuality.Tier.PERFECT else 1
 
-	state = State.EMPTY
-	current_flower_id = ""
-	current_specimen = null
-	growth_progress = 0.0
-	is_pruned = false
-	_prune_alerted = false
-	is_fertilized = false
-	quality = 1
-	is_mystery_seed = false
-	is_revealed = false
-
-	if is_instance_valid(_flower_visual):
-		_flower_visual.visible = false
+	reset_to_empty_state()
 
 	# Sparkle celebration
 	_harvest_particles.restart()
 	_harvest_particles.emitting = true
 	_play_sfx("harvest")
 
-	var harvest_count := 2 if harvested_quality >= 3 else 1
-	emit_signal("flower_harvested", harvested_id, harvest_count)
+	emit_signal("flower_harvested", harvested_id, harvest_count, harvested_quality)
 
 	var f_data := FlowerData.get_flower(harvested_id)
 	var flower_name: String = f_data.get("display_name", harvested_id)
@@ -373,17 +397,7 @@ func preserve_specimen_for_breeding() -> FlowerSpecimen:
 		return null
 
 	var preserved := current_specimen
-	state = State.EMPTY
-	current_flower_id = ""
-	current_specimen = null
-	growth_progress = 0.0
-	is_pruned = false
-	quality = 1
-	is_mystery_seed = false
-	is_revealed = false
-
-	if is_instance_valid(_flower_visual):
-		_flower_visual.visible = false
+	reset_to_empty_state()
 
 	_harvest_particles.restart()
 	_harvest_particles.emitting = true
@@ -395,26 +409,16 @@ func preserve_specimen_for_breeding() -> FlowerSpecimen:
 	return preserved
 
 
+func preserve_for_breeding() -> FlowerSpecimen:
+	return preserve_specimen_for_breeding()
+
+
 func _reset_plot_state() -> void:
-	state = State.EMPTY
-	current_flower_id = ""
-	current_specimen = null
-	growth_progress = 0.0
-	is_mystery_seed = false
-	is_revealed = false
-	is_pruned = false
-	quality = 1
-	if is_instance_valid(_flower_visual):
-		_flower_visual.is_mystery = false
-		_flower_visual.is_revealed = false
-		_flower_visual.is_pruned = false
-		_flower_visual.phenotype = null
-		_flower_visual.visible = false
-
+	reset_to_empty_state()
 	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2(1.12, 1.12), 0.1).set_trans(Tween.TRANS_BACK)
-	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
-
+	if tween:
+		tween.tween_property(self, "scale", Vector2(1.12, 1.12), 0.1).set_trans(Tween.TRANS_BACK)
+		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
 	queue_redraw()
 
 

@@ -2,41 +2,15 @@ class_name BouquetModal
 extends Control
 
 ## Standalone UI Modal for the Bouquet Workshop.
+## Reads recipes dynamically from BouquetData (Single Source of Truth).
 
 signal bouquet_crafted(bouquet_id: String)
 signal closed()
 
-const BOUQUET_RECIPES: Dictionary = {
-	"garden_harmony": {
-		"name": "Garden Harmony Bouquet",
-		"icon": "💐",
-		"requirements": {"rose": 2, "lavender": 2},
-		"description": "A classic blend of fragrant crimson roses and soothing lavender."
-	},
-	"crimson_romance": {
-		"name": "Crimson Romance",
-		"icon": "🌹",
-		"requirements": {"rose": 3, "tulip": 1},
-		"description": "Passionate crimson blooms with radiant golden-orange tulip accents."
-	},
-	"ethereal_lumina": {
-		"name": "Ethereal Lumina",
-		"icon": "✨",
-		"requirements": {"roselight": 1, "lavender": 2},
-		"description": "A mystical arrangement featuring translucent glowing Roselight petals."
-	},
-	"solar_grandeur": {
-		"name": "Solar Grandeur",
-		"icon": "🌻",
-		"requirements": {"sunflower": 2, "golden_rose": 1},
-		"description": "Magnificent giant sunflowers anchored by an opulent Golden Rose."
-	}
-}
-
 @onready var _card_container: VBoxContainer = $CenterContainer/Panel/Margin/VBox/Scroll/CardsVBox
 @onready var _close_btn: Button = $CenterContainer/Panel/Margin/VBox/HeaderHBox/CloseBtn
 
-var flower_inventory: Dictionary = {}
+var flower_inventory = null
 
 
 func _ready() -> void:
@@ -48,7 +22,7 @@ func _ready() -> void:
 		)
 
 
-func open_workshop(inventory: Dictionary) -> void:
+func open_workshop(inventory) -> void:
 	flower_inventory = inventory
 	_populate_recipes()
 	show()
@@ -61,22 +35,28 @@ func _populate_recipes() -> void:
 	for child in _card_container.get_children():
 		child.queue_free()
 
-	for b_id in BOUQUET_RECIPES:
-		var card := _create_recipe_card(b_id, BOUQUET_RECIPES[b_id])
+	var bouquet_ids: Array[String] = BouquetData.get_all_bouquet_ids()
+	for b_id in bouquet_ids:
+		var card := _create_recipe_card(b_id)
 		_card_container.add_child(card)
 
 
-func _create_recipe_card(b_id: String, r_data: Dictionary) -> PanelContainer:
-	var reqs: Dictionary = r_data.get("requirements", {})
-	var can_craft := true
-	var req_strings: Array[String] = []
+func _create_recipe_card(b_id: String) -> PanelContainer:
+	var b_data := BouquetData.get_bouquet(b_id)
+	var reqs: Dictionary = b_data.get("ingredients", {})
+	var check := BouquetData.check_ingredients(b_id, flower_inventory if flower_inventory != null else {})
+	var can_craft: bool = bool(check.get("can_craft", false))
 
+	var req_strings: Array[String] = []
 	for f_id in reqs:
-		var have: int = flower_inventory.get(f_id, 0)
 		var need: int = int(reqs[f_id])
-		if have < need:
-			can_craft = false
-		req_strings.append("%s: %d/%d" % [f_id.capitalize(), have, need])
+		var have: int = 0
+		if flower_inventory is FlowerInventory:
+			have = flower_inventory.get_flower_count(f_id)
+		elif flower_inventory is Dictionary:
+			have = int(flower_inventory.get(f_id, 0))
+		var f_name: String = FlowerData.get_flower(f_id).get("display_name", f_id.capitalize())
+		req_strings.append("%s: %d/%d" % [f_name, have, need])
 
 	var card := PanelContainer.new()
 	var margin := MarginContainer.new()
@@ -91,7 +71,7 @@ func _create_recipe_card(b_id: String, r_data: Dictionary) -> PanelContainer:
 	margin.add_child(hbox)
 
 	var icon_lbl := Label.new()
-	icon_lbl.text = r_data.get("icon", "💐")
+	icon_lbl.text = "💐"
 	icon_lbl.add_theme_font_size_override("font_size", 22)
 	hbox.add_child(icon_lbl)
 
@@ -100,13 +80,13 @@ func _create_recipe_card(b_id: String, r_data: Dictionary) -> PanelContainer:
 	hbox.add_child(text_vbox)
 
 	var name_lbl := Label.new()
-	name_lbl.text = r_data.get("name", "Bouquet")
+	name_lbl.text = b_data.get("display_name", "Bouquet")
 	name_lbl.add_theme_font_size_override("font_size", 13)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.70))
 	text_vbox.add_child(name_lbl)
 
 	var desc_lbl := Label.new()
-	desc_lbl.text = r_data.get("description", "")
+	desc_lbl.text = b_data.get("description", "")
 	desc_lbl.add_theme_font_size_override("font_size", 10)
 	desc_lbl.add_theme_color_override("font_color", Color(0.75, 0.85, 0.75))
 	text_vbox.add_child(desc_lbl)

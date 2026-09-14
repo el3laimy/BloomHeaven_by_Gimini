@@ -55,10 +55,7 @@ static func get_request(order_id: String) -> Dictionary:
 		if not req.has("patience_max_seconds"):
 			req["patience_max_seconds"] = 75.0
 		return req
-	var fallback: Dictionary = _cached_requests.get("order_1", {}).duplicate()
-	if not fallback.has("patience_max_seconds"):
-		fallback["patience_max_seconds"] = 75.0
-	return fallback
+	return {}
 
 
 static func get_all_request_ids() -> Array[String]:
@@ -108,9 +105,21 @@ static func calculate_reward(order_id: String, patience_ratio: float, combo_mult
 
 ## Checks if the player has all required items in inventory to fulfill the request.
 ## Returns Dictionary with "can_fulfill": bool, "status_text": String
-static func check_fulfillment(order_id: String, flower_inventory: Dictionary, bouquet_inventory: Dictionary) -> Dictionary:
+static func check_fulfillment(order_id: String, flower_inventory, bouquet_inventory: Dictionary) -> Dictionary:
 	var req := get_request(order_id)
-	var req_type: String = req.get("type", "flowers")
+	if req.is_empty():
+		return {
+			"can_fulfill": false,
+			"status_text": "Unknown order."
+		}
+
+	var req_type: String = req.get("type", "")
+	if req_type != "flowers" and req_type != "bouquet":
+		return {
+			"can_fulfill": false,
+			"status_text": "Unsupported request type."
+		}
+
 	var items: Dictionary = req.get("required_items", {})
 	var can_fulfill := true
 	var status_parts: Array[String] = []
@@ -118,7 +127,11 @@ static func check_fulfillment(order_id: String, flower_inventory: Dictionary, bo
 	if req_type == "flowers":
 		for flower_id in items:
 			var needed: int = int(items[flower_id])
-			var have: int = int(flower_inventory.get(flower_id, 0))
+			var have: int = 0
+			if flower_inventory is FlowerInventory:
+				have = flower_inventory.get_flower_count(flower_id)
+			elif flower_inventory is Dictionary:
+				have = int(flower_inventory.get(flower_id, 0))
 			var name: String = FlowerData.get_flower(flower_id).get("display_name", flower_id)
 			status_parts.append("%s (%d/%d)" % [name, have, needed])
 			if have < needed:

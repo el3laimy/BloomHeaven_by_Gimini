@@ -65,7 +65,7 @@ static func get_bouquet(bouquet_id: String) -> Dictionary:
 	_ensure_initialized()
 	if _cached_bouquets.has(bouquet_id):
 		return _cached_bouquets[bouquet_id]
-	return _cached_bouquets.get("garden_harmony", {})
+	return {}
 
 
 static func get_all_bouquet_ids() -> Array[String]:
@@ -77,15 +77,25 @@ static func get_all_bouquet_ids() -> Array[String]:
 
 
 ## Returns a Dictionary with "can_craft": bool and "missing": Array[String]
-static func check_ingredients(bouquet_id: String, inventory: Dictionary) -> Dictionary:
+static func check_ingredients(bouquet_id: String, inventory) -> Dictionary:
 	var b_data := get_bouquet(bouquet_id)
+	if b_data.is_empty():
+		return {
+			"can_craft": false,
+			"missing": ["Unknown bouquet recipe."]
+		}
+
 	var ingredients: Dictionary = b_data.get("ingredients", {})
 	var can_craft := true
 	var missing: Array[String] = []
 
 	for flower_id in ingredients:
 		var needed: int = int(ingredients[flower_id])
-		var have: int = int(inventory.get(flower_id, 0))
+		var have: int = 0
+		if inventory is FlowerInventory:
+			have = inventory.get_flower_count(flower_id)
+		elif inventory is Dictionary:
+			have = int(inventory.get(flower_id, 0))
 		if have < needed:
 			can_craft = false
 			var flower_name: String = FlowerData.get_flower(flower_id).get("display_name", flower_id)
