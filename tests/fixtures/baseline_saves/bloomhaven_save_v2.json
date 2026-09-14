@@ -9,8 +9,8 @@
 		},
 		"bouquet_inventory": {
 			"garden_harmony": 2.0,
-			"pure_elegance": 0,
-			"spring_meadow": 0
+			"pure_elegance": 0.0,
+			"spring_meadow": 0.0
 		},
 		"breeding_roster": [
 			{
@@ -128,9 +128,9 @@
 				"specimen_id": "S-001"
 			}
 		],
-		"coins": 200,
+		"coins": 148,
 		"combo_count": 4,
-		"combo_timer": 18.0,
+		"combo_timer": 17.727791,
 		"completed_requests": {
 			"order_1": true,
 			"order_2": false,
@@ -151,20 +151,12 @@
 			"tulip": true,
 			"velvet_dusk": true
 		},
-		"inventory": {
-			"daisy": 2,
-			"lavender": 1,
-			"rose": 2,
-			"rose_cream": 1,
-			"sunflower": 1,
-			"tulip": 1,
-			"velvet_dusk": 1
-		},
+		"inventory": {},
 		"live_orders_patience": {
 			"order_1": 75.0,
-			"order_2": 79.7639673333333,
+			"order_2": 79.727791,
 			"order_3": 75.0,
-			"order_4": 89.7639673333333,
+			"order_4": 89.727791,
 			"order_5": 75.0,
 			"order_6": 75.0
 		},
@@ -254,6 +246,6 @@
 		"unknown_hybrid_seeds": []
 	},
 	"game_title": "BloomHaven CVP",
-	"timestamp": 1789425970.67572,
+	"timestamp": 1789427469.80752,
 	"version": 2
 }

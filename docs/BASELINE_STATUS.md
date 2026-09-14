@@ -1,104 +1,113 @@
-# BloomHaven Baseline Status — Sprint 0 Lock
+# BloomHaven — Baseline Status & Regression Capture (Sprint 0)
 
-**Date:** 2026-09-15  
+**Generated:** 2026-09-15  
+**Baseline Git Commit:** `04326f320760008d02d08320e90dbdf3d182ed1b`  
 **Target Branch:** `stabilization/code-audit-fixes`  
-**Baseline Git Commit:** `46c3a65b64cd338800f8067e76fdd9c8fb6b2aad`  
-**Working Tree Status:** Clean  
+**Status:** Sprint 0 Baseline Locked
 
 ---
 
-## 1. Baseline Test Execution Results
+## 1. Environment & Runtime Information
 
-### 1.1 Project Validator (`tools/validate_project.py`)
-- **Command:** `python3 tools/validate_project.py`
-- **Exit Code:** `0`
-- **Output Summary:** `ALL COMPREHENSIVE VALIDATION CHECKS PASSED (0 ERRORS)`
-- **Finding:** The validator only performs filesystem existence checks (`os.path.exists`) on JSON files, scenes, audio assets, and sprite files. It does not perform semantic validation of data recipes, IDs, enums, or runtime contracts.
-
-### 1.2 Unified Headless Runner (`tests/runner.gd`)
-- **Command:** `godot --headless --script tests/runner.gd`
-- **Exit Code:** `1` (FAILED)
-- **Failure Reason:**
-  ```text
-  ❌ TEST RUNNER FAILED WITH 1 ERRORS:
-    - Genetics hybrid cross expected 'roselight', got 'velvet_dusk'
-  ```
-- **Finding:** In `FlowerData.get_breeding_result()`, crossing `rose` + `lavender` was updated to the CVP curated hybrid `velvet_dusk`, while `tests/runner.gd` still expects the legacy `roselight` cross.
-
-### 1.3 Smoke & Regression Suite (`scripts/tests/smoke_test.gd`)
-- **Command:** `godot --headless --script scripts/tests/smoke_test.gd`
-- **Exit Code:** `0` (PASS)
-- **Memory & Resource Leak Log at Exit:**
-  ```text
-  WARNING: 91 RIDs of type "CanvasItem" were leaked.
-  ERROR: 13 RID allocations of type 'DummyTexture' were leaked at exit.
-  ERROR: 40 RID allocations of type 'ShapedTextDataAdvanced' were leaked at exit.
-  ERROR: 1 RID allocations of type 'FontAdvanced' were leaked at exit.
-  WARNING: 272 ObjectDB instances were leaked at exit.
-  ERROR: 7 resources still in use at exit.
-  ```
-
-### 1.4 Quick Sell Verification (`scripts/tests/test_quick_sell.gd`)
-- **Command:** `godot --headless --script scripts/tests/test_quick_sell.gd`
-- **Exit Code:** `0` (PASS)
-- **Finding:** Confirmed that batch selling in `quick_sell_all_flowers()` triggers individual saves per flower item (observed multiple `Game state saved successfully` lines for a single batch sell).
-
-### 1.5 Breeding System Lifecycle (`scripts/tests/test_breeding_system.gd`)
-- **Command:** `godot --headless --script scripts/tests/test_breeding_system.gd`
-- **Exit Code:** FAILED (Hangs after assertion failure)
-- **Failure Reason:**
-  ```text
-  SCRIPT ERROR: Assertion failed: Expected roselight hybrid
-            at: _run_all_tests (res://scripts/tests/test_breeding_system.gd:40)
-  ```
-- **Finding:** `test_breeding_system.gd` expects `rose` + `lavender` to yield `roselight`, but `flower_data.gd` resolves it to `velvet_dusk`. Because assert fails in `_process` without calling `quit(1)`, the script hangs.
+- **OS:** Linux (x86_64)
+- **Godot Engine:** v4.7.1.stable.official.a13da4feb
+- **Rendering Method:** GL Compatibility
+- **Project Name:** BloomHaven (`res://scenes/main.tscn`)
 
 ---
 
-## 2. Baseline Runtime Problems & Known Issues
+## 2. Test Execution Baseline & Results
 
-1. **P0-01 (Invalid Method Call):**
-   `main.gd:597` calls `plot.preserve_for_breeding()`, which does not exist on `GardenPlot` (actual method name: `preserve_specimen_for_breeding()`).
-2. **P0-02 (Genetic Data Loss on Save/Load):**
-   `unknown_hybrid_seeds: Array[String]` is saved, but `unknown_hybrid_specimens: Array[FlowerSpecimen]` is never serialized. On restart, all custom hybrid offspring lose their genotype, phenotype, parents, and generation.
-3. **P0-03 (Specimen ID Collisions):**
-   `GeneticsEngine._specimen_counter` is static, initialized to 100, and never saved or restored. On game restart, subsequent hybrid generations re-issue previously used IDs (e.g. `H-101`).
-4. **P0-04 (Pruning Window Invariant Bypass):**
-   `GardenPlot.prune()` does not verify `growth_progress` within `0.60..0.85`. Prune can be called at any growth percentage to produce a Hero Bloom.
-5. **P0-05 (Quality System Desynchronization):**
-   `GardenPlot.harvest()` returns quality, but emits `flower_harvested(flower_id, count)` without quality. `main.gd` stores flat counts in `inventory[flower_id]`. Hero Blooms degrade into standard flowers in inventory. `quick_sell_flower()` defaults to quality 1. Hero tier is 3 in plot vs 4 in quick sell.
-6. **P0-06 (Fake Seed Inventory):**
-   `SeedBar` displays harvested flower counts or a default `10` fallback. `_handle_planting_action()` plants base species without checking seed stock, without deducting seeds, allowing infinite free planting.
-7. **P0-07 (Repeat Order Fulfillment Exploit):**
-   `OrderManager.fulfill_order()` does not guard against `completed_requests[order_id] == true` at the top of the function.
-8. **P0-08 (Invalid ID Gameplay Masking):**
-   `FlowerData.get_flower(invalid)` returns Rose; `BouquetData.get_bouquet(invalid)` returns Garden Harmony; `FloristRequestData.get_request(invalid)` returns Order 1.
-9. **P0-09 (Malformed Request Type Bypass):**
-   `FloristRequestData.check_fulfillment()` initializes `can_fulfill = true`. Unknown request types pass requirement checks and pay rewards without deducting items.
-10. **P0-10 (Bouquet Recipe Drift):**
-    `BouquetModal.gd` hardcodes `BOUQUET_RECIPES` with ingredients that contradict `data/bouquets.json`.
+| Tool / Test Script | Exit Code | Result Status | Key Output / Error Signature |
+| :--- | :---: | :---: | :--- |
+| `tools/validate_project.py` | `0` | **PASS** | `🎉 ALL COMPREHENSIVE VALIDATION CHECKS PASSED (0 ERRORS)!` *(Note: Only verifies file existence on disk, not semantic data integrity).* |
+| `tests/runner.gd` | `1` | **FAIL** | `❌ TEST RUNNER FAILED WITH 1 ERRORS:`<br>`- Genetics hybrid cross expected 'roselight', got 'velvet_dusk'` |
+| `scripts/tests/smoke_test.gd` | `0` | **PASS (with Leaks)** | `ALL FIONA FINCH & P4.1/P4.2 VERIFICATION TESTS PASSED (100% OK)`<br>*Memory Leaks:* 91 CanvasItem RIDs, 13 DummyTexture, 40 ShapedTextDataAdvanced, 1 FontAdvanced, 272 ObjectDB instances, 7 resources still in use. |
+| `scripts/tests/test_quick_sell.gd` | `0` | **PASS** | `🎉 ALL QUICK SELL TESTS PASSED (100% OK)!`<br>Sold 1 Rose (10c), 3 Daisies (24c), batch remaining (64c). Final: 148c. Leaked 2 ObjectDB instances. |
+| `scripts/tests/test_breeding_system.gd` | `1` (Hangs on assert) | **FAIL** | `SCRIPT ERROR: Assertion failed: Expected roselight hybrid`<br>`at: _run_all_tests (res://scripts/tests/test_breeding_system.gd:40)` |
 
 ---
 
-## 3. Save State Baseline Fixtures
+## 3. Save State Fixture Archives
 
-Archived under `tests/fixtures/baseline_saves/`:
-- `tests/fixtures/baseline_saves/bloomhaven_save_v2.json` (5,100 bytes, Schema V2)
-- `tests/fixtures/baseline_saves/finest_garden_save_v1.json` (11,863 bytes, Schema V1)
-
-These fixtures are preserved unchanged for regression and schema migration verification during Sprint B.
+Saved fixtures preserved without modification in `tests/fixtures/baseline_saves/`:
+- `tests/fixtures/baseline_saves/bloomhaven_save_v2.json` (V2 Schema from `~/.local/share/godot/app_userdata/BloomHaven/`)
+- `tests/fixtures/baseline_saves/finest_garden_save_v1.json` (V1 Schema from `~/.local/share/godot/app_userdata/Finest Garden Prototype/`)
 
 ---
 
-## 4. Pre-Fix Core Gameplay Loops Behavior Record
+## 4. Documented Core Gameplay Flows (Baseline State)
 
-| Gameplay Loop | Pre-Fix Behavior |
-| :--- | :--- |
-| **Plant** | Sows base species infinitely without checking or deducting seeds. Sowing mystery seed pops from arrays before plant check, losing seed if plot is occupied. |
-| **Water** | Waters any plot regardless of state (EMPTY or MATURE). Water duration timer does not reset cleanly upon plot clear. |
-| **Prune** | Allows pruning outside the gold window (before 60% or after 85%). Discrepancy between GardenPlot (quality 3) and Quick Sell (quality 4). |
-| **Harvest** | Emits flat count; discards quality rating. Hero flowers become Normal flowers in inventory. |
-| **Sell** | Sells at flat quality 1. Batch sell executes redundant save, sound, UI, and toast calls per flower item. |
-| **Breed** | UI allows selecting same specimen in both slots, or selecting 1-count species in both slots. Signal from HUD discards specimen references. |
-| **Save / Load** | Loses hybrid specimen genetic data. Counter resets to 100 on restart. No atomic write, no `.bak` backup, no schema validation. |
-| **Orders** | Domain allows duplicate fulfillment. Patience timers in `OrderManager` diverge from `requests.json`. Runtime state split across multiple dictionaries. |
+### 4.1 Plant Loop
+- **Method:** `MainGame._handle_planting_action(plot)` (`scripts/main.gd:554`)
+- **Baseline Behavior:**
+  - Standard seeds (Rose, Tulip, Daisy, Lavender) do NOT check seed stock and do NOT deduct seeds from any inventory. Infinite planting is currently permitted.
+  - Mystery seeds: `unknown_hybrid_seeds.pop_front()` is executed **before** `plot.plant()` succeeds. If `plot.plant()` fails, the seed is permanently lost.
+  - `unknown_hybrid_specimens` is not persisted to disk. On restart, planting a mystery seed generates a generic starter specimen, wiping all player-bred lineage data.
+  - `SeedBar` displays harvested flower counts or a default fallback of 10.
+
+### 4.2 Water Loop
+- **Method:** `GardenPlot.water()` (`scripts/garden/garden_plot.gd:266`)
+- **Baseline Behavior:**
+  - Does NOT check `state == State.GROWING`. Allows watering EMPTY and MATURE plots.
+  - `Double Water` upgrade (`main.gd:516`) selects adjacent plot using index parity `target_idx + 1 if (target_idx % 2 == 0) else target_idx - 1`, failing on non-grid spatial layouts.
+
+### 4.3 Prune Loop
+- **Method:** `GardenPlot.prune()` (`scripts/garden/garden_plot.gd:299`)
+- **Baseline Behavior:**
+  - Checks only `state == State.GROWING and not is_pruned`.
+  - Does NOT enforce the 60%–85% skill timing window. Pruning is accepted at any growth percentage (e.g. 5% or 95%) and awards a Hero Bloom.
+
+### 4.4 Harvest Loop
+- **Method:** `GardenPlot.harvest()` (`scripts/garden/garden_plot.gd:328`)
+- **Baseline Behavior:**
+  - Correctly requires `state == State.MATURE`.
+  - Calculates `harvest_count = 2 if quality >= 3 else 1`.
+  - Emits `flower_harvested(harvested_id, harvest_count)` — completely dropping the quality tier!
+  - `main.gd` receives only flower ID and count, adding to flat `inventory[flower_id]`.
+  - Plot reset does not clean up `is_watered` or `water_duration_remaining`.
+
+### 4.5 Sell Loop
+- **Method:** `MainGame.quick_sell_flower()` & `quick_sell_all_flowers()` (`scripts/main.gd:774`)
+- **Baseline Behavior:**
+  - Quality defaults to 1. Because harvest drops quality, Hero Blooms are sold at standard 1.0x price.
+  - `quick_sell_all_flowers()` invokes `quick_sell_flower()` in a loop, triggering repetitive save writes, toasts, and audio playback.
+
+### 4.6 Breed Loop
+- **Method:** `BreedingModal` & `MainGame._on_breed_requested()` (`scripts/main.gd:638`)
+- **Baseline Behavior:**
+  - UI permits selecting the exact same `FlowerSpecimen` instance in both slots, or selecting the same species when only 1 unit exists in inventory.
+  - CVP Curated Hybrids resolve `rose + lavender -> velvet_dusk`, causing legacy assertions expecting `roselight` to fail.
+  - Specimen counter `_specimen_counter = 100` in `GeneticsEngine` is static and unpersisted, leading to ID collisions upon game reload.
+
+### 4.7 Save / Load Loop
+- **Method:** `SaveManager.save_game()` & `load_game()` (`scripts/core/save_manager.gd`)
+- **Baseline Behavior:**
+  - Save writes directly to `SAVE_PATH_V2` with no temporary file or backup rotation.
+  - Corrupt main save file results in total loss (empty dictionary fallback with no `.bak` recovery).
+  - Unplanted hybrid specimens in `unknown_hybrid_specimens` are omitted from save payload.
+
+### 4.8 Customer Orders Loop
+- **Method:** `OrderManager.fulfill_order()` (`scripts/core/order_manager.gd:55`)
+- **Baseline Behavior:**
+  - Does NOT verify if `completed_requests[order_id]` is already true at entry. Multiple fulfillment can be triggered at domain level.
+  - Unknown request types pass `can_fulfill()` as true and pay out rewards with zero item deductions.
+  - Customer patience values in `OrderManager` diverge from `requests.json`.
+
+---
+
+## 5. Summary of Baseline Issues Documented
+
+1. **2 Out of 5 Test Scripts Fail / Hang:**
+   - `tests/runner.gd` fails on curated hybrid cross expectation (`velvet_dusk` vs `roselight`).
+   - `scripts/tests/test_breeding_system.gd` hangs on assertion error for the same reason.
+2. **Object and RID Leaks:**
+   - Godot engine logs 272 ObjectDB leaks and 91 CanvasItem RID leaks upon headless exit.
+3. **Save System Risk:**
+   - Single-file direct write without atomic promotion or schema-validated backups.
+4. **Data Contract Vulnerabilities:**
+   - Fallback masking in `FlowerData`, `BouquetData`, and `FloristRequestData`.
+   - Disconnected seed vs flower inventory state.
+
+---
+*Sprint 0 Baseline Capture Complete. Ready for Gate 0 evaluation.*
