@@ -332,7 +332,8 @@ func _test_missing_patience_no_fallback() -> String:
 	if pat_val != null:
 		return "Simulated request without patience_max_seconds unexpectedly produced: %s" % str(pat_val)
 
-	# 2. In OrderManager, an order missing patience_max_seconds must have max_patience == 0.0 (fails safely, never defaults to 75.0)
+	# 2. In OrderManager, an order missing patience_max_seconds must be REJECTED from order_runtime
+	# (no order_runtime entry created, zero gameplay mutation, never defaults to 75.0 or 0.0 entry)
 	var om := OrderManager.new()
 	FloristRequestData._ensure_initialized()
 	FloristRequestData._cached_requests["test_no_patience_fixture"] = {
@@ -341,13 +342,28 @@ func _test_missing_patience_no_fallback() -> String:
 		"required_items": {"rose": 1}
 	}
 	om._ensure_order_in_runtime("test_no_patience_fixture")
+	var has_entry: bool = om.order_runtime.has("test_no_patience_fixture")
 	var pat: float = om.get_patience("test_no_patience_fixture")
 	FloristRequestData._cached_requests.erase("test_no_patience_fixture")
 
-	if pat == 75.0:
-		return "OrderManager defaulted missing patience to 75.0! Must not invent gameplay values"
+	if has_entry:
+		return "OrderManager created order_runtime record for request missing patience_max_seconds! Must reject/skip creation."
 	if pat != 0.0:
-		return "OrderManager did not set 0.0 safe failure for missing patience: got %f" % pat
+		return "OrderManager returned nonzero patience for missing/rejected order: got %f" % pat
+
+	# 3. Verify invalid patience (<= 0.0) is also rejected
+	FloristRequestData._cached_requests["test_zero_patience_fixture"] = {
+		"id": "test_zero_patience_fixture",
+		"customer_name": "GhostZero",
+		"required_items": {"rose": 1},
+		"patience_max_seconds": 0.0
+	}
+	om._ensure_order_in_runtime("test_zero_patience_fixture")
+	var has_zero_entry: bool = om.order_runtime.has("test_zero_patience_fixture")
+	FloristRequestData._cached_requests.erase("test_zero_patience_fixture")
+
+	if has_zero_entry:
+		return "OrderManager created order_runtime record for request with 0.0 patience_max_seconds! Must reject/skip creation."
 
 	return ""
 

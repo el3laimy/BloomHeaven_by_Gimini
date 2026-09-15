@@ -55,11 +55,13 @@ func _init_runtime() -> void:
 func _ensure_order_in_runtime(order_id: String) -> void:
 	if not order_runtime.has(order_id):
 		var req := FloristRequestData.get_request(order_id)
-		var max_pat: float = 0.0
-		if req.has("patience_max_seconds"):
-			max_pat = float(req["patience_max_seconds"])
-		else:
-			push_warning("OrderManager: Order '%s' missing canonical patience_max_seconds." % order_id)
+		if not req.has("patience_max_seconds"):
+			push_warning("OrderManager: Order '%s' missing canonical patience_max_seconds; skipping runtime creation." % order_id)
+			return
+		var max_pat: float = float(req["patience_max_seconds"])
+		if max_pat <= 0.0:
+			push_warning("OrderManager: Order '%s' has invalid patience_max_seconds (<= 0.0); skipping runtime creation." % order_id)
+			return
 		order_runtime[order_id] = {
 			"completed": false,
 			"remaining_patience": max_pat,
@@ -215,6 +217,8 @@ func reset_all_patience() -> void:
 
 func reset_order(order_id: String) -> void:
 	_ensure_order_in_runtime(order_id)
+	if not order_runtime.has(order_id):
+		return
 	var req := FloristRequestData.get_request(order_id)
 	var max_pat: float = float(req.get("patience_max_seconds", 0.0))
 	if max_pat <= 0.0:
@@ -252,11 +256,13 @@ func deserialize(data: Dictionary) -> void:
 		if data.has("completed_requests") and data["completed_requests"] is Dictionary:
 			for o_id in data["completed_requests"]:
 				_ensure_order_in_runtime(o_id)
-				order_runtime[o_id]["completed"] = bool(data["completed_requests"][o_id])
+				if order_runtime.has(o_id):
+					order_runtime[o_id]["completed"] = bool(data["completed_requests"][o_id])
 		if data.has("live_orders_patience") and data["live_orders_patience"] is Dictionary:
 			for o_id in data["live_orders_patience"]:
 				_ensure_order_in_runtime(o_id)
-				order_runtime[o_id]["remaining_patience"] = float(data["live_orders_patience"][o_id])
+				if order_runtime.has(o_id):
+					order_runtime[o_id]["remaining_patience"] = float(data["live_orders_patience"][o_id])
 
 	if data.has("combo_count"):
 		combo_count = int(data["combo_count"])
