@@ -138,7 +138,7 @@ func _populate_roster() -> void:
 
 	if _active_tab == 0:
 		# 1. Base Garden Flowers from inventory
-		var basic_species: Array[String] = ["rose", "tulip", "daisy", "lavender", "sunflower"]
+		var basic_species: Array[String] = FlowerData.get_cvp_base_species()
 		for s_id in basic_species:
 			var count: int = basic_inventory.get(s_id, 0)
 			var card := _create_grid_species_card(s_id, count)
@@ -146,7 +146,9 @@ func _populate_roster() -> void:
 				_roster_grid.add_child(card)
 
 		# Also check for harvested hybrid flowers in basic inventory
-		for h_id in ["roselight", "golden_rose", "sunflare_spike"]:
+		var hybrid_species: Array[String] = FlowerData.get_curated_hybrids()
+		hybrid_species.append_array(FlowerData.get_legacy_species())
+		for h_id in hybrid_species:
 			var count: int = basic_inventory.get(h_id, 0)
 			if count > 0:
 				var card := _create_grid_species_card(h_id, count)
@@ -475,16 +477,15 @@ func _update_slots_ui() -> void:
 func _get_flower_trait_summary(species_id: String, specimen: FlowerSpecimen) -> String:
 	if specimen != null and specimen.phenotype != null:
 		return "%s · Fragrance: %d★" % [specimen.phenotype.color_name, specimen.phenotype.fragrance_rating]
-	match species_id:
-		"rose": return "Crimson Red · Fragrance: 3★"
-		"lavender": return "Aromatic Stalk · Fragrance: 4★"
-		"sunflower": return "Golden Radiant · Exceptional Vigor"
-		"tulip": return "Orange Flame · Fragrance: 3★"
-		"daisy": return "Sunny Disc · Star Petals"
-		"roselight": return "Plum Magenta · Luminescent"
-		"golden_rose": return "Sun-Kissed Gold · Rare ★★★"
-		"sunflare_spike": return "Solar Amber · Rare ★★★"
-		_: return "Botanical Specimen"
+	var f_data := FlowerData.get_flower(species_id)
+	if not f_data.is_empty():
+		var clue: String = f_data.get("botanical_clue", "")
+		if not clue.is_empty():
+			return clue
+		var desc: String = f_data.get("description", "")
+		if not desc.is_empty():
+			return desc.substr(0, 48)
+	return "Botanical Specimen"
 
 
 func _on_breed_clicked() -> void:
@@ -508,26 +509,4 @@ func _play_harvest_chime() -> void:
 
 
 static func get_flower_texture(flower_id: String) -> Texture2D:
-	if _flower_tex_cache.has(flower_id):
-		return _flower_tex_cache[flower_id]
-
-	var path: String = ""
-	match flower_id:
-		"sunflower": path = "res://assets/flowers/master_sunflower.png"
-		"roselight": path = "res://assets/flowers/master_roselight.png"
-		"golden_rose": path = "res://assets/flowers/master_golden_rose.png"
-		"sunflare_spike": path = "res://assets/flowers/master_sunflare_spike.png"
-		"rose": path = "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png"
-		"tulip": path = "res://assets/flowers/growth_stages/tulip_bloom_standard.png"
-		"daisy": path = "res://assets/flowers/growth_stages/daisy_bloom_standard.png"
-		"lavender": path = "res://assets/flowers/growth_stages/lavender_bloom_standard.png"
-		_:
-			var f_data := FlowerData.get_flower(flower_id)
-			path = f_data.get("master_sprite", "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png")
-
-	if ResourceLoader.exists(path):
-		var tex := load(path) as Texture2D
-		_flower_tex_cache[flower_id] = tex
-		return tex
-
-	return null
+	return FlowerAssetResolver.resolve_flower_texture(flower_id)

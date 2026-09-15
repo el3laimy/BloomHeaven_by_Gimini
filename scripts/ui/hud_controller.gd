@@ -341,10 +341,14 @@ func _build_hud_ui() -> void:
 	_visual_lab_btn = Button.new()
 	dummy_compat.add_child(_visual_lab_btn)
 
-	for fid in ["rose", "tulip", "daisy", "lavender", "sunflower", "bouquets", "unknown_seed"]:
+	for fid in FlowerData.get_all_flower_ids():
 		var lbl := Label.new()
 		dummy_compat.add_child(lbl)
 		_inv_labels[fid] = lbl
+	for special_fid in ["bouquets", "unknown_seed"]:
+		var lbl := Label.new()
+		dummy_compat.add_child(lbl)
+		_inv_labels[special_fid] = lbl
 
 	# Bottom Center: Main Toolbar & Seed Selector
 	_build_bottom_toolbar(margin)
@@ -1788,21 +1792,15 @@ func _update_visual_lab_state() -> void:
 
 	var parent_a_id := "rose"
 	var parent_b_id := "lavender"
-	var hybrid_name := "Roselight Bloom"
+	var hybrid_name := "Hybrid Bloom"
 
-	match _selected_hybrid_cross:
-		"roselight":
-			parent_a_id = "rose"
-			parent_b_id = "lavender"
-			hybrid_name = "Roselight Bloom"
-		"golden_rose":
-			parent_a_id = "rose"
-			parent_b_id = "sunflower"
-			hybrid_name = "Golden Sun Rose"
-		"sunflare_spike":
-			parent_a_id = "lavender"
-			parent_b_id = "sunflower"
-			hybrid_name = "Sunflare Spike"
+	var f_data := FlowerData.get_flower(_selected_hybrid_cross)
+	if not f_data.is_empty():
+		var parents: Array = f_data.get("parents", [])
+		if parents.size() >= 2:
+			parent_a_id = str(parents[0])
+			parent_b_id = str(parents[1])
+		hybrid_name = f_data.get("display_name", _selected_hybrid_cross.capitalize())
 
 	_parent_a_title_lbl.text = "Parent A (%s)" % parent_a_id.capitalize()
 	_parent_b_title_lbl.text = "Parent B (%s)" % parent_b_id.capitalize()
@@ -1932,8 +1930,8 @@ func update_inventory(
 		var pat = p.order_manager.live_orders_patience if (p != null and "order_manager" in p and p.order_manager != null) else {}
 		_side_order_rail.update_state(flowers, bouquets, pat, _cached_completed_requests)
 
-	for flower_id in ["rose", "lavender", "sunflower"]:
-		if _inv_labels.has(flower_id):
+	for flower_id in _inv_labels:
+		if flowers.has(flower_id):
 			_inv_labels[flower_id].text = str(flowers.get(flower_id, 0))
 
 	if _inv_labels.has("bouquets"):

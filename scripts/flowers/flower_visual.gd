@@ -245,27 +245,10 @@ func _draw_seed_stage() -> void:
 
 
 func _get_species_key() -> String:
-	match flower_id:
-		"rose":
-			return "rose_crimson"
-		"rose_cream":
-			return "rose_cream"
-		"lavender":
-			return "lavender"
-		"tulip":
-			return "tulip"
-		"daisy":
-			return "daisy"
-		"sunflower":
-			return "sunflower"
-		"roselight":
-			return "roselight"
-		"golden_rose":
-			return "golden_rose"
-		"sunflare_spike":
-			return "sunflare_spike"
-		_:
-			return "rose_crimson"
+	var canon_id := FlowerData.get_canonical_id(flower_id)
+	if canon_id == "rose":
+		return "rose_crimson"
+	return canon_id
 
 
 func _get_growth_sprite(stage_suffix: String) -> Texture2D:
@@ -439,9 +422,7 @@ func _draw_blooming_stage(
 		elif flower_id == "rose" and ResourceLoader.exists("res://assets/flowers/rose_standard_form.png"):
 			tex = load("res://assets/flowers/rose_standard_form.png")
 		else:
-			var tex_path := "res://assets/flowers/master_%s.png" % flower_id
-			if ResourceLoader.exists(tex_path):
-				tex = load(tex_path)
+			tex = FlowerAssetResolver.resolve_flower_texture(flower_id)
 
 	if tex != null:
 		var spr_w: float = 52.0 * vigor_scale

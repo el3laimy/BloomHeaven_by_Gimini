@@ -91,12 +91,18 @@ func update_inventory(inventory: Dictionary, bouquet_inventory: Dictionary) -> v
 	var total_flowers_to_sell: int = 0
 	var total_coin_value: int = 0
 
-	# 1. Flora catalog: Core 4 CVP Base + 6 Curated Hybrids + Legacy
-	var catalog := [
-		"rose", "daisy", "lavender", "tulip",
-		"blushbell", "velvet_dusk", "twilight_bell", "sunburst_daisy", "crown_petal", "meadow_mist",
-		"sunflower", "roselight", "golden_rose", "sunflare_spike"
-	]
+	# 1. Flora catalog: Core CVP Base + Curated Hybrids (plus legacy if player owns them)
+	var base_species: Array[String] = FlowerData.get_cvp_base_species()
+	var curated_hybrids: Array[String] = FlowerData.get_curated_hybrids()
+
+	var catalog: Array[String] = []
+	catalog.append_array(base_species)
+	catalog.append_array(curated_hybrids)
+
+	# Only check legacy species if player actually possesses them in inventory
+	for leg_id in FlowerData.get_legacy_species():
+		if int(inventory.get(leg_id, 0)) > 0:
+			catalog.append(leg_id)
 
 	for f_id in catalog:
 		var count: int = int(inventory.get(f_id, 0))
@@ -107,8 +113,8 @@ func update_inventory(inventory: Dictionary, bouquet_inventory: Dictionary) -> v
 			total_flowers_to_sell += count
 			total_coin_value += (count * base_val)
 
-		# Display if in inventory or if one of the 4 core starters
-		if count > 0 or f_id in ["rose", "daisy", "lavender", "tulip"]:
+		# Display if in inventory or if one of the core base species
+		if count > 0 or base_species.has(f_id):
 			var crate := _create_flower_crate(f_id, f_data.get("display_name", f_id.capitalize()), count, _get_flower_icon(f_id), base_val)
 			crate_grid.add_child(crate)
 

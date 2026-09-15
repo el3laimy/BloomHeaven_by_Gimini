@@ -39,30 +39,68 @@ static func _ensure_initialized() -> void:
 	_is_initialized = true
 
 
-const ALIASES: Dictionary = {
-	"crimson_rose": "rose",
-	"rose_crimson": "rose",
-	"sunny_daisy": "daisy",
-	"english_lavender": "lavender",
-	"pastel_tulip": "tulip"
-}
+static func get_canonical_id(flower_id: String) -> String:
+	_ensure_initialized()
+	if not _cached_flowers.has(flower_id):
+		return ""
+	var entry: Dictionary = _cached_flowers[flower_id]
+	if entry.get("status") == "alias":
+		var target: String = entry.get("alias_of", "")
+		if target.is_empty() or target == flower_id:
+			return "" # Broken or self-referential alias
+		if not _cached_flowers.has(target):
+			return "" # Target missing
+		var target_entry: Dictionary = _cached_flowers[target]
+		if target_entry.get("status") == "alias":
+			return "" # Circular or chained alias rejected
+		return target
+	return flower_id
 
 
 static func get_flower(flower_id: String) -> Dictionary:
 	_ensure_initialized()
-	if _cached_flowers.has(flower_id):
-		return _cached_flowers[flower_id]
-	var alias_id: String = ALIASES.get(flower_id, "")
-	if not alias_id.is_empty() and _cached_flowers.has(alias_id):
-		return _cached_flowers[alias_id]
+	var canon_id := get_canonical_id(flower_id)
+	if not canon_id.is_empty() and _cached_flowers.has(canon_id):
+		return _cached_flowers[canon_id]
 	return {}
+
+
+static func get_cvp_base_species() -> Array[String]:
+	_ensure_initialized()
+	var res: Array[String] = []
+	for f_id in _cached_flowers:
+		var entry: Dictionary = _cached_flowers[f_id]
+		if entry.get("status") == "cvp_base":
+			res.append(f_id)
+	return res
+
+
+static func get_curated_hybrids() -> Array[String]:
+	_ensure_initialized()
+	var res: Array[String] = []
+	for f_id in _cached_flowers:
+		var entry: Dictionary = _cached_flowers[f_id]
+		if entry.get("status") == "cvp_hybrid":
+			res.append(f_id)
+	return res
+
+
+static func get_legacy_species() -> Array[String]:
+	_ensure_initialized()
+	var res: Array[String] = []
+	for f_id in _cached_flowers:
+		var entry: Dictionary = _cached_flowers[f_id]
+		if entry.get("status") == "legacy":
+			res.append(f_id)
+	return res
 
 
 static func get_base_flower_ids() -> Array[String]:
 	_ensure_initialized()
 	var res: Array[String] = []
 	for f_id in _cached_flowers:
-		if not _cached_flowers[f_id].get("is_hybrid", false):
+		var entry: Dictionary = _cached_flowers[f_id]
+		if entry.get("status") != "alias" and not entry.get("is_hybrid", false):
 			res.append(f_id)
 	return res
 
@@ -71,7 +109,8 @@ static func get_hybrid_flower_ids() -> Array[String]:
 	_ensure_initialized()
 	var res: Array[String] = []
 	for f_id in _cached_flowers:
-		if _cached_flowers[f_id].get("is_hybrid", false):
+		var entry: Dictionary = _cached_flowers[f_id]
+		if entry.get("status") != "alias" and entry.get("is_hybrid", false):
 			res.append(f_id)
 	return res
 
@@ -80,16 +119,19 @@ static func get_all_flower_ids() -> Array[String]:
 	_ensure_initialized()
 	var res: Array[String] = []
 	for f_id in _cached_flowers:
-		res.append(f_id)
+		if _cached_flowers[f_id].get("status") != "alias":
+			res.append(f_id)
 	return res
 
 
 ## Deterministic breeding cross resolver for CVP Handcrafted Hybrids & Legacy Crosses
 static func get_breeding_result(parent_a: String, parent_b: String) -> String:
 	_ensure_initialized()
-	parent_a = ALIASES.get(parent_a, parent_a)
-	parent_b = ALIASES.get(parent_b, parent_b)
-	var pair := [parent_a, parent_b]
+	var canon_a := get_canonical_id(parent_a)
+	var canon_b := get_canonical_id(parent_b)
+	if canon_a.is_empty() or canon_b.is_empty():
+		return ""
+	var pair := [canon_a, canon_b]
 	pair.sort()
 
 	# CVP Curated 6 Handcrafted Hybrids
@@ -110,8 +152,8 @@ static func get_breeding_result(parent_a: String, parent_b: String) -> String:
 		return "golden_rose"
 	elif pair == ["lavender", "sunflower"]:
 		return "sunflare_spike"
-	elif parent_a == parent_b:
-		return parent_a
+	elif canon_a == canon_b:
+		return canon_a
 
 	return ""
 

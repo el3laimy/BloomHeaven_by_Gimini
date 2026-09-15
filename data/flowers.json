@@ -345,6 +345,7 @@
         "Golden Tulip"
       ],
       "description": "A regal spring tulip with cupped golden-orange petals and smooth emerald lanceolate leaves.",
+      "master_sprite": "res://assets/flowers/growth_stages/tulip_bloom_standard.png",
       "status": "cvp_base"
     },
     "daisy": {
@@ -392,6 +393,7 @@
         "White Daisy"
       ],
       "description": "A cheerful cottage garden daisy with radiant white ray petals surrounding a sunny golden central disc.",
+      "master_sprite": "res://assets/flowers/growth_stages/daisy_bloom_standard.png",
       "status": "cvp_base"
     },
     "rose_cream": {
@@ -439,6 +441,7 @@
         "Cream Tea Rose"
       ],
       "description": "An exquisite heirloom tea rose with layered porcelain-cream petals and a delicate sweet honey fragrance.",
+      "master_sprite": "res://assets/flowers/growth_stages/rose_cream_bloom_standard.png",
       "status": "legacy"
     },
     "crimson_rose": {
@@ -487,7 +490,20 @@
       ],
       "master_sprite": "res://assets/flowers/master_rose.png",
       "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage.",
-      "status": "cvp_base"
+      "status": "alias",
+      "alias_of": "rose"
+    },
+    "rose_crimson": {
+      "id": "rose_crimson",
+      "display_name": "Crimson Rose",
+      "is_hybrid": false,
+      "parents": [],
+      "base_growth_seconds": 35.0,
+      "base_value": 10,
+      "master_sprite": "res://assets/flowers/master_rose.png",
+      "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage.",
+      "status": "alias",
+      "alias_of": "rose"
     },
     "sunny_daisy": {
       "id": "sunny_daisy",
@@ -534,7 +550,9 @@
         "White Daisy"
       ],
       "description": "A cheerful cottage garden daisy with radiant white ray petals surrounding a sunny golden central disc.",
-      "status": "cvp_base"
+      "master_sprite": "res://assets/flowers/growth_stages/daisy_bloom_standard.png",
+      "status": "alias",
+      "alias_of": "daisy"
     },
     "english_lavender": {
       "id": "english_lavender",
@@ -582,7 +600,8 @@
       ],
       "master_sprite": "res://assets/flowers/master_lavender.png",
       "description": "Calming, aromatic lavender stalks that sway gently in the afternoon breeze.",
-      "status": "cvp_base"
+      "status": "alias",
+      "alias_of": "lavender"
     },
     "pastel_tulip": {
       "id": "pastel_tulip",
@@ -629,7 +648,9 @@
         "Golden Tulip"
       ],
       "description": "A regal spring tulip with cupped golden-orange petals and smooth emerald lanceolate leaves.",
-      "status": "cvp_base"
+      "master_sprite": "res://assets/flowers/growth_stages/tulip_bloom_standard.png",
+      "status": "alias",
+      "alias_of": "tulip"
     },
     "blushbell": {
       "id": "blushbell",

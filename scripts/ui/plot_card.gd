@@ -45,20 +45,11 @@ func display_plot(plot_data: Dictionary) -> void:
 		var f_data := FlowerData.get_flower(flower_id)
 		var f_name: String = f_data.get("display_name", flower_id.capitalize())
 		title_label.text = f_name
-		flower_icon.texture = _get_flower_texture(flower_id)
+		flower_icon.texture = FlowerAssetResolver.resolve_flower_texture(flower_id)
 
-		if state_name == "Mature":
-			stage_label.text = "Stage 4 · Full Bloom ★%d" % quality
-			_active_stage_idx = 3
-		elif growth_progress > 0.65:
-			stage_label.text = "Stage 3 · Bud Forming"
-			_active_stage_idx = 2
-		elif growth_progress > 0.25:
-			stage_label.text = "Stage 2 · Young Bush"
-			_active_stage_idx = 1
-		else:
-			stage_label.text = "Stage 1 · Seedling Sprout"
-			_active_stage_idx = 0
+		var is_mature: bool = (state_name == "Mature")
+		_active_stage_idx = GardenPlot.get_growth_stage_index(growth_progress, is_mature)
+		stage_label.text = GardenPlot.get_growth_stage_label(growth_progress, is_mature, quality)
 
 	# 2. Moisture droplets (4 droplets gauge)
 	_update_moisture_droplets(moisture)
@@ -100,17 +91,5 @@ func _update_timeline_selector() -> void:
 
 
 func _get_flower_texture(flower_id: String) -> Texture2D:
-	var path := ""
-	match flower_id:
-		"rose": path = "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png"
-		"lavender": path = "res://assets/flowers/growth_stages/lavender_bloom_standard.png"
-		"sunflower": path = "res://assets/flowers/master_sunflower.png"
-		"tulip": path = "res://assets/flowers/growth_stages/tulip_bloom_standard.png"
-		"daisy": path = "res://assets/flowers/growth_stages/daisy_bloom_standard.png"
-		"roselight": path = "res://assets/flowers/master_roselight.png"
-		"golden_rose": path = "res://assets/flowers/master_golden_rose.png"
-		"sunflare_spike": path = "res://assets/flowers/master_sunflare_spike.png"
-		_: path = "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png"
-	if ResourceLoader.exists(path):
-		return load(path)
-	return null
+	return FlowerAssetResolver.resolve_flower_texture(flower_id)
+

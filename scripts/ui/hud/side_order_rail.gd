@@ -49,7 +49,7 @@ func _refresh_tickets() -> void:
 				"request": req,
 				"is_completed": false,
 				"dialogue": req.get("dialogue", ""),
-				"patience": req.get("patience_sec", 60.0)
+				"patience": req.get("patience_max_seconds", 75.0)
 			}
 
 

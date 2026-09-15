@@ -16,7 +16,9 @@ var _seed_inventory: Dictionary = {}
 
 
 func _ready() -> void:
-	refresh_seeds(["rose", "lavender", "sunflower", "mystery_seed", "tulip", "daisy"])
+	var seeds: Array[String] = FlowerData.get_cvp_base_species()
+	seeds.append("mystery_seed")
+	refresh_seeds(seeds)
 
 
 func toggle() -> void:
@@ -73,13 +75,8 @@ func _create_seed_packet_card(seed_id: String) -> Control:
 	bg_btn.ignore_texture_size = true
 	bg_btn.stretch_mode = TextureButton.STRETCH_SCALE
 
-	var tex_path := ""
-	match seed_id:
-		"rose": tex_path = "res://assets/ui/seeds/seed_packet_rose.png"
-		"lavender": tex_path = "res://assets/ui/seeds/seed_packet_lavender.png"
-		"sunflower": tex_path = "res://assets/ui/seeds/seed_packet_sunflower.png"
-		_: tex_path = "res://assets/ui/seeds/seed_card_blank.png"
-
+	var specific_tex := "res://assets/ui/seeds/seed_packet_%s.png" % seed_id
+	var tex_path: String = specific_tex if ResourceLoader.exists(specific_tex) else "res://assets/ui/seeds/seed_card_blank.png"
 	if ResourceLoader.exists(tex_path):
 		bg_btn.texture_normal = load(tex_path)
 

@@ -11,7 +11,6 @@ signal combo_expired()
 
 const COMBO_WINDOW_SECONDS: float = 18.0
 const COMBO_MULTIPLIER_STEP: float = 0.25
-const DEFAULT_ORDERS: Array[String] = ["order_1", "order_2", "order_3", "order_4", "order_5", "order_6"]
 
 ## Canonical runtime state: order_runtime[order_id] = { "completed": bool, "remaining_patience": float, "max_patience": float }
 var order_runtime: Dictionary = {}
@@ -49,7 +48,7 @@ func _init() -> void:
 
 func _init_runtime() -> void:
 	order_runtime.clear()
-	for o_id in DEFAULT_ORDERS:
+	for o_id in FloristRequestData.get_all_request_ids():
 		_ensure_order_in_runtime(o_id)
 
 

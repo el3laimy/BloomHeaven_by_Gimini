@@ -13,7 +13,8 @@
       },
       "dialogue": "I'm styling a summer outdoor wedding altar. I need fragrant lavender and radiant sunflowers!",
       "coin_reward": 25,
-      "reputation_reward": 10
+      "reputation_reward": 10,
+      "patience_max_seconds": 75.0
     },
     "order_2": {
       "id": "order_2",
@@ -28,7 +29,8 @@
       },
       "dialogue": "My upcoming perfume line requires fresh velvety crimson roses distilled with aromatic lavender.",
       "coin_reward": 30,
-      "reputation_reward": 15
+      "reputation_reward": 15,
+      "patience_max_seconds": 80.0
     },
     "order_3": {
       "id": "order_3",
@@ -42,7 +44,8 @@
       },
       "dialogue": "Our café tables need a centerpiece that captures the full joy of the garden. Please craft 1 Garden Harmony bouquet!",
       "coin_reward": 50,
-      "reputation_reward": 25
+      "reputation_reward": 25,
+      "patience_max_seconds": 85.0
     },
     "order_4": {
       "id": "order_4",
@@ -56,7 +59,8 @@
       },
       "dialogue": "I collect extraordinary botanical rarities. Assemble and bring me 1 glowing Ethereal Lumina bouquet!",
       "coin_reward": 90,
-      "reputation_reward": 50
+      "reputation_reward": 50,
+      "patience_max_seconds": 90.0
     },
     "order_5": {
       "id": "order_5",
@@ -70,7 +74,8 @@
       },
       "dialogue": "A springtime ceremony demands fresh daisies and golden tulips! Please bring me 1 Spring Meadow bouquet.",
       "coin_reward": 65,
-      "reputation_reward": 30
+      "reputation_reward": 30,
+      "patience_max_seconds": 80.0
     },
     "order_6": {
       "id": "order_6",
@@ -84,7 +89,8 @@
       },
       "dialogue": "Only the finest porcelain cream tea roses will suffice for the Grand Conservatory exhibit. Bring me 1 Pure Elegance bouquet.",
       "coin_reward": 100,
-      "reputation_reward": 55
+      "reputation_reward": 55,
+      "patience_max_seconds": 95.0
     }
   }
 }

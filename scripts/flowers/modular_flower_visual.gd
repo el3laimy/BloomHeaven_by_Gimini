@@ -88,9 +88,8 @@ func _draw() -> void:
 
 func _draw_whole_authored() -> void:
 	# Approach A: Hand-curated standalone composition with strong unified artistic silhouette
-	var tex_path := "res://assets/flowers/master_%s.png" % flower_id
-	if ResourceLoader.exists(tex_path):
-		var tex: Texture2D = load(tex_path)
+	var tex: Texture2D = FlowerAssetResolver.resolve_flower_texture(flower_id)
+	if tex != null and tex != FlowerAssetResolver.get_missing_texture():
 		var spr_w: float = 64.0 * visual_scale
 		var spr_h: float = 64.0 * visual_scale
 		_draw_custom_ellipse(Vector2(0, 4), 18.0 * visual_scale, 8.0 * visual_scale, Color(0.04, 0.08, 0.05, 0.45))

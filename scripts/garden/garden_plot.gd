@@ -18,6 +18,33 @@ enum State {
 	MATURE
 }
 
+# --- Canonical Growth Stage Thresholds (Single Source of Truth) ---
+const STAGE_SEED_MAX: float = 0.25
+const STAGE_SPROUT_MAX: float = 0.60
+const STAGE_VEGETATIVE_MAX: float = 1.0
+
+static func get_growth_stage_index(progress: float, is_mature: bool = false) -> int:
+	if is_mature or progress >= STAGE_VEGETATIVE_MAX:
+		return 3 # Blooming / Stage 4
+	elif progress >= STAGE_SPROUT_MAX:
+		return 2 # Vegetative / Stage 3
+	elif progress >= STAGE_SEED_MAX:
+		return 1 # Sprout / Stage 2
+	else:
+		return 0 # Seed / Stage 1
+
+static func get_growth_stage_label(progress: float, is_mature: bool = false, p_quality: int = 1) -> String:
+	var idx := get_growth_stage_index(progress, is_mature)
+	match idx:
+		3:
+			return "Stage 4 · Full Bloom ★%d" % p_quality
+		2:
+			return "Stage 3 · Bud Forming"
+		1:
+			return "Stage 2 · Young Bush"
+		_:
+			return "Stage 1 · Seedling Sprout"
+
 @export var plot_index: int = 0
 @export var growth_speed_multiplier: float = 1.0
 
@@ -194,14 +221,12 @@ func _process(delta: float) -> void:
 func _update_growth_stage() -> void:
 	if not is_instance_valid(_flower_visual):
 		return
-	if growth_progress < 0.25:
-		_flower_visual.current_stage = FlowerVisual.Stage.SEED
-	elif growth_progress < 0.60:
-		_flower_visual.current_stage = FlowerVisual.Stage.SPROUT
-	elif growth_progress < 1.0:
-		_flower_visual.current_stage = FlowerVisual.Stage.VEGETATIVE
-	else:
-		_flower_visual.current_stage = FlowerVisual.Stage.BLOOMING
+	var stage_idx := get_growth_stage_index(growth_progress, state == State.MATURE)
+	match stage_idx:
+		0: _flower_visual.current_stage = FlowerVisual.Stage.SEED
+		1: _flower_visual.current_stage = FlowerVisual.Stage.SPROUT
+		2: _flower_visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+		3: _flower_visual.current_stage = FlowerVisual.Stage.BLOOMING
 
 
 func _update_growth_stage_visual() -> void:

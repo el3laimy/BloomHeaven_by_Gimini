@@ -303,8 +303,7 @@ func _update_card(card: Control, order_id: String, _card_index: int) -> void:
 				
 				# Flower icon
 				if flower_icon != null:
-					var icon_path: String = FLOWER_ICON_MAP.get(it_id, "res://assets/ui/customer_orders/flowers/flower_icon_hybrid_purple.png")
-					flower_icon.texture = load(icon_path)
+					flower_icon.texture = _resolve_item_texture(it_id)
 					flower_icon.visible = true
 					
 				# Count badge
@@ -439,8 +438,7 @@ func _update_bottom_carousel() -> void:
 				var req_items: Dictionary = req.get("required_items", {})
 				if not req_items.is_empty():
 					var first_item: String = req_items.keys()[0]
-					var f_path: String = FLOWER_ICON_MAP.get(first_item, "res://assets/ui/customer_orders/flowers/flower_icon_hybrid_purple.png")
-					flower_node.texture = load(f_path)
+					flower_node.texture = _resolve_item_texture(first_item)
 			
 			# Visual selected state on mini card
 			var style := StyleBoxFlat.new()
@@ -483,3 +481,13 @@ func _on_mini_card_gui_input(event: InputEvent, order_id: String) -> void:
 func _play_sfx(sfx_name: String) -> void:
 	if is_inside_tree() and get_tree() != null and get_tree().root != null and get_tree().root.has_node("AudioManager"):
 		get_tree().root.get_node("AudioManager").play_sfx(sfx_name)
+
+
+func _resolve_item_texture(it_id: String) -> Texture2D:
+	if not FlowerData.get_flower(it_id).is_empty():
+		return FlowerAssetResolver.resolve_flower_texture(it_id)
+	var fallback_path: String = FLOWER_ICON_MAP.get(it_id, "res://assets/ui/customer_orders/flowers/flower_icon_hybrid_purple.png")
+	if ResourceLoader.exists(fallback_path):
+		return load(fallback_path)
+	return FlowerAssetResolver.get_missing_texture()
+
