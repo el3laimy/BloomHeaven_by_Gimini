@@ -26,8 +26,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	position = position.lerp(_target_position, delta * smooth_speed)
-	zoom = zoom.lerp(_target_zoom, delta * smooth_speed)
+	var weight := clampf(delta * smooth_speed, 0.0, 1.0)
+	position = position.lerp(_target_position, weight)
+	zoom = zoom.lerp(_target_zoom, weight)
 
 
 func _unhandled_input(event: InputEvent) -> void:

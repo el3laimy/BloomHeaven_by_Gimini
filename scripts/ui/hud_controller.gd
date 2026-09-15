@@ -183,6 +183,8 @@ var _reveal_species_lbl: Label = null
 var _reveal_traits_lbl: Label = null
 var _reveal_preserve_btn: Button = null
 var _reveal_harvest_btn: Button = null
+var _reveal_preserve_callable: Callable = Callable()
+var _reveal_harvest_callable: Callable = Callable()
 
 # Cached game state
 var _cached_inventory: Dictionary = {}
@@ -398,6 +400,8 @@ func _build_hud_ui() -> void:
 		if is_instance_valid(_seed_bar_instance):
 			_seed_bar_instance.toggle()
 	)
+	if not _tool_dock_instance.flower_stand_toggle_requested.is_connected(_on_flower_stand_toggle_requested):
+		_tool_dock_instance.flower_stand_toggle_requested.connect(_on_flower_stand_toggle_requested)
 
 	# 3. Bottom Right Seed Box Cabinet
 	_seed_bar_instance = preload("res://scenes/ui/seed_bar.tscn").instantiate()
@@ -1214,6 +1218,9 @@ func _build_reveal_modal() -> void:
 	_reveal_harvest_btn.custom_minimum_size = Vector2(0, 32)
 	choice_box.add_child(_reveal_harvest_btn)
 
+	_reveal_preserve_btn.pressed.connect(_on_reveal_preserve_clicked)
+	_reveal_harvest_btn.pressed.connect(_on_reveal_harvest_clicked)
+
 	center.add_child(_reveal_modal)
 	_root_control.add_child(_reveal_overlay)
 
@@ -1225,6 +1232,8 @@ func show_specimen_reveal(
 ) -> void:
 	_close_all_modals()
 	_reveal_specimen = specimen
+	_reveal_preserve_callable = on_preserve_callable
+	_reveal_harvest_callable = on_harvest_callable
 
 	_reveal_species_lbl.text = "%s (%s #%s)" % [
 		FlowerData.get_flower(specimen.species_id).get("display_name", specimen.species_id),
@@ -1246,10 +1255,6 @@ func show_specimen_reveal(
 	]
 	_reveal_traits_lbl.text = trait_text
 
-	# Configure buttons
-	_reveal_preserve_btn.pressed.disconnect(_on_reveal_preserve_clicked) if _reveal_preserve_btn.pressed.is_connected(_on_reveal_preserve_clicked) else null
-	_reveal_harvest_btn.pressed.disconnect(_on_reveal_harvest_clicked) if _reveal_harvest_btn.pressed.is_connected(_on_reveal_harvest_clicked) else null
-
 	var roster_full: bool = _cached_breeding_roster.size() >= 12
 	if roster_full:
 		_reveal_preserve_btn.text = "🌿 Stock Full (12/12)"
@@ -1258,24 +1263,27 @@ func show_specimen_reveal(
 		_reveal_preserve_btn.text = "🌿 Preserve to Breeding Stock"
 		_reveal_preserve_btn.disabled = false
 
-	_reveal_preserve_btn.pressed.connect(func() -> void:
-		_reveal_overlay.visible = false
-		on_preserve_callable.call()
-	)
-	_reveal_harvest_btn.pressed.connect(func() -> void:
-		_reveal_overlay.visible = false
-		on_harvest_callable.call()
-	)
-
 	_reveal_overlay.visible = true
 
 
 func _on_reveal_preserve_clicked() -> void:
-	pass
+	if not _reveal_preserve_callable.is_valid():
+		return
+	var cb := _reveal_preserve_callable
+	_reveal_preserve_callable = Callable()
+	_reveal_harvest_callable = Callable()
+	_reveal_overlay.visible = false
+	cb.call()
 
 
 func _on_reveal_harvest_clicked() -> void:
-	pass
+	if not _reveal_harvest_callable.is_valid():
+		return
+	var cb := _reveal_harvest_callable
+	_reveal_preserve_callable = Callable()
+	_reveal_harvest_callable = Callable()
+	_reveal_overlay.visible = false
+	cb.call()
 
 
 # =========================================================================
@@ -2172,6 +2180,11 @@ func _create_action_button(parent: Control, text: String, id: String, callback: 
 	)
 	parent.add_child(btn)
 	return btn
+
+
+func _on_flower_stand_toggle_requested() -> void:
+	if is_instance_valid(_inventory_drawer):
+		_inventory_drawer.toggle()
 
 
 func _on_tool_btn_pressed(tool_id: String) -> void:

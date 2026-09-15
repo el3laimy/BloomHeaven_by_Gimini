@@ -15,6 +15,7 @@ signal reset_camera_requested()
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	if close_btn:
 		close_btn.pressed.connect(func():
 			hide()

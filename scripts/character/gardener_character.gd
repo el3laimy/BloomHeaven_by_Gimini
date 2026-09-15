@@ -239,14 +239,15 @@ func walk_to(destination: Vector2, on_arrival: Callable = Callable()) -> void:
 	_on_arrival_callback = on_arrival
 
 
-func queue_action_at_plot(plot: GardenPlot, action_name: String, on_trigger: Callable = Callable()) -> void:
+func queue_action_at_plot(plot: GardenPlot, action_name: String, on_trigger: Callable = Callable(), on_complete: Callable = Callable()) -> void:
 	if plot == null or task_queue.size() >= MAX_QUEUE_SIZE:
 		return
 
 	task_queue.append({
 		"plot": plot,
 		"action": action_name,
-		"on_trigger": on_trigger
+		"on_trigger": on_trigger,
+		"on_complete": on_complete
 	})
 	queue_updated.emit(task_queue.size())
 	queue_redraw()
@@ -256,7 +257,7 @@ func queue_action_at_plot(plot: GardenPlot, action_name: String, on_trigger: Cal
 
 
 func perform_action_at_plot(plot: GardenPlot, action_name: String, on_trigger: Callable = Callable(), on_complete: Callable = Callable()) -> void:
-	queue_action_at_plot(plot, action_name, on_trigger)
+	queue_action_at_plot(plot, action_name, on_trigger, on_complete)
 
 
 func _process_next_queue_task() -> void:
@@ -278,9 +279,13 @@ func _process_next_queue_task() -> void:
 	var stand_pos := target_plot.global_position + Vector2(0, 30.0)
 	walk_to(stand_pos, func() -> void:
 		_execute_tool_action(target_plot, current_task.action, current_task.on_trigger, func() -> void:
+			var cb: Callable = current_task.get("on_complete", Callable())
+			current_task["on_complete"] = Callable()
 			if not task_queue.is_empty():
 				task_queue.pop_front()
 			queue_updated.emit(task_queue.size())
+			if cb.is_valid():
+				cb.call()
 			_process_next_queue_task()
 		)
 	)
@@ -299,6 +304,9 @@ func clear_queue() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if is_inside_tree() and not can_process():
+		return
+
 	if not character_enabled:
 		velocity = Vector2.ZERO
 		is_moving = false

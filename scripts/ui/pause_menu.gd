@@ -16,6 +16,7 @@ signal main_menu_requested()
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	if resume_btn:
 		resume_btn.pressed.connect(func():
 			hide()
@@ -33,3 +34,12 @@ func _ready() -> void:
 		main_menu_btn.pressed.connect(func():
 			main_menu_requested.emit()
 		)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
+		hide()
+		resume_requested.emit()
+		get_viewport().set_input_as_handled()

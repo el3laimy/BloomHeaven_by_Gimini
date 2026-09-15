@@ -188,6 +188,9 @@ func _update_bed_visual() -> void:
 
 
 func _process(delta: float) -> void:
+	if is_inside_tree() and not can_process():
+		return
+
 	if is_watered:
 		water_duration_remaining -= delta
 		if water_duration_remaining <= 0.0:

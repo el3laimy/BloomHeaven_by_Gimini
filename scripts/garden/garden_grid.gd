@@ -127,6 +127,45 @@ func set_speed_multiplier(multiplier: float) -> void:
 		plot.growth_speed_multiplier = multiplier
 
 
+func get_plot_spacing() -> float:
+	if plots.size() < 2:
+		return 0.0
+	var min_dist: float = INF
+	for i in range(plots.size()):
+		for j in range(i + 1, plots.size()):
+			var d: float = plots[i].position.distance_to(plots[j].position)
+			if d > 0.1 and d < min_dist:
+				min_dist = d
+	return min_dist if min_dist != INF else 0.0
+
+
+func get_adjacent_plots(target_plot: GardenPlot) -> Array[GardenPlot]:
+	var result: Array[GardenPlot] = []
+	if target_plot == null or not is_instance_valid(target_plot):
+		return result
+	var min_spacing := get_plot_spacing()
+	if min_spacing <= 0.0:
+		return result
+	var threshold: float = min_spacing * 1.55
+	for p in plots:
+		if p == target_plot or not is_instance_valid(p):
+			continue
+		if target_plot.position.distance_to(p.position) <= threshold:
+			result.append(p)
+	result.sort_custom(func(a: GardenPlot, b: GardenPlot) -> bool:
+		return target_plot.position.distance_squared_to(a.position) < target_plot.position.distance_squared_to(b.position)
+	)
+	return result
+
+
+func get_nearest_valid_neighbor(target_plot: GardenPlot, predicate: Callable = Callable()) -> GardenPlot:
+	var adjacent := get_adjacent_plots(target_plot)
+	for p in adjacent:
+		if not predicate.is_valid() or predicate.call(p):
+			return p
+	return null
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_check_hover()

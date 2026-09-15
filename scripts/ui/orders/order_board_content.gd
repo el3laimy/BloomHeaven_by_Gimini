@@ -189,21 +189,21 @@ func _on_card_action_pressed(card_index: int) -> void:
 		return
 	var order_id: String = _active_orders[card_index]
 	if _can_fulfill_order(order_id):
-		_play_sfx("sfx_coin")
+		_play_sfx("coin")
 		fulfill_requested.emit(order_id)
 	else:
-		_play_sfx("sfx_click")
+		_play_sfx("click")
 		select_order(order_id)
 
 
 func _prev_carousel() -> void:
-	_play_sfx("sfx_click")
+	_play_sfx("click")
 	_carousel_offset = max(0, _carousel_offset - 1)
 	_update_bottom_carousel()
 
 
 func _next_carousel() -> void:
-	_play_sfx("sfx_click")
+	_play_sfx("click")
 	if _carousel_offset + 4 < _active_orders.size():
 		_carousel_offset += 1
 	_update_bottom_carousel()
@@ -426,65 +426,109 @@ func _update_live_timers() -> void:
 func _update_bottom_carousel() -> void:
 	if mini_cards_row == null:
 		return
-	var mini_cards := mini_cards_row.get_children()
-	for i in range(mini_cards.size()):
-		var m_card: Control = mini_cards[i]
-		var order_idx := _carousel_offset + i
-		if order_idx < _active_orders.size():
-			m_card.visible = true
-			var o_id: String = _active_orders[order_idx]
-			var req := FloristRequestData.get_request(o_id)
-			var cust_name: String = req.get("customer_name", "Maya")
-			
-			var port_node: TextureRect = m_card.find_child("Portrait", true, false) as TextureRect
-			if port_node != null:
-				var p_path: String = CUSTOMER_PORTRAIT_MAP.get(cust_name, "res://assets/ui/orders/customers/circular/circ_customer_01_florist.png")
-				port_node.texture = load(p_path)
-				
-			var flower_node: TextureRect = m_card.find_child("Flower", true, false) as TextureRect
-			if flower_node != null:
-				var req_items: Dictionary = req.get("required_items", {})
-				if not req_items.is_empty():
-					var first_item: String = req_items.keys()[0]
-					flower_node.texture = _resolve_item_texture(first_item)
-			
-			# Visual selected state on mini card
-			var style := StyleBoxFlat.new()
-			style.corner_radius_top_left = 6
-			style.corner_radius_top_right = 6
-			style.corner_radius_bottom_right = 6
-			style.corner_radius_bottom_left = 6
-			if o_id == _selected_order_id:
-				style.bg_color = Color(1.0, 0.98, 0.93, 0.98)
-				style.border_width_left = 2
-				style.border_width_top = 2
-				style.border_width_right = 2
-				style.border_width_bottom = 2
-				style.border_color = Color(0.92, 0.76, 0.35, 1.0) # Golden active border
-				style.shadow_color = Color(0.85, 0.65, 0.2, 0.35)
-				style.shadow_size = 3
-			else:
-				style.bg_color = Color(0.99, 0.97, 0.92, 0.96)
-				style.border_width_left = 1
-				style.border_width_top = 1
-				style.border_width_right = 1
-				style.border_width_bottom = 1
-				style.border_color = Color(0.85, 0.77, 0.65, 0.95)
-				style.shadow_color = Color(0.15, 0.08, 0.03, 0.2)
-				style.shadow_size = 2
-			m_card.add_theme_stylebox_override("panel", style)
-			
-			# Wire touch click on mini card
-			if not m_card.gui_input.is_connected(_on_mini_card_gui_input):
-				m_card.gui_input.connect(_on_mini_card_gui_input.bind(o_id))
-		else:
-			m_card.visible = false
+
+	# Remove and free previous instances to prevent signal/node accumulation
+	for child in mini_cards_row.get_children():
+		child.queue_free()
+		mini_cards_row.remove_child(child)
+
+	var count_to_show: int = min(4, max(0, _active_orders.size() - _carousel_offset))
+	for i in range(count_to_show):
+		var order_idx: int = _carousel_offset + i
+		var o_id: String = _active_orders[order_idx]
+		var card := _create_mini_card_instance(o_id)
+		mini_cards_row.add_child(card)
 
 
-func _on_mini_card_gui_input(event: InputEvent, order_id: String) -> void:
+func _create_mini_card_instance(o_id: String) -> PanelContainer:
+	var m_card := PanelContainer.new()
+	m_card.custom_minimum_size = Vector2(65, 58)
+	m_card.set_meta("order_id", o_id)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 3)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_right", 3)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	m_card.add_child(margin)
+
+	var content_hbox := HBoxContainer.new()
+	content_hbox.add_theme_constant_override("separation", 2)
+	margin.add_child(content_hbox)
+
+	var left_vbox := VBoxContainer.new()
+	left_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	content_hbox.add_child(left_vbox)
+
+	var port_node := TextureRect.new()
+	port_node.name = "Portrait"
+	port_node.custom_minimum_size = Vector2(26, 26)
+	port_node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	port_node.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	left_vbox.add_child(port_node)
+
+	var right_vbox := VBoxContainer.new()
+	right_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	content_hbox.add_child(right_vbox)
+
+	var flower_node := TextureRect.new()
+	flower_node.name = "Flower"
+	flower_node.custom_minimum_size = Vector2(26, 26)
+	flower_node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flower_node.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	right_vbox.add_child(flower_node)
+
+	# Configure customer portrait & flower texture
+	var req := FloristRequestData.get_request(o_id)
+	var cust_name: String = req.get("customer_name", "Maya")
+	var p_path: String = CUSTOMER_PORTRAIT_MAP.get(cust_name, "res://assets/ui/orders/customers/circular/circ_customer_01_florist.png")
+	if ResourceLoader.exists(p_path):
+		port_node.texture = load(p_path)
+
+	var req_items: Dictionary = req.get("required_items", {})
+	if not req_items.is_empty():
+		var first_item: String = req_items.keys()[0]
+		flower_node.texture = _resolve_item_texture(first_item)
+
+	# Visual styling based on selected state
+	var style := StyleBoxFlat.new()
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	if o_id == _selected_order_id:
+		style.bg_color = Color(1.0, 0.98, 0.93, 0.98)
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.92, 0.76, 0.35, 1.0)
+		style.shadow_color = Color(0.85, 0.65, 0.2, 0.35)
+		style.shadow_size = 3
+	else:
+		style.bg_color = Color(0.99, 0.97, 0.92, 0.96)
+		style.border_width_left = 1
+		style.border_width_top = 1
+		style.border_width_right = 1
+		style.border_width_bottom = 1
+		style.border_color = Color(0.85, 0.77, 0.65, 0.95)
+		style.shadow_color = Color(0.15, 0.08, 0.03, 0.2)
+		style.shadow_size = 2
+	m_card.add_theme_stylebox_override("panel", style)
+
+	# Connect gui_input exactly ONCE at instance creation with bound card
+	m_card.gui_input.connect(_on_mini_card_gui_input.bind(m_card))
+
+	return m_card
+
+
+func _on_mini_card_gui_input(event: InputEvent, card: Control) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_play_sfx("sfx_click")
-		select_order(order_id)
+		var o_id: String = card.get_meta("order_id", "")
+		_play_sfx("click")
+		select_order(o_id)
 
 func _play_sfx(sfx_name: String) -> void:
 	if is_inside_tree() and get_tree() != null and get_tree().root != null and get_tree().root.has_node("AudioManager"):

@@ -10,6 +10,7 @@ const SaveManagerScript := preload("res://scripts/core/save_manager.gd")
 const PauseMenuScene := preload("res://scenes/ui/pause_menu.tscn")
 const SettingsMenuScene := preload("res://scenes/ui/settings_menu.tscn")
 const TutorialOverlayScene := preload("res://scenes/ui/tutorial_overlay.tscn")
+const BreedingService := preload("res://scripts/domain/breeding_service.gd")
 
 @onready var environment: Node2D = $GardenEnvironment
 @onready var garden_grid: GardenGrid = $GardenGrid
@@ -143,9 +144,18 @@ var _settings_menu: SettingsMenu = null
 var _tutorial_overlay: TutorialOverlay = null
 var _auto_save_timer: float = 0.0
 var tutorial_completed: bool = false
+var _rmb_down: bool = false
+var _rmb_dragged: bool = false
+var _rmb_press_pos: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	if not InputMap.has_action("cancel_action_queue"):
+		InputMap.add_action("cancel_action_queue")
+		var key_ev := InputEventKey.new()
+		key_ev.keycode = KEY_BACKSPACE
+		InputMap.action_add_event("cancel_action_queue", key_ev)
+
 	var loaded: bool = _load_game_state()
 	if not loaded:
 		_init_new_game_starter_seeds()
@@ -166,6 +176,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not can_process():
+		return
+
 	if is_instance_valid(garden_grid) and is_instance_valid(garden_grid.selected_plot):
 		hud.update_plot_info(garden_grid.selected_plot)
 
@@ -184,6 +197,11 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("cancel_action_queue"):
+		_cancel_action_queue()
+		get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
 		if is_instance_valid(hud) and hud.has_method("has_active_modal") and hud.has_active_modal():
 			hud.close_top_modal()
@@ -231,10 +249,26 @@ func _unhandled_input(event: InputEvent) -> void:
 						character.set_active_tool("fertilizer")
 					_play_sfx("click")
 					hud.show_toast("🧪 Tool: Organic Fertilizer [5]", Color(0.4, 1.0, 0.6))
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-		if is_instance_valid(character):
-			character.clear_queue()
-			_play_sfx("click")
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
+		if event.pressed:
+			_rmb_down = true
+			_rmb_dragged = false
+			_rmb_press_pos = event.position
+		else:
+			if _rmb_down and not _rmb_dragged:
+				_cancel_action_queue()
+			_rmb_down = false
+			_rmb_dragged = false
+	elif event is InputEventMouseMotion and _rmb_down:
+		if not _rmb_dragged and event.position.distance_to(_rmb_press_pos) > 8.0:
+			_rmb_dragged = true
+
+
+func _cancel_action_queue() -> void:
+	if is_instance_valid(character):
+		character.clear_queue()
+		_play_sfx("click")
+		if hud != null:
 			hud.show_toast("🧹 Action Queue Cleared", Color(0.7, 0.7, 0.7))
 
 
@@ -242,7 +276,10 @@ func _setup_menus() -> void:
 	# Instantiate Pause Menu
 	_pause_menu = PauseMenuScene.instantiate() as PauseMenu
 	_pause_menu.hide()
-	_pause_menu.resume_requested.connect(func(): _pause_menu.hide())
+	_pause_menu.resume_requested.connect(func():
+		_pause_menu.hide()
+		get_tree().paused = false
+	)
 	_pause_menu.settings_requested.connect(func():
 		if _settings_menu:
 			_settings_menu.show()
@@ -252,6 +289,7 @@ func _setup_menus() -> void:
 		hud.show_toast("💾 Game saved successfully!", Color(0.6, 1.0, 0.7))
 	)
 	_pause_menu.main_menu_requested.connect(func():
+		get_tree().paused = false
 		_save_game_state()
 		get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 	)
@@ -275,8 +313,10 @@ func _toggle_pause_menu() -> void:
 		return
 	if _pause_menu.visible:
 		_pause_menu.hide()
+		get_tree().paused = false
 	else:
 		_pause_menu.show()
+		get_tree().paused = true
 
 
 func _save_game_state() -> void:
@@ -573,16 +613,13 @@ func _on_plot_prune_window_opened(plot: GardenPlot) -> void:
 
 
 func _water_adjacent_plot(target_plot: GardenPlot) -> void:
-	if not is_instance_valid(garden_grid):
+	if not is_instance_valid(garden_grid) or target_plot == null:
 		return
-	var plots: Array = garden_grid.plots
-	var target_idx: int = plots.find(target_plot)
-	if target_idx != -1:
-		var adj_idx: int = target_idx + 1 if (target_idx % 2 == 0) else target_idx - 1
-		if adj_idx >= 0 and adj_idx < plots.size():
-			var adj_plot: GardenPlot = plots[adj_idx] as GardenPlot
-			if adj_plot != null and adj_plot.state == GardenPlot.State.GROWING and not adj_plot.is_watered:
-				adj_plot.water()
+	var neighbor: GardenPlot = garden_grid.get_nearest_valid_neighbor(target_plot, func(p: GardenPlot) -> bool:
+		return p.state == GardenPlot.State.GROWING and not p.is_watered
+	)
+	if neighbor != null:
+		neighbor.water()
 
 
 func _apply_all_active_upgrades() -> void:
@@ -708,6 +745,13 @@ func _on_flower_revealed(flower_id: String, plot: GardenPlot) -> void:
 
 
 func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int) -> void:
+	var val_res := BreedingService.validate_pair(parent_a_id, parent_b_id, null, null, flower_inventory, breeding_roster)
+	if not val_res.get("valid", false):
+		_play_sfx("error")
+		if hud != null:
+			hud.show_toast(val_res.get("error", "Breeding validation failed!"), Color(0.9, 0.4, 0.4))
+		return
+
 	var specimen_a: FlowerSpecimen = null
 	var specimen_b: FlowerSpecimen = null
 	var deduct_inventory_a: String = ""
@@ -789,7 +833,7 @@ func _on_craft_bouquet_requested(bouquet_id: String) -> void:
 			hud.show_toast(res.get("error", "Cannot craft bouquet!"), Color(0.9, 0.4, 0.4))
 		return
 
-	_play_sfx("craft")
+	_play_sfx("harvest")
 	_sync_hud_state()
 	if is_instance_valid(hud):
 		hud.show_toast("💐 Crafted 1 %s!" % res.get("display_name", bouquet_id), Color(0.95, 0.80, 0.90))

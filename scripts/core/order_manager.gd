@@ -249,7 +249,7 @@ func serialize() -> Dictionary:
 
 
 func deserialize(data: Dictionary) -> void:
-	if data.has("order_runtime") and data["order_runtime"] is Dictionary:
+	if data.has("order_runtime") and data["order_runtime"] is Dictionary and not data["order_runtime"].is_empty():
 		order_runtime = data["order_runtime"].duplicate(true)
 	else:
 		_init_runtime()

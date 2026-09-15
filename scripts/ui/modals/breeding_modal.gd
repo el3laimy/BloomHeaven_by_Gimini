@@ -42,6 +42,7 @@ var basic_inventory: Dictionary = {}
 var _active_tab: int = 0 # 0: Garden Flowers, 1: Preserved Roster
 
 static var _flower_tex_cache: Dictionary = {}
+const BreedingService := preload("res://scripts/domain/breeding_service.gd")
 
 
 func _ready() -> void:
@@ -424,47 +425,58 @@ func _update_slots_ui() -> void:
 				_slot_b_clear_btn.visible = false
 
 	# 3. Dynamic Outcome Simulation & Crucible Prediction
-	var can_breed: bool = not selected_parent_a_id.is_empty() and not selected_parent_b_id.is_empty()
+	var val_res: Dictionary = BreedingService.validate_pair(
+		selected_parent_a_id,
+		selected_parent_b_id,
+		selected_specimen_a,
+		selected_specimen_b,
+		basic_inventory,
+		available_roster
+	)
+	var can_breed: bool = val_res.get("valid", false)
 	if _breed_btn != null:
 		_breed_btn.disabled = not can_breed
 
 	if _preview_label != null:
-		if can_breed:
-			var resolved_hybrid := GeneticsEngine.resolve_species(selected_parent_a_id, selected_parent_b_id)
-			if not resolved_hybrid.is_empty() and resolved_hybrid != selected_parent_a_id:
-				# Emergent hybrid discovery
-				var h_data := FlowerData.get_flower(resolved_hybrid)
-				var h_name: String = h_data.get("display_name", resolved_hybrid.capitalize())
-				_preview_label.text = "✨ Emergent Hybrid: %s!\nCombines %s with %s (100%% Pollination Rate)" % [
-					h_name,
-					FlowerData.get_flower(selected_parent_a_id).get("display_name", selected_parent_a_id),
-					FlowerData.get_flower(selected_parent_b_id).get("display_name", selected_parent_b_id)
-				]
-				_preview_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
-				if _preview_tex != null:
-					_preview_tex.texture = get_flower_texture(resolved_hybrid)
-					_preview_tex.visible = true
-				if _breed_btn != null:
-					_breed_btn.text = "✨ Pollinate & Harvest %s Seed 🌾" % h_name
-			elif selected_parent_a_id == selected_parent_b_id:
-				# Purebred Lineage Refinement
-				var sp_name: String = FlowerData.get_flower(selected_parent_a_id).get("display_name", selected_parent_a_id)
-				_preview_label.text = "🌱 Purebred Lineage Refinement (%s)\nReinforces heritable vigor, fragrance rating & petal size." % sp_name
-				_preview_label.add_theme_color_override("font_color", Color(0.5, 0.95, 0.7))
-				if _preview_tex != null:
-					_preview_tex.texture = get_flower_texture(selected_parent_a_id)
-					_preview_tex.visible = true
-				if _breed_btn != null:
-					_breed_btn.text = "✨ Pollinate Purebred %s Seed 🌾" % sp_name
+		if not selected_parent_a_id.is_empty() and not selected_parent_b_id.is_empty():
+			if can_breed:
+				var resolved_hybrid: String = val_res.get("result_species", "")
+				var species_a: String = selected_specimen_a.species_id if selected_specimen_a != null else selected_parent_a_id
+				var species_b: String = selected_specimen_b.species_id if selected_specimen_b != null else selected_parent_b_id
+				if not resolved_hybrid.is_empty() and not val_res.get("is_purebred", false):
+					# Emergent hybrid discovery
+					var h_data := FlowerData.get_flower(resolved_hybrid)
+					var h_name: String = h_data.get("display_name", resolved_hybrid.capitalize())
+					_preview_label.text = "✨ Emergent Hybrid: %s!\nCombines %s with %s (100%% Pollination Rate)" % [
+						h_name,
+						FlowerData.get_flower(species_a).get("display_name", species_a),
+						FlowerData.get_flower(species_b).get("display_name", species_b)
+					]
+					_preview_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
+					if _preview_tex != null:
+						_preview_tex.texture = get_flower_texture(resolved_hybrid)
+						_preview_tex.visible = true
+					if _breed_btn != null:
+						_breed_btn.text = "✨ Pollinate & Harvest %s Seed 🌾" % h_name
+				else:
+					# Purebred Lineage Refinement
+					var sp_name: String = FlowerData.get_flower(species_a).get("display_name", species_a)
+					_preview_label.text = "🌱 Purebred Lineage Refinement (%s)\nReinforces heritable vigor, fragrance rating & petal size." % sp_name
+					_preview_label.add_theme_color_override("font_color", Color(0.5, 0.95, 0.7))
+					if _preview_tex != null:
+						_preview_tex.texture = get_flower_texture(species_a)
+						_preview_tex.visible = true
+					if _breed_btn != null:
+						_breed_btn.text = "✨ Pollinate Purebred %s Seed 🌾" % sp_name
 			else:
-				# Incompatible cross
-				_preview_label.text = "⚠️ Incompatible Cross\nThese species cannot pollinate together. Try:\n🌹 Rose + 🌼 Daisy (Blushbell)\n🌹 Rose + 🪻 Lavender (Velvet Dusk)\n🪻 Lavender + 🌷 Tulip (Twilight Bell)\n🌼 Daisy + 🌷 Tulip (Sunburst Daisy)\n🌹 Rose + 🌷 Tulip (Crown Petal)\n🌼 Daisy + 🪻 Lavender (Meadow Mist)"
+				var err: String = val_res.get("error", "Cannot breed selected pair.")
+				_preview_label.text = "⚠️ %s\nThese species cannot pollinate together. Try:\n🌹 Rose + 🌼 Daisy (Blushbell)\n🌹 Rose + 🪻 Lavender (Velvet Dusk)\n🪻 Lavender + 🌷 Tulip (Twilight Bell)\n🌼 Daisy + 🌷 Tulip (Sunburst Daisy)\n🌹 Rose + 🌷 Tulip (Crown Petal)\n🌼 Daisy + 🪻 Lavender (Meadow Mist)" % err
 				_preview_label.add_theme_color_override("font_color", Color(1.0, 0.65, 0.4))
 				if _preview_tex != null:
 					_preview_tex.visible = false
 				if _breed_btn != null:
 					_breed_btn.disabled = true
-					_breed_btn.text = "⚠️ Incompatible Species"
+					_breed_btn.text = "⚠️ " + err
 		else:
 			_preview_label.text = "Select two parent specimens to simulate genetic inheritance."
 			_preview_label.add_theme_color_override("font_color", Color(0.7, 0.75, 0.7))
@@ -489,7 +501,15 @@ func _get_flower_trait_summary(species_id: String, specimen: FlowerSpecimen) -> 
 
 
 func _on_breed_clicked() -> void:
-	if selected_parent_a_id.is_empty() or selected_parent_b_id.is_empty():
+	var val_res: Dictionary = BreedingService.validate_pair(
+		selected_parent_a_id,
+		selected_parent_b_id,
+		selected_specimen_a,
+		selected_specimen_b,
+		basic_inventory,
+		available_roster
+	)
+	if not val_res.get("valid", false):
 		return
 
 	_play_harvest_chime()

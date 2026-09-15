@@ -37,24 +37,56 @@ func _init() -> void:
 	_preload_audio_streams()
 
 
+const CANONICAL_SFX_IDS: Array[String] = [
+	"click", "coin", "plant", "water", "prune", "harvest", "upgrade", "error", "step"
+]
+
+const SFX_ALIASES: Dictionary = {
+	"sfx_click": "click",
+	"sfx_coin": "coin",
+	"sfx_plant": "plant",
+	"sfx_water": "water",
+	"sfx_prune": "prune",
+	"sfx_harvest": "harvest",
+	"sfx_upgrade": "upgrade",
+	"sfx_error": "error",
+	"sfx_step": "step",
+	"craft": "harvest"
+}
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_ensure_audio_buses()
 	_setup_audio_players()
 
 
+func _ensure_audio_buses() -> void:
+	if AudioServer.get_bus_index("Music") == -1:
+		AudioServer.add_bus()
+		var idx := AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(idx, "Music")
+		AudioServer.set_bus_send(idx, "Master")
+	if AudioServer.get_bus_index("SFX") == -1:
+		AudioServer.add_bus()
+		var idx := AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(idx, "SFX")
+		AudioServer.set_bus_send(idx, "Master")
+
+
 func _setup_audio_players() -> void:
-	# Pool of SFX players for polyphonic sounds
+	# Pool of SFX players routed to SFX bus
 	for i in range(SFX_POOL_SIZE):
 		var p := AudioStreamPlayer.new()
 		p.name = "SFXPlayer_%d" % i
-		p.bus = "Master"
+		p.bus = "SFX"
 		add_child(p)
 		_sfx_players.append(p)
 
-	# Dedicated looping music player
+	# Dedicated looping music player routed to Music bus
 	_music_player = AudioStreamPlayer.new()
 	_music_player.name = "MusicPlayer"
-	_music_player.bus = "Master"
+	_music_player.bus = "Music"
 	_music_player.volume_db = music_volume_db
 	add_child(_music_player)
 
@@ -85,8 +117,14 @@ func play_sfx(sfx_name: String, pitch_randomness: float = 0.06, volume_offset_db
 	if is_muted or _sfx_players.is_empty():
 		return
 
-	var stream: AudioStream = _sfx_cache.get(sfx_name, null)
+	var resolved_name := sfx_name
+	if SFX_ALIASES.has(sfx_name):
+		resolved_name = SFX_ALIASES[sfx_name]
+		push_warning("AudioManager: Legacy SFX ID '%s' used; routed to canonical '%s'." % [sfx_name, resolved_name])
+
+	var stream: AudioStream = _sfx_cache.get(resolved_name, null)
 	if stream == null:
+		push_warning("AudioManager: Unknown SFX ID '%s'." % sfx_name)
 		return
 
 	# Round-robin player selection from pool
