@@ -153,9 +153,8 @@ var _auto_save_timer: float = 0.0
 
 
 func _ready() -> void:
-	if SaveManagerScript.has_save():
-		_load_game_state()
-	else:
+	var loaded: bool = _load_game_state()
+	if not loaded:
 		_init_new_game_starter_seeds()
 	_init_starter_breeding_stock()
 	_setup_menus()
@@ -167,7 +166,7 @@ func _ready() -> void:
 	hud.update_breeding_roster(breeding_roster)
 	_start_ambient_music()
 	
-	if not SaveManagerScript.has_save() and _tutorial_overlay != null:
+	if not loaded and _tutorial_overlay != null:
 		_tutorial_overlay.show_step(0)
 	else:
 		hud.show_toast("🌸 Welcome to BloomHaven!", Color(0.65, 0.95, 0.75))
@@ -301,6 +300,7 @@ func _save_game_state() -> void:
 
 	var state_data: Dictionary = {
 		"coins": coins,
+		"specimen_counter": GeneticsEngine.get_specimen_counter(),
 		"inventory": flower_inventory.get_legacy_view(),
 		"flower_inventory_storage": flower_inventory.serialize(),
 		"seed_inventory": seed_inventory.serialize(),
@@ -321,12 +321,14 @@ func _save_game_state() -> void:
 	SaveManagerScript.save_game(state_data)
 
 
-func _load_game_state() -> void:
+func _load_game_state() -> bool:
 	var data := SaveManagerScript.load_game()
 	if data.is_empty():
-		return
+		return false
 
 	coins = data.get("coins", coins)
+	var saved_counter: int = int(data.get("specimen_counter", 100))
+	GeneticsEngine.set_specimen_counter(saved_counter)
 
 	if data.has("flower_inventory_storage") and data["flower_inventory_storage"] is Dictionary:
 		flower_inventory.deserialize(data["flower_inventory_storage"])
@@ -365,6 +367,22 @@ func _load_game_state() -> void:
 
 	if data.has("plots") and data["plots"] is Array and is_instance_valid(garden_grid):
 		SaveManagerScript.deserialize_plots(data["plots"], garden_grid.plots)
+
+	# Scan loaded specimen IDs to enforce strictly non-colliding IDs for future specimens
+	var all_loaded_ids: Array = []
+	for spec in breeding_roster:
+		if is_instance_valid(spec):
+			all_loaded_ids.append(spec.specimen_id)
+	for spec in pending_hybrid_seeds:
+		if is_instance_valid(spec):
+			all_loaded_ids.append(spec.specimen_id)
+	if is_instance_valid(garden_grid):
+		for plot in garden_grid.plots:
+			if is_instance_valid(plot) and plot.current_specimen != null:
+				all_loaded_ids.append(plot.current_specimen.specimen_id)
+	GeneticsEngine.scan_and_register_ids(all_loaded_ids)
+
+	return true
 
 
 func _init_new_game_starter_seeds() -> void:

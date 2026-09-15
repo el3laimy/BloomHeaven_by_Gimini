@@ -48,6 +48,41 @@ const STARTER_GENOTYPES: Dictionary = {
 static var _specimen_counter: int = 100
 
 
+static func get_specimen_counter() -> int:
+	return _specimen_counter
+
+
+static func set_specimen_counter(val: int) -> void:
+	_specimen_counter = maxi(_specimen_counter, val)
+
+
+static func reset_counter_for_tests(val: int = 100) -> void:
+	_specimen_counter = val
+
+
+static func register_existing_specimen_id(s_id: String) -> void:
+	if s_id.is_empty():
+		return
+	var parts := s_id.split("-")
+	if parts.size() >= 2:
+		var last_part: String = parts[parts.size() - 1]
+		if last_part.is_valid_int():
+			var num := last_part.to_int()
+			if num > _specimen_counter:
+				_specimen_counter = num
+
+
+static func scan_and_register_ids(ids: Array) -> void:
+	for item in ids:
+		if item is String:
+			register_existing_specimen_id(item)
+		elif item is FlowerSpecimen:
+			register_existing_specimen_id(item.specimen_id)
+		elif item is Dictionary and item.has("specimen_id"):
+			register_existing_specimen_id(str(item["specimen_id"]))
+
+
+
 static func resolve_species(species_a: String, species_b: String) -> String:
 	return FlowerData.get_breeding_result(species_a, species_b)
 
