@@ -33,11 +33,13 @@ static func get_active_save_path() -> String:
 
 static func has_save(target_path: String = SAVE_PATH_V3) -> bool:
 	var bak_path := target_path.get_basename() + ".bak"
-	return FileAccess.file_exists(target_path) \
-		or FileAccess.file_exists(bak_path) \
-		or FileAccess.file_exists(SAVE_PATH_V2) \
-		or FileAccess.file_exists(SAVE_PATH_V2_BAK) \
-		or FileAccess.file_exists(SAVE_PATH_V1)
+	if target_path == SAVE_PATH_V3:
+		return FileAccess.file_exists(target_path) \
+			or FileAccess.file_exists(bak_path) \
+			or FileAccess.file_exists(SAVE_PATH_V2) \
+			or FileAccess.file_exists(SAVE_PATH_V2_BAK) \
+			or FileAccess.file_exists(SAVE_PATH_V1)
+	return FileAccess.file_exists(target_path) or FileAccess.file_exists(bak_path)
 
 
 static func delete_save(target_path: String = SAVE_PATH_V3) -> bool:
@@ -47,11 +49,13 @@ static func delete_save(target_path: String = SAVE_PATH_V3) -> bool:
 	var files_to_delete: Array[String] = [
 		target_path,
 		bak_path,
-		tmp_path,
-		SAVE_PATH_V2,
-		SAVE_PATH_V2_BAK,
-		SAVE_PATH_V1
+		tmp_path
 	]
+	if target_path == SAVE_PATH_V3:
+		files_to_delete.append(SAVE_PATH_V2)
+		files_to_delete.append(SAVE_PATH_V2_BAK)
+		files_to_delete.append(SAVE_PATH_V1)
+
 	for f in files_to_delete:
 		if FileAccess.file_exists(f):
 			var err := DirAccess.remove_absolute(f)
@@ -106,6 +110,17 @@ static func validate_schema(root_dict: Dictionary) -> Dictionary:
 	if not data.has("order_runtime") or not (data["order_runtime"] is Dictionary):
 		return {"valid": false, "error": "Missing or invalid 'order_runtime'"}
 
+	for o_id in data["order_runtime"]:
+		var o_entry = data["order_runtime"][o_id]
+		if not (o_entry is Dictionary):
+			return {"valid": false, "error": "Invalid order_runtime entry for '%s' (must be Dictionary)" % str(o_id)}
+		if not o_entry.has("completed") or not (o_entry["completed"] is bool):
+			return {"valid": false, "error": "Missing or non-bool 'completed' in order_runtime['%s']" % str(o_id)}
+		if not o_entry.has("remaining_patience") or not (o_entry["remaining_patience"] is int or o_entry["remaining_patience"] is float):
+			return {"valid": false, "error": "Missing or non-numeric 'remaining_patience' in order_runtime['%s']" % str(o_id)}
+		if not o_entry.has("max_patience") or not (o_entry["max_patience"] is int or o_entry["max_patience"] is float):
+			return {"valid": false, "error": "Missing or non-numeric 'max_patience' in order_runtime['%s']" % str(o_id)}
+
 	return {"valid": true, "error": ""}
 
 
@@ -153,19 +168,26 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 			"lavender": 5
 		}
 
-	# 3. Pending Hybrids: Convert legacy unknown_hybrid_seeds string arrays -> serialized FlowerSpecimen
+	# 3. Pending Hybrids: Deterministic legacy reconstruction for historical string arrays
+	# Legacy V1/V2 only stored string IDs (unknown_hybrid_seeds: ["species_id"]).
+	# Historical genotype, phenotype, parents, and generation were not tracked in legacy schemas.
+	# We perform deterministic legacy reconstruction (preserving species_id with valid starter genetics),
+	# explicitly recording "legacy_reconstructed" for lineage, while lossless preservation is guaranteed for V3 serialized specimens.
 	if not d.has("pending_hybrid_seeds") or not (d["pending_hybrid_seeds"] is Array):
 		var pending: Array = []
 		if d.has("unknown_hybrid_seeds") and d["unknown_hybrid_seeds"] is Array:
 			for item in d["unknown_hybrid_seeds"]:
 				if item is String and not item.is_empty():
 					var starter_sp := GeneticsEngine.create_starter_specimen(item)
+					starter_sp.parent_a_id = "legacy_reconstructed"
+					starter_sp.parent_b_id = "legacy_reconstructed"
+					starter_sp.generation = 1
 					pending.append(starter_sp.serialize())
 				elif item is Dictionary:
 					pending.append(item)
 		d["pending_hybrid_seeds"] = pending
 
-	# 4. Order Runtime: Merge completed_requests + live_orders_patience
+	# 4. Order Runtime: Merge completed_requests + live_orders_patience into canonical per-order records
 	if not d.has("order_runtime") or not (d["order_runtime"] is Dictionary) or d["order_runtime"].is_empty():
 		var order_rt: Dictionary = {}
 		var comp_reqs: Dictionary = d.get("completed_requests", {})
@@ -181,25 +203,40 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 		for o_id in all_order_ids:
 			var req_data := FloristRequestData.get_request(o_id)
 			var max_p: float = float(req_data.get("patience_max_seconds", 75.0)) if not req_data.is_empty() else 75.0
-			var rem_p: float = float(live_pat.get(o_id, max_p))
 			var is_comp: bool = bool(comp_reqs.get(o_id, false))
+			var rem_p: float = float(live_pat.get(o_id, 0.0 if is_comp else max_p))
 			order_rt[o_id] = {
 				"completed": is_comp,
 				"remaining_patience": rem_p,
 				"max_patience": max_p
 			}
 		d["order_runtime"] = order_rt
+	else:
+		# Ensure every entry in existing order_runtime satisfies the canonical structure
+		for o_id in d["order_runtime"]:
+			var entry = d["order_runtime"][o_id]
+			if entry is Dictionary:
+				if not entry.has("completed"):
+					entry["completed"] = false
+				if not entry.has("max_patience"):
+					entry["max_patience"] = 75.0
+				if not entry.has("remaining_patience"):
+					entry["remaining_patience"] = float(entry.get("max_patience", 75.0))
 
 	# 5. Specimen Counter: Scan all existing specimen IDs
 	var scanned_max: int = _scan_max_specimen_id(d)
 	var existing_counter: int = int(d.get("specimen_counter", 100))
 	d["specimen_counter"] = maxi(existing_counter, scanned_max)
 
-	# 6. Ensure other standard fields exist
+	# 6. Ensure other standard CVP fields exist
 	if not d.has("coins"): d["coins"] = 0
 	if not d.has("plots"): d["plots"] = []
 	if not d.has("breeding_roster"): d["breeding_roster"] = []
 	if not d.has("bouquet_inventory"): d["bouquet_inventory"] = {}
+	if not d.has("perfume_inventory"): d["perfume_inventory"] = {}
+	if not d.has("discovered_flowers"): d["discovered_flowers"] = {}
+	if not d.has("active_upgrades"): d["active_upgrades"] = {}
+	if not d.has("tutorial_completed"): d["tutorial_completed"] = false
 
 	return out
 
@@ -213,6 +250,12 @@ static func migrate_to_latest(root_dict: Dictionary) -> Dictionary:
 	if ver == 2:
 		current = migrate_v2_to_v3(current)
 		ver = 3
+
+	# Requirement 5: Migrated payload must pass validate_schema
+	var val_res := validate_schema(current)
+	if not val_res.get("valid", false):
+		push_error("SaveManager: Migrated payload failed schema validation: %s" % str(val_res.get("error", "")))
+		return {}
 	return current
 
 
@@ -297,6 +340,10 @@ static func load_game(target_path: String = SAVE_PATH_V3) -> Dictionary:
 		if not data_v3.is_empty():
 			print("✓ [LOAD] Game state loaded successfully (%s - v3 primary)." % target_path.get_file())
 			return data_v3
+		var migrated_target := _try_read_and_migrate_legacy(target_path, -1)
+		if not migrated_target.is_empty():
+			print("✓ [LOAD] Migrated legacy save at %s -> v3." % target_path.get_file())
+			return migrated_target
 		else:
 			push_warning("SaveManager: Primary save %s is corrupt or invalid schema. Attempting recovery..." % target_path)
 
@@ -309,26 +356,28 @@ static func load_game(target_path: String = SAVE_PATH_V3) -> Dictionary:
 		else:
 			push_warning("SaveManager: Backup save %s is corrupt or invalid schema. Attempting legacy recovery..." % bak_path)
 
-	# 3. Primary V2 + Migration
-	if FileAccess.file_exists(SAVE_PATH_V2):
-		var data_v2 := _try_read_and_migrate_legacy(SAVE_PATH_V2, 2)
-		if not data_v2.is_empty():
-			print("✓ [LOAD] Migrated V2 primary save (%s -> v3)." % SAVE_PATH_V2.get_file())
-			return data_v2
+	# Global legacy fallthrough applies when loading default canonical save path
+	if target_path == SAVE_PATH_V3:
+		# 3. Primary V2 + Migration
+		if FileAccess.file_exists(SAVE_PATH_V2):
+			var data_v2 := _try_read_and_migrate_legacy(SAVE_PATH_V2, 2)
+			if not data_v2.is_empty():
+				print("✓ [LOAD] Migrated V2 primary save (%s -> v3)." % SAVE_PATH_V2.get_file())
+				return data_v2
 
-	# 4. Backup V2 + Migration
-	if FileAccess.file_exists(SAVE_PATH_V2_BAK):
-		var data_v2_bak := _try_read_and_migrate_legacy(SAVE_PATH_V2_BAK, 2)
-		if not data_v2_bak.is_empty():
-			print("✓ [LOAD] Migrated V2 backup save (%s -> v3)." % SAVE_PATH_V2_BAK.get_file())
-			return data_v2_bak
+		# 4. Backup V2 + Migration
+		if FileAccess.file_exists(SAVE_PATH_V2_BAK):
+			var data_v2_bak := _try_read_and_migrate_legacy(SAVE_PATH_V2_BAK, 2)
+			if not data_v2_bak.is_empty():
+				print("✓ [LOAD] Migrated V2 backup save (%s -> v3)." % SAVE_PATH_V2_BAK.get_file())
+				return data_v2_bak
 
-	# 5. Primary V1 + Migration
-	if FileAccess.file_exists(SAVE_PATH_V1):
-		var data_v1 := _try_read_and_migrate_legacy(SAVE_PATH_V1, 1)
-		if not data_v1.is_empty():
-			print("✓ [LOAD] Migrated V1 primary save (%s -> v3)." % SAVE_PATH_V1.get_file())
-			return data_v1
+		# 5. Primary V1 + Migration
+		if FileAccess.file_exists(SAVE_PATH_V1):
+			var data_v1 := _try_read_and_migrate_legacy(SAVE_PATH_V1, 1)
+			if not data_v1.is_empty():
+				print("✓ [LOAD] Migrated V1 primary save (%s -> v3)." % SAVE_PATH_V1.get_file())
+				return data_v1
 
 	# 6. Clean failure
 	print("[SAVE] No valid or recoverable save file found. Clean failure.")
@@ -340,22 +389,9 @@ static func serialize_plots(plots: Array) -> Array:
 	var plots_array: Array = []
 	for plot in plots:
 		if plot is GardenPlot:
-			var p_dict: Dictionary = {
-				"index": plot.plot_index,
-				"state": int(plot.state),
-				"flower_id": plot.current_flower_id,
-				"growth_progress": plot.growth_progress,
-				"is_watered": plot.is_watered,
-				"water_duration_remaining": plot.water_duration_remaining,
-				"is_mystery_seed": plot.is_mystery_seed,
-				"is_revealed": plot.is_revealed,
-				"is_pruned": plot.is_pruned,
-				"is_fertilized": plot.is_fertilized,
-				"quality": plot.quality
-			}
-			if plot.current_specimen != null:
-				p_dict["specimen"] = plot.current_specimen.serialize()
-			plots_array.append(p_dict)
+			plots_array.append(plot.to_dictionary())
+		elif plot is Dictionary:
+			plots_array.append(plot)
 	return plots_array
 
 
@@ -364,38 +400,11 @@ static func deserialize_plots(plots_array: Array, plots: Array) -> void:
 	for p_data in plots_array:
 		if not (p_data is Dictionary):
 			continue
-		var idx: int = p_data.get("index", -1)
+		var idx: int = int(p_data.get("index", -1))
 		if idx >= 0 and idx < plots.size():
-			var plot: GardenPlot = plots[idx]
-			plot.state = p_data.get("state", 0) as GardenPlot.State
-			plot.current_flower_id = p_data.get("flower_id", "")
-			plot.growth_progress = p_data.get("growth_progress", 0.0)
-			plot.is_watered = p_data.get("is_watered", false)
-			plot.water_duration_remaining = p_data.get("water_duration_remaining", 0.0)
-			plot.is_mystery_seed = p_data.get("is_mystery_seed", false)
-			plot.is_revealed = p_data.get("is_revealed", true)
-			plot.is_pruned = p_data.get("is_pruned", false)
-			plot.is_fertilized = p_data.get("is_fertilized", false)
-			plot.quality = p_data.get("quality", 1)
-
-			if p_data.has("specimen") and p_data["specimen"] is Dictionary:
-				plot.current_specimen = FlowerSpecimen.deserialize(p_data["specimen"])
-			elif not plot.current_flower_id.is_empty():
-				plot.current_specimen = GeneticsEngine.create_starter_specimen(plot.current_flower_id)
-
-			# Sync visual
-			if is_instance_valid(plot._flower_visual):
-				if plot.state != GardenPlot.State.EMPTY and not plot.current_flower_id.is_empty():
-					plot._flower_visual.flower_id = plot.current_flower_id
-					plot._flower_visual.phenotype = plot.current_specimen.phenotype if plot.current_specimen else null
-					plot._flower_visual.is_mystery = plot.is_mystery_seed
-					plot._flower_visual.is_revealed = plot.is_revealed
-					plot._flower_visual.is_pruned = plot.is_pruned
-					plot._flower_visual.visible = true
-					plot._update_growth_stage()
-				else:
-					plot._flower_visual.visible = false
-			plot.queue_redraw()
+			var plot: GardenPlot = plots[idx] as GardenPlot
+			if plot != null:
+				plot.from_dictionary(p_data)
 
 
 static func _scan_max_specimen_id(data: Dictionary) -> int:
@@ -424,16 +433,26 @@ static func _scan_max_specimen_id(data: Dictionary) -> int:
 	var plots_arr = data.get("plots", [])
 	if plots_arr is Array:
 		for p in plots_arr:
-			if p is Dictionary and p.has("specimen") and p["specimen"] is Dictionary:
-				var s_id: String = str(p["specimen"].get("specimen_id", ""))
-				if not s_id.is_empty():
-					var parts := s_id.split("-")
-					if parts.size() >= 2:
-						var last_part: String = parts[parts.size() - 1]
-						if last_part.is_valid_int():
-							var num := last_part.to_int()
-							if num > max_num:
-								max_num = num
+			var spec_obj: Variant = null
+			if p is Dictionary:
+				spec_obj = p.get("current_specimen", p.get("specimen", null))
+			elif p is GardenPlot:
+				spec_obj = p.current_specimen
+
+			var s_id: String = ""
+			if spec_obj is Dictionary:
+				s_id = str(spec_obj.get("specimen_id", ""))
+			elif spec_obj is FlowerSpecimen:
+				s_id = spec_obj.specimen_id
+
+			if not s_id.is_empty():
+				var parts := s_id.split("-")
+				if parts.size() >= 2:
+					var last_part: String = parts[parts.size() - 1]
+					if last_part.is_valid_int():
+						var num := last_part.to_int()
+						if num > max_num:
+							max_num = num
 	return max_num
 
 
@@ -459,6 +478,14 @@ static func _ensure_canonical_data_shape(state_data: Dictionary) -> Dictionary:
 		d["pending_hybrid_seeds"] = []
 	if not d.has("bouquet_inventory"):
 		d["bouquet_inventory"] = {}
+	if not d.has("perfume_inventory"):
+		d["perfume_inventory"] = {}
+	if not d.has("discovered_flowers"):
+		d["discovered_flowers"] = {}
+	if not d.has("active_upgrades"):
+		d["active_upgrades"] = {}
+	if not d.has("tutorial_completed"):
+		d["tutorial_completed"] = false
 	if not d.has("order_runtime"):
 		d["order_runtime"] = {}
 	return d
@@ -525,7 +552,11 @@ static func _try_read_and_migrate_legacy(path: String, expected_ver: int) -> Dic
 	var ver: int = int(root_dict.get("version", 0))
 	if expected_ver > 0 and ver != expected_ver:
 		return {}
+	if ver >= SAVE_SCHEMA_VERSION:
+		return {}
 	var migrated := migrate_to_latest(root_dict)
+	if migrated.is_empty():
+		return {}
 	var val_res := validate_schema(migrated)
 	if not val_res.get("valid", false):
 		return {}

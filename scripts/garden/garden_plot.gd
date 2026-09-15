@@ -361,6 +361,68 @@ func reset_to_empty_state() -> void:
 	queue_redraw()
 
 
+## Serializes complete GardenPlot domain state
+func to_dictionary() -> Dictionary:
+	var d: Dictionary = {
+		"index": plot_index,
+		"state": int(state),
+		"current_flower_id": current_flower_id,
+		"flower_id": current_flower_id, # Backwards compatibility alias
+		"growth_progress": growth_progress,
+		"is_watered": is_watered,
+		"water_duration_remaining": water_duration_remaining,
+		"water_duration_multiplier": water_duration_multiplier,
+		"is_fertilized": is_fertilized,
+		"is_pruned": is_pruned,
+		"quality": quality,
+		"is_mystery_seed": is_mystery_seed,
+		"is_revealed": is_revealed,
+		"is_hero_showcase": is_hero_showcase,
+		"current_specimen": current_specimen.serialize() if current_specimen != null else null,
+		"specimen": current_specimen.serialize() if current_specimen != null else null # Backwards compatibility alias
+	}
+	return d
+
+
+## Deserializes complete GardenPlot domain state
+func from_dictionary(d: Dictionary) -> void:
+	plot_index = int(d.get("index", plot_index))
+	state = int(d.get("state", State.EMPTY)) as State
+	current_flower_id = str(d.get("current_flower_id", d.get("flower_id", "")))
+	growth_progress = float(d.get("growth_progress", 0.0))
+	is_watered = bool(d.get("is_watered", false))
+	water_duration_remaining = float(d.get("water_duration_remaining", 0.0))
+	water_duration_multiplier = float(d.get("water_duration_multiplier", 1.0))
+	is_fertilized = bool(d.get("is_fertilized", false))
+	is_pruned = bool(d.get("is_pruned", false))
+	quality = int(d.get("quality", FlowerQuality.Tier.NORMAL))
+	is_mystery_seed = bool(d.get("is_mystery_seed", false))
+	is_revealed = bool(d.get("is_revealed", not is_mystery_seed))
+	is_hero_showcase = bool(d.get("is_hero_showcase", false))
+
+	var spec_dict: Variant = d.get("current_specimen", d.get("specimen", null))
+	if spec_dict is Dictionary:
+		current_specimen = FlowerSpecimen.deserialize(spec_dict)
+	elif not current_flower_id.is_empty():
+		current_specimen = GeneticsEngine.create_starter_specimen(current_flower_id)
+	else:
+		current_specimen = null
+
+	_update_bed_visual()
+	if is_instance_valid(_flower_visual):
+		if state != State.EMPTY and not current_flower_id.is_empty():
+			_flower_visual.flower_id = current_flower_id
+			_flower_visual.phenotype = current_specimen.phenotype if current_specimen != null else null
+			_flower_visual.is_mystery = is_mystery_seed
+			_flower_visual.is_revealed = is_revealed
+			_flower_visual.is_pruned = is_pruned
+			_flower_visual.visible = true
+			_update_growth_stage()
+		else:
+			_flower_visual.visible = false
+	queue_redraw()
+
+
 func harvest() -> Dictionary:
 	if state != State.MATURE:
 		return {}

@@ -150,6 +150,7 @@ var _pause_menu: PauseMenu = null
 var _settings_menu: SettingsMenu = null
 var _tutorial_overlay: TutorialOverlay = null
 var _auto_save_timer: float = 0.0
+var tutorial_completed: bool = false
 
 
 func _ready() -> void:
@@ -166,7 +167,7 @@ func _ready() -> void:
 	hud.update_breeding_roster(breeding_roster)
 	_start_ambient_music()
 	
-	if not loaded and _tutorial_overlay != null:
+	if not loaded and not tutorial_completed and _tutorial_overlay != null:
 		_tutorial_overlay.show_step(0)
 	else:
 		hud.show_toast("🌸 Welcome to BloomHaven!", Color(0.65, 0.95, 0.75))
@@ -273,6 +274,7 @@ func _setup_menus() -> void:
 	# Instantiate Tutorial Overlay
 	_tutorial_overlay = TutorialOverlayScene.instantiate() as TutorialOverlay
 	_tutorial_overlay.hide()
+	_tutorial_overlay.tutorial_finished.connect(func(): tutorial_completed = true)
 	hud.add_child(_tutorial_overlay)
 
 
@@ -312,7 +314,8 @@ func _save_game_state() -> void:
 		"combo_count": order_manager.combo_count if order_manager != null else 0,
 		"combo_timer": order_manager.combo_timer if order_manager != null else 0.0,
 		"discovered_flowers": discovered_flowers,
-		"active_upgrades": active_upgrades,
+		"active_upgrades": upgrade_manager.serialize() if upgrade_manager != null else active_upgrades,
+		"tutorial_completed": tutorial_completed,
 		"unknown_hybrid_seeds": legacy_unknown_seeds,
 		"pending_hybrid_seeds": pending_serialized,
 		"breeding_roster": roster_serialized,
@@ -326,7 +329,7 @@ func _load_game_state() -> bool:
 	if data.is_empty():
 		return false
 
-	coins = data.get("coins", coins)
+	coins = int(data.get("coins", coins))
 	var saved_counter: int = int(data.get("specimen_counter", 100))
 	GeneticsEngine.set_specimen_counter(saved_counter)
 
@@ -346,8 +349,12 @@ func _load_game_state() -> bool:
 	completed_requests = order_manager.completed_requests if order_manager != null else data.get("completed_requests", completed_requests)
 
 	discovered_flowers = data.get("discovered_flowers", discovered_flowers)
-	active_upgrades = data.get("active_upgrades", active_upgrades)
+	if upgrade_manager != null and data.has("active_upgrades") and data["active_upgrades"] is Dictionary:
+		upgrade_manager.deserialize(data["active_upgrades"])
+	active_upgrades = upgrade_manager.active_upgrades if upgrade_manager != null else data.get("active_upgrades", active_upgrades)
 	_apply_all_active_upgrades()
+
+	tutorial_completed = bool(data.get("tutorial_completed", false))
 
 	if data.has("pending_hybrid_seeds") and data["pending_hybrid_seeds"] is Array:
 		pending_hybrid_seeds.clear()
@@ -357,7 +364,11 @@ func _load_game_state() -> bool:
 	elif data.has("unknown_hybrid_seeds") and data["unknown_hybrid_seeds"] is Array:
 		pending_hybrid_seeds.clear()
 		for s in data["unknown_hybrid_seeds"]:
-			pending_hybrid_seeds.append(GeneticsEngine.create_starter_specimen(str(s)))
+			var reconstructed := GeneticsEngine.create_starter_specimen(str(s))
+			reconstructed.parent_a_id = "legacy_reconstructed"
+			reconstructed.parent_b_id = "legacy_reconstructed"
+			reconstructed.generation = 1
+			pending_hybrid_seeds.append(reconstructed)
 
 	if data.has("breeding_roster") and data["breeding_roster"] is Array:
 		breeding_roster.clear()
