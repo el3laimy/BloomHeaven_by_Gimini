@@ -25,13 +25,13 @@ func _run_all_tests() -> void:
 	print("==================================================")
 
 	# 1. Setup inventory
-	main_node.unknown_hybrid_seeds.clear()
-	main_node.unknown_hybrid_specimens.clear()
-	main_node.inventory["rose"] = 5
-	main_node.inventory["lavender"] = 5
-	main_node.inventory["sunflower"] = 5
-	main_node.inventory["tulip"] = 5
-	main_node.inventory["daisy"] = 5
+	main_node.pending_hybrid_seeds.clear()
+	main_node.flower_inventory.clear()
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("sunflower", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("tulip", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("daisy", FlowerQuality.Tier.NORMAL, 5)
 
 	# TEST 1: Rose + Lavender -> Roselight Bloom
 	print("-> Test 1: Breeding Rose + Lavender from inventory...")

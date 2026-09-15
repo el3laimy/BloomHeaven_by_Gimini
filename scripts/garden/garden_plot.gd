@@ -313,7 +313,7 @@ func prune() -> bool:
 
 	is_pruned = true
 	_prune_alerted = false
-	quality = FlowerQuality.Tier.PERFECT
+	quality = FlowerQuality.Tier.HERO
 	if is_instance_valid(_flower_visual):
 		_flower_visual.is_pruned = true
 
@@ -327,7 +327,7 @@ func prune() -> bool:
 		scale = Vector2(1.12, 1.12)
 		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BACK)
 
-	_spawn_floating_text("✂️ Hero Bloom (★★★)!", Color(1.0, 0.88, 0.35))
+	_spawn_floating_text("✂️ Hero Bloom (★★★★)!", Color(1.0, 0.88, 0.35))
 	queue_redraw()
 	return true
 

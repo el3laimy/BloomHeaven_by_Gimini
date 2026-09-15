@@ -201,11 +201,11 @@ func _init() -> void:
 		errors.append("Failed to create starter specimen for new species.")
 
 	# 2. Material Fee & Roster Retain
-	main_node.unknown_hybrid_seeds.clear()
-	main_node.inventory["rose"] = 1
-	main_node.inventory["lavender"] = 1
+	main_node.pending_hybrid_seeds.clear()
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 1)
+	main_node.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 1)
 	main_node._on_breed_requested("R-001", "L-001", 100)
-	if main_node.unknown_hybrid_seeds.size() != 1:
+	if main_node.pending_hybrid_seeds.size() != 1:
 		errors.append("Breeding fee / seed generation failed.")
 
 	# 3. Mystery Seed Concealment
@@ -222,14 +222,20 @@ func _init() -> void:
 	plot0.harvest()
 
 	# 4. Bouquet Crafting & Fiona Finch Orders with Tips & Combo Rush
-	main_node.inventory["rose"] = 3
-	main_node.inventory["lavender"] = 5
-	main_node.inventory["sunflower"] = 3
-	main_node.inventory["tulip"] = 3
-	main_node.inventory["daisy"] = 5
-	main_node.inventory["rose_cream"] = 3
+	main_node.flower_inventory.clear()
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 3)
+	main_node.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("sunflower", FlowerQuality.Tier.NORMAL, 3)
+	main_node.flower_inventory.add_flower("tulip", FlowerQuality.Tier.NORMAL, 3)
+	main_node.flower_inventory.add_flower("daisy", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("rose_cream", FlowerQuality.Tier.NORMAL, 3)
 	main_node.coins = 0
 	main_node.combo_count = 0
+	if main_node.order_manager != null:
+		main_node.order_manager.reset_order("order_1")
+		main_node.order_manager.reset_order("order_3")
+		main_node.order_manager.reset_order("order_5")
+		main_node.order_manager.reset_order("order_6")
 
 	main_node._on_fulfill_request_requested("order_1")
 	if main_node.coins < 25 or main_node.combo_count != 1:
@@ -366,6 +372,7 @@ func _init() -> void:
 		if not can_f.get("can_fulfill", false):
 			errors.append("OrderManager can_fulfill failed for order_1.")
 
+		om.reset_order("order_1")
 		var f_res := om.fulfill_order("order_1", test_inv, test_b_inv)
 		if not f_res.get("success", false) or f_res.get("total_coins", 0) <= 0:
 			errors.append("OrderManager fulfill_order execution failed.")

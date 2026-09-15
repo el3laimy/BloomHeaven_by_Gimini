@@ -21,14 +21,12 @@ var flower_inventory: FlowerInventory = FlowerInventory.new()
 var seed_inventory: SeedInventory = SeedInventory.new()
 var pending_hybrid_seeds: Array[FlowerSpecimen] = []
 
-var inventory: Dictionary = {
-	"rose": 0,
-	"lavender": 0,
-	"sunflower": 0,
-	"roselight": 0,
-	"golden_rose": 0,
-	"sunflare_spike": 0
-}
+## Read-only projection of flower_inventory for legacy systems and HUD
+var inventory: Dictionary:
+	get:
+		return flower_inventory.get_legacy_view()
+	set(_value):
+		push_warning("main.inventory is a read-only projection of flower_inventory; mutate flower_inventory directly")
 
 var bouquet_inventory: Dictionary = {
 	"garden_harmony": 0,
@@ -124,8 +122,23 @@ var discovered_flowers: Dictionary = {
 	"daisy": true,
 	"rose_cream": true
 }
+## Read-only projection of pending_hybrid_seeds for legacy systems
+var unknown_hybrid_seeds: Array[String]:
+	get:
+		var arr: Array[String] = []
+		for sp in pending_hybrid_seeds:
+			if is_instance_valid(sp):
+				arr.append(sp.species_id)
+		return arr
+	set(_value):
+		push_warning("main.unknown_hybrid_seeds is a read-only projection of pending_hybrid_seeds; mutate pending_hybrid_seeds directly")
 
-var unknown_hybrid_seeds: Array[String] = []
+## Read-only alias for pending_hybrid_seeds for legacy callers
+var unknown_hybrid_specimens: Array:
+	get:
+		return pending_hybrid_seeds
+	set(_value):
+		push_warning("main.unknown_hybrid_specimens is an alias for pending_hybrid_seeds; mutate pending_hybrid_seeds directly")
 var breeding_roster: Array[FlowerSpecimen] = []
 
 var current_tool: String = "plant"
@@ -141,7 +154,6 @@ var _auto_save_timer: float = 0.0
 
 func _ready() -> void:
 	_load_game_state()
-	_init_starter_seeds_if_empty()
 	_init_starter_breeding_stock()
 	_setup_menus()
 	_connect_signals()
@@ -271,49 +283,6 @@ func _toggle_pause_menu() -> void:
 		_pause_menu.show()
 
 
-func _init_starter_seeds_if_empty() -> void:
-	if seed_inventory.get_all_seeds().is_empty():
-		seed_inventory.add_seeds("rose", 10)
-		seed_inventory.add_seeds("lavender", 10)
-		seed_inventory.add_seeds("sunflower", 10)
-		seed_inventory.add_seeds("tulip", 10)
-		seed_inventory.add_seeds("daisy", 10)
-
-
-func _sync_inventory_to_domain() -> void:
-	for f_id in inventory:
-		var domain_count: int = flower_inventory.get_flower_count(f_id)
-		var legacy_count: int = int(inventory[f_id])
-		if legacy_count > domain_count:
-			flower_inventory.add_flower(f_id, FlowerQuality.Tier.NORMAL, legacy_count - domain_count)
-		elif legacy_count < domain_count:
-			flower_inventory.consume_requirements({f_id: domain_count - legacy_count}, "lowest_first")
-	for f_id in flower_inventory.get_all_flowers():
-		if not inventory.has(f_id):
-			var count: int = flower_inventory.get_flower_count(f_id)
-			if count > 0:
-				flower_inventory.consume_requirements({f_id: count}, "lowest_first")
-	inventory = flower_inventory.get_legacy_view()
-
-
-func _sync_hybrid_seeds() -> void:
-	if unknown_hybrid_seeds.is_empty() and not pending_hybrid_seeds.is_empty():
-		pending_hybrid_seeds.clear()
-	elif unknown_hybrid_seeds.size() < pending_hybrid_seeds.size():
-		var trimmed: Array[FlowerSpecimen] = []
-		for i in range(unknown_hybrid_seeds.size()):
-			trimmed.append(pending_hybrid_seeds[i])
-		pending_hybrid_seeds = trimmed
-	elif unknown_hybrid_seeds.size() > pending_hybrid_seeds.size():
-		for i in range(pending_hybrid_seeds.size(), unknown_hybrid_seeds.size()):
-			pending_hybrid_seeds.append(GeneticsEngine.create_starter_specimen(unknown_hybrid_seeds[i]))
-
-	unknown_hybrid_seeds.clear()
-	for sp in pending_hybrid_seeds:
-		if is_instance_valid(sp):
-			unknown_hybrid_seeds.append(sp.species_id)
-
-
 func _save_game_state() -> void:
 	var roster_serialized: Array = []
 	for spec in breeding_roster:
@@ -360,7 +329,6 @@ func _load_game_state() -> void:
 		flower_inventory.deserialize(data["flower_inventory_storage"])
 	elif data.has("inventory") and data["inventory"] is Dictionary:
 		flower_inventory.deserialize(data["inventory"])
-	inventory = flower_inventory.get_legacy_view()
 
 	if data.has("seed_inventory") and data["seed_inventory"] is Dictionary:
 		seed_inventory.deserialize(data["seed_inventory"])
@@ -463,10 +431,8 @@ func _connect_signals() -> void:
 
 
 func _sync_hud_state() -> void:
-	_sync_inventory_to_domain()
-	_sync_hybrid_seeds()
 	if is_instance_valid(hud):
-		hud.update_inventory(inventory, bouquet_inventory, coins, unknown_hybrid_seeds.size())
+		hud.update_inventory(inventory, bouquet_inventory, coins, pending_hybrid_seeds.size())
 		hud.update_requests(completed_requests)
 		hud.update_breeding_roster(breeding_roster)
 		if hud.has_method("update_upgrades"):
@@ -610,7 +576,6 @@ func _on_upgrade_purchased(upgrade_id: String) -> void:
 			flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 3)
 			flower_inventory.add_flower("tulip", FlowerQuality.Tier.NORMAL, 3)
 			flower_inventory.add_flower("daisy", FlowerQuality.Tier.NORMAL, 3)
-			inventory = flower_inventory.get_legacy_view()
 		upgrade_manager.apply_upgrade_effect(upgrade_id, character, garden_grid, inventory)
 		_sync_hud_state()
 		_play_sfx("upgrade")
@@ -623,7 +588,6 @@ func _on_upgrade_purchased(upgrade_id: String) -> void:
 
 
 func _handle_planting_action(plot: GardenPlot) -> void:
-	_sync_hybrid_seeds()
 	if plot.state != GardenPlot.State.EMPTY:
 		hud.show_toast("This plot is already occupied!", Color(0.9, 0.4, 0.4))
 		return
@@ -638,7 +602,6 @@ func _handle_planting_action(plot: GardenPlot) -> void:
 
 		if plot.plant(candidate_species, true, candidate_specimen):
 			pending_hybrid_seeds.pop_front()
-			_sync_hybrid_seeds()
 			hud.show_toast("Planted an Unknown Mystery Hybrid Seed!", Color(1.0, 0.9, 0.4))
 			_sync_hud_state()
 			_save_game_state()
@@ -662,7 +625,6 @@ func _handle_planting_action(plot: GardenPlot) -> void:
 
 func _on_flower_harvested(flower_id: String, count: int, quality: int = FlowerQuality.Tier.NORMAL) -> void:
 	flower_inventory.add_flower(flower_id, quality, count)
-	inventory = flower_inventory.get_legacy_view()
 	_sync_hud_state()
 	_save_game_state()
 
@@ -717,8 +679,6 @@ func _on_flower_revealed(flower_id: String, plot: GardenPlot) -> void:
 
 
 func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int) -> void:
-	_sync_inventory_to_domain()
-	_sync_hybrid_seeds()
 	var specimen_a: FlowerSpecimen = null
 	var specimen_b: FlowerSpecimen = null
 	var deduct_inventory_a: String = ""
@@ -779,10 +739,8 @@ func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int
 		flower_inventory.consume_requirements({deduct_inventory_a: 1}, "lowest_first")
 	if not deduct_inventory_b.is_empty():
 		flower_inventory.consume_requirements({deduct_inventory_b: 1}, "lowest_first")
-	inventory = flower_inventory.get_legacy_view()
 
 	pending_hybrid_seeds.append(offspring)
-	_sync_hybrid_seeds()
 
 	_play_sfx("upgrade")
 	_sync_hud_state()
@@ -795,29 +753,17 @@ func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int
 
 
 func _on_craft_bouquet_requested(bouquet_id: String) -> void:
-	_sync_inventory_to_domain()
-	var b_data := BouquetData.get_bouquet(bouquet_id)
-	if b_data.is_empty():
-		hud.show_toast("Unknown bouquet recipe!", Color(0.9, 0.4, 0.4))
+	var res := BouquetData.craft_bouquet(bouquet_id, flower_inventory, bouquet_inventory)
+	if not res.get("success", false):
+		_play_sfx("error")
+		if is_instance_valid(hud):
+			hud.show_toast(res.get("error", "Cannot craft bouquet!"), Color(0.9, 0.4, 0.4))
 		return
 
-	var ingredients: Dictionary = b_data.get("ingredients", {})
-	if not flower_inventory.can_consume_requirements(ingredients, "lowest_first"):
-		hud.show_toast("Missing ingredients for %s!" % b_data.get("display_name", bouquet_id), Color(0.9, 0.4, 0.4))
-		return
-
-	var consumed: bool = flower_inventory.consume_requirements(ingredients, "lowest_first")
-	if not consumed:
-		hud.show_toast("Failed to consume ingredients for %s!" % b_data.get("display_name", bouquet_id), Color(0.9, 0.4, 0.4))
-		return
-
-	if not bouquet_inventory.has(bouquet_id):
-		bouquet_inventory[bouquet_id] = 0
-	bouquet_inventory[bouquet_id] += 1
-
-	inventory = flower_inventory.get_legacy_view()
+	_play_sfx("craft")
 	_sync_hud_state()
-	hud.show_toast("💐 Crafted 1 %s!" % b_data.get("display_name", bouquet_id), Color(0.95, 0.80, 0.90))
+	if is_instance_valid(hud):
+		hud.show_toast("💐 Crafted 1 %s!" % res.get("display_name", bouquet_id), Color(0.95, 0.80, 0.90))
 	_save_game_state()
 
 
@@ -825,14 +771,12 @@ func _on_fulfill_request_requested(order_id: String) -> void:
 	if order_manager == null:
 		return
 
-	_sync_inventory_to_domain()
 	var res := order_manager.fulfill_order(order_id, flower_inventory, bouquet_inventory)
 	if not res.get("success", false):
 		_play_sfx("error")
-		hud.show_toast("Cannot fulfill order: missing required items!", Color(0.9, 0.4, 0.4))
+		hud.show_toast(res.get("error", "Cannot fulfill order: missing required items!"), Color(0.9, 0.4, 0.4))
 		return
 
-	inventory = flower_inventory.get_legacy_view()
 	var total_earned: int = int(res.get("total_coins", 25))
 	var tip_earned: int = int(res.get("tip_coins", 0))
 	coins += total_earned
@@ -867,7 +811,6 @@ func quick_sell_flower(flower_id: String, count: int = 1, quality: int = FlowerQ
 	if flower_id.is_empty() or count <= 0:
 		return 0
 
-	_sync_inventory_to_domain()
 	var flower_data: Dictionary = FlowerData.get_flower(flower_id)
 	if flower_data.is_empty():
 		if is_instance_valid(hud):
@@ -891,7 +834,6 @@ func quick_sell_flower(flower_id: String, count: int = 1, quality: int = FlowerQ
 		return 0
 
 	coins += total_earned
-	inventory = flower_inventory.get_legacy_view()
 	_sync_hud_state()
 	_save_game_state()
 
@@ -920,7 +862,6 @@ func _on_sell_all_requested() -> void:
 
 ## Sells all harvestable flowers currently stored in inventory.
 func quick_sell_all_flowers() -> int:
-	_sync_inventory_to_domain()
 	var total_earned: int = 0
 	var total_flowers_sold: int = 0
 	var all_flowers: Dictionary = flower_inventory.get_all_flowers()
@@ -948,7 +889,6 @@ func quick_sell_all_flowers() -> int:
 
 	flower_inventory.clear()
 	coins += total_earned
-	inventory = flower_inventory.get_legacy_view()
 
 	_play_sfx("coin")
 	_sync_hud_state()

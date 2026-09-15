@@ -28,6 +28,7 @@ func _init() -> void:
 	_run_suite("Strict Catalog Lookups", _test_strict_catalog_lookups)
 	_run_suite("Atomic Mystery Seed Planting & SSoT", _test_mystery_seed_atomicity)
 	_run_suite("Transactional Quick Sell & Quality Multipliers", _test_quick_sell_transactions)
+	_run_suite("Atomic Bouquet Crafting & Transaction Rollback", _test_atomic_bouquet_crafting)
 	
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -211,7 +212,7 @@ func _test_garden_plot_guards() -> String:
 	var prune_ok: bool = plot.prune()
 	if not prune_ok: return "prune() failed within valid prune window"
 	if not plot.is_pruned: return "is_pruned should be true"
-	if plot.quality != FlowerQuality.Tier.PERFECT: return "Pruned plot quality should be PERFECT"
+	if plot.quality != FlowerQuality.Tier.HERO: return "Pruned plot quality should be HERO (Tier 4)"
 	
 	# Cannot prune twice
 	if plot.can_prune(): return "can_prune() should be false when already pruned"
@@ -246,7 +247,7 @@ func _test_garden_plot_guards() -> String:
 	var harvest_res: Dictionary = plot.harvest()
 	if harvest_res.is_empty(): return "harvest() failed on MATURE plot"
 	if harvested_data.is_empty(): return "flower_harvested signal was not emitted"
-	if harvested_data[0]["quality"] != FlowerQuality.Tier.PERFECT: return "Harvested quality mismatch (expected PERFECT)"
+	if harvested_data[0]["quality"] != FlowerQuality.Tier.HERO: return "Harvested quality mismatch (expected HERO)"
 	
 	# 7. Verify reset_to_empty_state() cleared all 12 properties
 	if plot.state != GardenPlot.State.EMPTY: return "Reset state not EMPTY"
@@ -261,6 +262,35 @@ func _test_garden_plot_guards() -> String:
 	if plot.current_specimen != null: return "current_specimen not reset"
 	if plot.is_mystery_seed: return "is_mystery_seed not reset"
 	if plot.is_revealed: return "is_revealed not reset"
+	
+	# 8. Test preserve_specimen_for_breeding() rejection guards
+	# Guard Case A: state != MATURE (e.g. GROWING) with specimen -> returns null
+	plot.state = GardenPlot.State.GROWING
+	plot.current_specimen = starter
+	var rejected_pres_growing: FlowerSpecimen = plot.preserve_specimen_for_breeding()
+	if rejected_pres_growing != null:
+		return "preserve_specimen_for_breeding() must return null when state != MATURE"
+	if plot.current_specimen != starter:
+		return "Plot specimen should not be mutated when preserve is rejected"
+
+	# Guard Case B: state == MATURE with current_specimen == null -> returns null
+	plot.state = GardenPlot.State.MATURE
+	plot.current_specimen = null
+	var rejected_pres_nospec: FlowerSpecimen = plot.preserve_specimen_for_breeding()
+	if rejected_pres_nospec != null:
+		return "preserve_specimen_for_breeding() must return null when current_specimen is null"
+
+	# Valid Case: state == MATURE with valid current_specimen -> preserves and resets
+	plot.state = GardenPlot.State.MATURE
+	plot.current_specimen = starter
+	plot.current_flower_id = "rose"
+	var success_pres: FlowerSpecimen = plot.preserve_specimen_for_breeding()
+	if success_pres != starter:
+		return "preserve_specimen_for_breeding() failed to return preserved specimen"
+	if plot.state != GardenPlot.State.EMPTY:
+		return "Plot state should be EMPTY after successful preserve"
+	if plot.current_specimen != null:
+		return "Plot current_specimen should be null after successful preserve"
 	
 	return ""
 
@@ -385,6 +415,7 @@ func _test_quick_sell_transactions() -> String:
 	var inv := FlowerInventory.new()
 	inv.add_flower("rose", FlowerQuality.Tier.NORMAL, 2)   # 2 * 10 = 20
 	inv.add_flower("rose", FlowerQuality.Tier.PERFECT, 1)  # 1 * (10 * 1.5) = 15
+	inv.add_flower("rose", FlowerQuality.Tier.HERO, 1)     # 1 * (10 * 2.5) = 25
 	inv.add_flower("daisy", FlowerQuality.Tier.FINE, 2)    # 2 * (8 * 1.25) = 20
 	
 	# 1. Single sell with quality
@@ -398,6 +429,17 @@ func _test_quick_sell_transactions() -> String:
 	if not sold_perfect: return "Failed to remove Perfect Rose"
 	if inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 0: return "Perfect rose not decremented"
 	if inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 2: return "Normal roses unexpectedly mutated"
+	
+	# 1b. Hero sell (2.5x multiplier)
+	var mult_hero: float = FlowerQuality.get_multiplier(FlowerQuality.Tier.HERO)
+	if not is_equal_approx(mult_hero, 2.5): return "Hero quality multiplier must be 2.50x"
+	var price_hero: int = int(round(base_val * mult_hero))
+	if price_hero != 25: return "Expected 25 coins for Hero Rose (10 * 2.5), calculated: %d" % price_hero
+	
+	var sold_hero: bool = inv.remove_flower("rose", FlowerQuality.Tier.HERO, 1)
+	if not sold_hero: return "Failed to remove Hero Rose"
+	if inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 0: return "Hero rose not decremented"
+	if inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 2: return "Normal roses unexpectedly mutated after Hero sell"
 	
 	# 2. Batch Sell All calculation
 	var total_calculated: int = 0
@@ -417,3 +459,51 @@ func _test_quick_sell_transactions() -> String:
 	if inv.get_total_flower_count() != 0: return "Inventory not empty after clear"
 	
 	return ""
+
+
+func _test_atomic_bouquet_crafting() -> String:
+	var f_inv := FlowerInventory.new()
+	var b_inv: Dictionary = {}
+	
+	# 1. Invalid recipe validation
+	var res_invalid := BouquetData.craft_bouquet("non_existent_recipe", f_inv, b_inv)
+	if res_invalid.get("success", false):
+		return "craft_bouquet must reject non-existent recipe ID"
+	if not b_inv.is_empty():
+		return "b_inv must remain empty on invalid recipe"
+
+	# Recipe: garden_harmony requires {rose: 1, lavender: 1, sunflower: 1}
+	# 2. Insufficient ingredients (multi-ingredient rollback & zero mutation)
+	f_inv.add_flower("rose", FlowerQuality.Tier.NORMAL, 2)
+	f_inv.add_flower("sunflower", FlowerQuality.Tier.FINE, 1)
+	# Note: lavender is missing (count == 0)
+	
+	var res_fail := BouquetData.craft_bouquet("garden_harmony", f_inv, b_inv)
+	if res_fail.get("success", false):
+		return "craft_bouquet must fail when missing lavender"
+	if f_inv.get_flower_count("rose") != 2:
+		return "Zero mutation failure: rose count changed after failed craft"
+	if f_inv.get_flower_count("sunflower") != 1:
+		return "Zero mutation failure: sunflower count changed after failed craft"
+	if f_inv.get_flower_count("lavender") != 0:
+		return "Zero mutation failure: lavender count changed after failed craft"
+	if not b_inv.is_empty():
+		return "b_inv must not gain any items on failed craft"
+
+	# 3. Successful atomic crafting & exact deduction
+	f_inv.add_flower("lavender", FlowerQuality.Tier.NORMAL, 1)
+	var res_ok := BouquetData.craft_bouquet("garden_harmony", f_inv, b_inv)
+	if not res_ok.get("success", false):
+		return "craft_bouquet failed with valid ingredients: %s" % res_ok.get("error", "")
+	
+	if f_inv.get_flower_count("rose") != 1:
+		return "Exact deduction failure: rose count should be 1 (was 2, deducted 1)"
+	if f_inv.get_flower_count("sunflower") != 0:
+		return "Exact deduction failure: sunflower count should be 0 (was 1, deducted 1)"
+	if f_inv.get_flower_count("lavender") != 0:
+		return "Exact deduction failure: lavender count should be 0 (was 1, deducted 1)"
+	if b_inv.get("garden_harmony", 0) != 1:
+		return "Bouquet not added to bouquet_inventory after successful craft"
+
+	return ""
+

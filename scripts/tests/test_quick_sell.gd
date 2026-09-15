@@ -12,7 +12,10 @@ func _init() -> void:
 		await process_frame
 
 	main_node.coins = 50
-	main_node.inventory = {"rose": 5, "daisy": 3, "lavender": 2}
+	main_node.flower_inventory.clear()
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("daisy", FlowerQuality.Tier.NORMAL, 3)
+	main_node.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 2)
 	main_node._sync_hud_state()
 
 	var initial_coins: int = main_node.coins

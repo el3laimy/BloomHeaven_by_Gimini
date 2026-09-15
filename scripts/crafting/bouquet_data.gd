@@ -105,3 +105,56 @@ static func check_ingredients(bouquet_id: String, inventory) -> Dictionary:
 		"can_craft": can_craft,
 		"missing": missing
 	}
+
+
+## Atomically crafts a bouquet if all ingredients are available.
+## Supports FlowerInventory (canonical) or legacy Dictionary for flower_inventory.
+## Returns a Dictionary with:
+##   "success": bool
+##   "bouquet_id": String
+##   "display_name": String (if success)
+##   "error": String (if failure)
+static func craft_bouquet(bouquet_id: String, flower_inventory, bouquet_inventory: Dictionary) -> Dictionary:
+	# 1. Validate bouquet ID
+	if bouquet_id.is_empty():
+		return {"success": false, "error": "Bouquet ID cannot be empty."}
+
+	# 2. Load canonical recipe
+	var b_data := get_bouquet(bouquet_id)
+	if b_data.is_empty():
+		return {"success": false, "error": "Unknown bouquet recipe: %s" % bouquet_id}
+
+	# 3. Build requirement plan
+	var ingredients: Dictionary = b_data.get("ingredients", {})
+	if ingredients.is_empty():
+		return {"success": false, "error": "Bouquet recipe has no ingredients."}
+
+	# 4. Validate ALL ingredients before any deduction (zero mutation on failure)
+	if flower_inventory is FlowerInventory:
+		if not flower_inventory.can_consume_requirements(ingredients, "lowest_first"):
+			return {"success": false, "error": "Missing ingredients for %s!" % b_data.get("display_name", bouquet_id)}
+	elif flower_inventory is Dictionary:
+		for flower_id in ingredients:
+			var needed: int = int(ingredients[flower_id])
+			if int(flower_inventory.get(flower_id, 0)) < needed:
+				return {"success": false, "error": "Missing ingredients for %s!" % b_data.get("display_name", bouquet_id)}
+	else:
+		return {"success": false, "error": "Invalid flower inventory type."}
+
+	# 5. Commit deductions atomically
+	if flower_inventory is FlowerInventory:
+		var consumed: bool = flower_inventory.consume_requirements(ingredients, "lowest_first")
+		if not consumed:
+			return {"success": false, "error": "Failed to consume ingredients for %s!" % b_data.get("display_name", bouquet_id)}
+	elif flower_inventory is Dictionary:
+		for flower_id in ingredients:
+			flower_inventory[flower_id] = int(flower_inventory[flower_id]) - int(ingredients[flower_id])
+
+	# 6. Add bouquet to bouquet_inventory
+	bouquet_inventory[bouquet_id] = int(bouquet_inventory.get(bouquet_id, 0)) + 1
+
+	return {
+		"success": true,
+		"bouquet_id": bouquet_id,
+		"display_name": b_data.get("display_name", bouquet_id)
+	}
