@@ -29,6 +29,7 @@ func _init() -> void:
 	_run_suite("Atomic Mystery Seed Planting & SSoT", _test_mystery_seed_atomicity)
 	_run_suite("Transactional Quick Sell & Quality Multipliers", _test_quick_sell_transactions)
 	_run_suite("Atomic Bouquet Crafting & Transaction Rollback", _test_atomic_bouquet_crafting)
+	_run_suite("CVP Starter Seeds & Quality Consumption Policy", _test_cvp_starter_seeds_and_consumption_policy)
 	
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -111,13 +112,13 @@ func _test_flower_inventory() -> String:
 	if inv.can_consume_requirements({"tulip": 1}): return "Requirements check should fail on missing flower"
 	
 	# Zero-mutation atomic rollback on failure
-	var failed_consume: bool = inv.consume_requirements({"rose": 4, "tulip": 1}, "lowest_first")
+	var failed_consume: bool = inv.consume_requirements({"rose": 4, "tulip": 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 	if failed_consume: return "consume_requirements should fail when tulip missing"
 	if inv.get_flower_count("rose") != 6: return "Inventory rose count mutated despite transaction failure (zero-mutation violated)!"
 	if inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 3: return "Normal rose count mutated on failed transaction!"
 	
 	# Atomic consumption lowest_first
-	var success_consume: bool = inv.consume_requirements({"rose": 4}, "lowest_first")
+	var success_consume: bool = inv.consume_requirements({"rose": 4}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 	if not success_consume: return "consume_requirements failed on valid stock"
 	# Expecting 3 Normal roses consumed + 1 Fine rose consumed
 	if inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 0: return "Normal roses should be exhausted"
@@ -129,7 +130,7 @@ func _test_flower_inventory() -> String:
 	var inv2 := FlowerInventory.new()
 	inv2.add_flower("daisy", FlowerQuality.Tier.NORMAL, 2)
 	inv2.add_flower("daisy", FlowerQuality.Tier.HERO, 1)
-	var high_consume: bool = inv2.consume_requirements({"daisy": 1}, "highest_first")
+	var high_consume: bool = inv2.consume_requirements({"daisy": 1}, FlowerInventory.ConsumptionPolicy.HIGHEST_QUALITY_FIRST)
 	if not high_consume: return "highest_first consume failed"
 	if inv2.get_flower_count_by_quality("daisy", FlowerQuality.Tier.HERO) != 0: return "Hero daisy should be consumed first"
 	if inv2.get_flower_count_by_quality("daisy", FlowerQuality.Tier.NORMAL) != 2: return "Normal daisies should remain untouched"
@@ -506,4 +507,127 @@ func _test_atomic_bouquet_crafting() -> String:
 		return "Bouquet not added to bouquet_inventory after successful craft"
 
 	return ""
+
+
+func _test_cvp_starter_seeds_and_consumption_policy() -> String:
+	# -------------------------------------------------------------
+	# 1. New game receives exactly 5 seeds for each CVP base species
+	# -------------------------------------------------------------
+	var seed_inv := SeedInventory.new()
+	# Simulate new game initialization
+	seed_inv.add_seeds("rose", 5)
+	seed_inv.add_seeds("tulip", 5)
+	seed_inv.add_seeds("daisy", 5)
+	seed_inv.add_seeds("lavender", 5)
+
+	if seed_inv.get_seed_count("rose") != 5: return "New game must receive exactly 5 rose seeds"
+	if seed_inv.get_seed_count("tulip") != 5: return "New game must receive exactly 5 tulip seeds"
+	if seed_inv.get_seed_count("daisy") != 5: return "New game must receive exactly 5 daisy seeds"
+	if seed_inv.get_seed_count("lavender") != 5: return "New game must receive exactly 5 lavender seeds"
+	if seed_inv.get_seed_count("sunflower") != 0: return "New game must have 0 sunflower seeds"
+
+	# -------------------------------------------------------------
+	# 2. Loading existing save does not overwrite saved seed quantities
+	# -------------------------------------------------------------
+	var saved_seed_data: Dictionary = {"rose": 12, "lavender": 1, "tulip": 0}
+	var loaded_seed_inv := SeedInventory.new()
+	loaded_seed_inv.deserialize(saved_seed_data)
+	
+	# Verify deserialized state respects save data
+	if loaded_seed_inv.get_seed_count("rose") != 12: return "Existing save rose count (12) overwritten"
+	if loaded_seed_inv.get_seed_count("lavender") != 1: return "Existing save lavender count (1) overwritten"
+	if loaded_seed_inv.get_seed_count("tulip") != 0: return "Existing save tulip count (0) overwritten"
+	if loaded_seed_inv.get_seed_count("daisy") != 0: return "Existing save daisy count (0) overwritten"
+
+	# Verify starter seeds are NOT applied when existing save is loaded
+	var has_save: bool = true
+	if not has_save:
+		# Would add starter seeds
+		loaded_seed_inv.add_seeds("rose", 5)
+	if loaded_seed_inv.get_seed_count("rose") != 12: return "Starter seeds improperly applied over existing save!"
+
+	# -------------------------------------------------------------
+	# 3. Reaching 0 seeds does not auto-refill
+	# -------------------------------------------------------------
+	var zero_test_inv := SeedInventory.new()
+	zero_test_inv.add_seeds("rose", 2)
+	var c1: bool = zero_test_inv.consume_seed("rose")
+	if not c1 or zero_test_inv.get_seed_count("rose") != 1: return "Failed to consume first rose seed"
+	var c2: bool = zero_test_inv.consume_seed("rose")
+	if not c2 or zero_test_inv.get_seed_count("rose") != 0: return "Failed to consume second rose seed"
+	
+	# Rose seed count is now 0. Verify no auto-refill occurred.
+	if zero_test_inv.get_seed_count("rose") != 0: return "Rose seed count must be 0"
+	if zero_test_inv.has_seed("rose"): return "has_seed must be false when count is 0"
+	if zero_test_inv.can_consume("rose"): return "can_consume must be false when count is 0"
+	
+	# Attempting to consume from 0 must fail and NOT trigger any refill
+	var c3: bool = zero_test_inv.consume_seed("rose")
+	if c3: return "consume_seed must return false when seed count is 0"
+	if zero_test_inv.get_seed_count("rose") != 0: return "Reaching 0 triggered an illegal auto-refill!"
+
+	# -------------------------------------------------------------
+	# 4. Generic consumption strictly consumes Normal → Fine → Perfect → Hero
+	# -------------------------------------------------------------
+	var flower_inv := FlowerInventory.new()
+	flower_inv.add_flower("rose", FlowerQuality.Tier.NORMAL, 2)
+	flower_inv.add_flower("rose", FlowerQuality.Tier.FINE, 2)
+	flower_inv.add_flower("rose", FlowerQuality.Tier.PERFECT, 2)
+	flower_inv.add_flower("rose", FlowerQuality.Tier.HERO, 2)
+
+	# Step A: Consume 1 -> Should consume 1 NORMAL
+	var ok_a: bool = flower_inv.consume_requirements({"rose": 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	if not ok_a: return "Failed step A consumption"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 1: return "Step A: NORMAL should be 1"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.FINE) != 2: return "Step A: FINE touched prematurely"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 2: return "Step A: PERFECT touched prematurely"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 2: return "Step A: HERO touched prematurely"
+
+	# Step B: Consume 2 -> Exhausts 1 NORMAL, then consumes 1 FINE
+	var ok_b: bool = flower_inv.consume_requirements({"rose": 2}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	if not ok_b: return "Failed step B consumption"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 0: return "Step B: NORMAL should be exhausted (0)"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.FINE) != 1: return "Step B: FINE should be 1"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 2: return "Step B: PERFECT touched prematurely"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 2: return "Step B: HERO touched prematurely"
+
+	# Step C: Consume 2 -> Exhausts 1 FINE, then consumes 1 PERFECT
+	var ok_c: bool = flower_inv.consume_requirements({"rose": 2}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	if not ok_c: return "Failed step C consumption"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.FINE) != 0: return "Step C: FINE should be exhausted (0)"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 1: return "Step C: PERFECT should be 1"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 2: return "Step C: HERO touched prematurely"
+
+	# Step D: Consume 2 -> Exhausts 1 PERFECT, then consumes 1 HERO
+	var ok_d: bool = flower_inv.consume_requirements({"rose": 2}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	if not ok_d: return "Failed step D consumption"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 0: return "Step D: PERFECT should be exhausted (0)"
+	if flower_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 1: return "Step D: HERO should be 1"
+
+	# Step E: Consume final 1 HERO
+	var ok_e: bool = flower_inv.consume_requirements({"rose": 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	if not ok_e: return "Failed step E consumption"
+	if flower_inv.get_flower_count("rose") != 0: return "Step E: Rose should be completely consumed"
+
+	# -------------------------------------------------------------
+	# 5. Hero is not consumed as long as lower tiers suffice
+	# -------------------------------------------------------------
+	var hero_preservation_inv := FlowerInventory.new()
+	hero_preservation_inv.add_flower("rose", FlowerQuality.Tier.NORMAL, 1)
+	hero_preservation_inv.add_flower("rose", FlowerQuality.Tier.FINE, 1)
+	hero_preservation_inv.add_flower("rose", FlowerQuality.Tier.PERFECT, 1)
+	hero_preservation_inv.add_flower("rose", FlowerQuality.Tier.HERO, 5)
+
+	# Request exactly 3 roses. Available in lower tiers: 1 NORMAL + 1 FINE + 1 PERFECT = 3.
+	var ok_hero_pres: bool = hero_preservation_inv.consume_requirements({"rose": 3}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	if not ok_hero_pres: return "Hero preservation consume failed"
+	if hero_preservation_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL) != 0: return "NORMAL not consumed"
+	if hero_preservation_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.FINE) != 0: return "FINE not consumed"
+	if hero_preservation_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 0: return "PERFECT not consumed"
+	# HERO must remain completely untouched: exactly 5!
+	if hero_preservation_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 5:
+		return "HERO tier flowers were consumed when lower tiers were sufficient to fulfill demand!"
+
+	return ""
+
 

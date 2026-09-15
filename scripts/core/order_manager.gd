@@ -118,7 +118,7 @@ func fulfill_order(order_id: String, flower_inventory, bouquet_inventory: Dictio
 	# 5 & 6. Verify ALL requirements before any mutation (zero mutation on failure)
 	if req_type == "flowers":
 		if flower_inventory is FlowerInventory:
-			if not flower_inventory.can_consume_requirements(items, "lowest_first"):
+			if not flower_inventory.can_consume_requirements(items, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST):
 				return {"success": false, "error": "Missing required flowers."}
 		elif flower_inventory is Dictionary:
 			for f_id in items:
@@ -144,7 +144,7 @@ func fulfill_order(order_id: String, flower_inventory, bouquet_inventory: Dictio
 	# 8. Commit deductions atomically (point of no return)
 	if req_type == "flowers":
 		if flower_inventory is FlowerInventory:
-			var success: bool = bool(flower_inventory.consume_requirements(items, "lowest_first"))
+			var success: bool = bool(flower_inventory.consume_requirements(items, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST))
 			if not success:
 				return {"success": false, "error": "Flower deduction failed."}
 		elif flower_inventory is Dictionary:

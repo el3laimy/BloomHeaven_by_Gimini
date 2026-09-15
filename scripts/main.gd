@@ -153,7 +153,10 @@ var _auto_save_timer: float = 0.0
 
 
 func _ready() -> void:
-	_load_game_state()
+	if SaveManagerScript.has_save():
+		_load_game_state()
+	else:
+		_init_new_game_starter_seeds()
 	_init_starter_breeding_stock()
 	_setup_menus()
 	_connect_signals()
@@ -362,6 +365,13 @@ func _load_game_state() -> void:
 
 	if data.has("plots") and data["plots"] is Array and is_instance_valid(garden_grid):
 		SaveManagerScript.deserialize_plots(data["plots"], garden_grid.plots)
+
+
+func _init_new_game_starter_seeds() -> void:
+	seed_inventory.add_seeds("rose", 5)
+	seed_inventory.add_seeds("tulip", 5)
+	seed_inventory.add_seeds("daisy", 5)
+	seed_inventory.add_seeds("lavender", 5)
 
 
 func _init_starter_breeding_stock() -> void:
@@ -736,9 +746,9 @@ func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int
 
 	# Deduct inventory if used from garden harvest
 	if not deduct_inventory_a.is_empty():
-		flower_inventory.consume_requirements({deduct_inventory_a: 1}, "lowest_first")
+		flower_inventory.consume_requirements({deduct_inventory_a: 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 	if not deduct_inventory_b.is_empty():
-		flower_inventory.consume_requirements({deduct_inventory_b: 1}, "lowest_first")
+		flower_inventory.consume_requirements({deduct_inventory_b: 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 
 	pending_hybrid_seeds.append(offspring)
 

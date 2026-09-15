@@ -131,7 +131,7 @@ static func craft_bouquet(bouquet_id: String, flower_inventory, bouquet_inventor
 
 	# 4. Validate ALL ingredients before any deduction (zero mutation on failure)
 	if flower_inventory is FlowerInventory:
-		if not flower_inventory.can_consume_requirements(ingredients, "lowest_first"):
+		if not flower_inventory.can_consume_requirements(ingredients, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST):
 			return {"success": false, "error": "Missing ingredients for %s!" % b_data.get("display_name", bouquet_id)}
 	elif flower_inventory is Dictionary:
 		for flower_id in ingredients:
@@ -143,7 +143,7 @@ static func craft_bouquet(bouquet_id: String, flower_inventory, bouquet_inventor
 
 	# 5. Commit deductions atomically
 	if flower_inventory is FlowerInventory:
-		var consumed: bool = flower_inventory.consume_requirements(ingredients, "lowest_first")
+		var consumed: bool = flower_inventory.consume_requirements(ingredients, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 		if not consumed:
 			return {"success": false, "error": "Failed to consume ingredients for %s!" % b_data.get("display_name", bouquet_id)}
 	elif flower_inventory is Dictionary:

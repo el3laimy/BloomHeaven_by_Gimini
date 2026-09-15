@@ -8,7 +8,16 @@ signal inventory_changed()
 signal flower_added(flower_id: String, quality: int, count: int)
 signal flower_removed(flower_id: String, quality: int, count: int)
 
+enum ConsumptionPolicy {
+	LOWEST_QUALITY_FIRST = 1,
+	HIGHEST_QUALITY_FIRST = 2,
+}
+
+const LOWEST_QUALITY_FIRST: int = ConsumptionPolicy.LOWEST_QUALITY_FIRST
+const HIGHEST_QUALITY_FIRST: int = ConsumptionPolicy.HIGHEST_QUALITY_FIRST
+
 var _storage: Dictionary = {}
+
 
 
 func add_flower(flower_id: String, quality: int = FlowerQuality.Tier.NORMAL, count: int = 1) -> void:
@@ -102,7 +111,7 @@ func get_all_flowers() -> Dictionary:
 	return copy
 
 
-func can_consume_requirements(requirements: Dictionary, strategy: String = "lowest_first") -> bool:
+func can_consume_requirements(requirements: Dictionary, policy = ConsumptionPolicy.LOWEST_QUALITY_FIRST) -> bool:
 	## Requirements can be { flower_id: count } or { flower_id: { tier: count } }
 	if requirements.is_empty():
 		return true
@@ -130,20 +139,20 @@ func can_consume_requirements(requirements: Dictionary, strategy: String = "lowe
 	return true
 
 
-func consume_requirements(requirements: Dictionary, strategy: String = "lowest_first") -> bool:
+func consume_requirements(requirements: Dictionary, policy = ConsumptionPolicy.LOWEST_QUALITY_FIRST) -> bool:
 	## Transactional requirement consumption: validate all first, then commit deductions.
 	## If any check fails: zero mutation.
-	if not can_consume_requirements(requirements, strategy):
+	if not can_consume_requirements(requirements, policy):
 		return false
 
-	# Order of tiers depending on strategy
+	# Order of tiers depending on policy (LOWEST_QUALITY_FIRST vs HIGHEST_QUALITY_FIRST)
 	var tier_order: Array[int] = [
 		FlowerQuality.Tier.NORMAL,
 		FlowerQuality.Tier.FINE,
 		FlowerQuality.Tier.PERFECT,
 		FlowerQuality.Tier.HERO
 	]
-	if strategy == "highest_first":
+	if policy == ConsumptionPolicy.HIGHEST_QUALITY_FIRST or str(policy) == "highest_first":
 		tier_order.reverse()
 
 	for flower_id in requirements:
