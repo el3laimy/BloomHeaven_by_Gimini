@@ -55,7 +55,11 @@ func _init_runtime() -> void:
 func _ensure_order_in_runtime(order_id: String) -> void:
 	if not order_runtime.has(order_id):
 		var req := FloristRequestData.get_request(order_id)
-		var max_pat: float = float(req.get("patience_max_seconds", 75.0))
+		var max_pat: float = 0.0
+		if req.has("patience_max_seconds"):
+			max_pat = float(req["patience_max_seconds"])
+		else:
+			push_warning("OrderManager: Order '%s' missing canonical patience_max_seconds." % order_id)
 		order_runtime[order_id] = {
 			"completed": false,
 			"remaining_patience": max_pat,
@@ -76,7 +80,8 @@ func tick(delta: float) -> void:
 	for o_id in order_runtime:
 		var entry: Dictionary = order_runtime[o_id]
 		if not entry.get("completed", false):
-			var rem: float = float(entry.get("remaining_patience", 75.0))
+			var max_p: float = float(entry.get("max_patience", 0.0))
+			var rem: float = float(entry.get("remaining_patience", max_p))
 			entry["remaining_patience"] = max(0.0, rem - delta)
 
 
@@ -131,7 +136,9 @@ func fulfill_order(order_id: String, flower_inventory, bouquet_inventory: Dictio
 				return {"success": false, "error": "Missing required bouquets."}
 
 	# 7. Calculate reward
-	var max_pat: float = float(runtime_entry.get("max_patience", req.get("patience_max_seconds", 75.0)))
+	var max_pat: float = float(runtime_entry.get("max_patience", 0.0))
+	if max_pat <= 0.0 and req.has("patience_max_seconds"):
+		max_pat = float(req["patience_max_seconds"])
 	var cur_pat: float = float(runtime_entry.get("remaining_patience", max_pat))
 	var pat_ratio: float = clamp(cur_pat / max(max_pat, 0.001), 0.0, 1.0)
 	var combo_mult: float = 1.0 + (float(combo_count) * COMBO_MULTIPLIER_STEP)
@@ -143,38 +150,39 @@ func fulfill_order(order_id: String, flower_inventory, bouquet_inventory: Dictio
 	# 8. Commit deductions atomically (point of no return)
 	if req_type == "flowers":
 		if flower_inventory is FlowerInventory:
-			var success: bool = bool(flower_inventory.consume_requirements(items, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST))
-			if not success:
-				return {"success": false, "error": "Flower deduction failed."}
+			flower_inventory.consume_requirements(items, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 		elif flower_inventory is Dictionary:
-			for f_id in items:
-				flower_inventory[f_id] = int(flower_inventory[f_id]) - int(items[f_id])
-	elif req_type == "bouquet":
+			for flower_id in items:
+				flower_inventory[flower_id] -= int(items[flower_id])
+	elif req_type == "bouquets":
 		for b_id in items:
-			bouquet_inventory[b_id] = int(bouquet_inventory[b_id]) - int(items[b_id])
+			bouquet_inventory[b_id] -= int(items[b_id])
 
-	# 9. Mark order completed in canonical runtime
+	# 9. Mark completed and update runtime state
 	runtime_entry["completed"] = true
 	runtime_entry["remaining_patience"] = max_pat
 
-	# 10 & 11. Update combo streak
+	# 10. Update combo rush
 	combo_count += 1
 	combo_timer = COMBO_WINDOW_SECONDS
+	combo_updated.emit(combo_count, combo_timer)
 
-	# 12. Emit signals and return result
+	# 11. Emit fulfillment signal and return
 	var result := {
 		"success": true,
 		"order_id": order_id,
+		"coins": total_earned,
 		"total_coins": total_earned,
+		"tip": tip_earned,
 		"tip_coins": tip_earned,
+		"patience_ratio": pat_ratio,
+		"combo_multiplier": combo_mult,
 		"combo_count": combo_count,
 		"customer_name": req.get("customer_name", "Customer"),
 		"satisfaction_tier": reward_calc.get("satisfaction_tier", "bronze"),
 		"rating_stars": reward_calc.get("rating_stars", 3)
 	}
-
 	order_fulfilled.emit(order_id, result)
-	combo_updated.emit(combo_count, combo_timer)
 	return result
 
 
@@ -188,7 +196,9 @@ func get_patience_ratio(order_id: String) -> float:
 	if not order_runtime.has(order_id):
 		return 0.0
 	var entry: Dictionary = order_runtime[order_id]
-	var max_pat: float = float(entry.get("max_patience", 75.0))
+	var max_pat: float = float(entry.get("max_patience", 0.0))
+	if max_pat <= 0.0:
+		return 0.0
 	var cur_pat: float = float(entry.get("remaining_patience", max_pat))
 	return clamp(cur_pat / max(max_pat, 0.001), 0.0, 1.0)
 
@@ -196,7 +206,9 @@ func get_patience_ratio(order_id: String) -> float:
 func reset_all_patience() -> void:
 	for o_id in order_runtime:
 		var req := FloristRequestData.get_request(o_id)
-		var max_pat: float = float(req.get("patience_max_seconds", 75.0))
+		var max_pat: float = float(req.get("patience_max_seconds", 0.0))
+		if max_pat <= 0.0:
+			max_pat = float(order_runtime[o_id].get("max_patience", 0.0))
 		order_runtime[o_id]["remaining_patience"] = max_pat
 		order_runtime[o_id]["max_patience"] = max_pat
 
@@ -204,7 +216,9 @@ func reset_all_patience() -> void:
 func reset_order(order_id: String) -> void:
 	_ensure_order_in_runtime(order_id)
 	var req := FloristRequestData.get_request(order_id)
-	var max_pat: float = float(req.get("patience_max_seconds", 75.0))
+	var max_pat: float = float(req.get("patience_max_seconds", 0.0))
+	if max_pat <= 0.0:
+		max_pat = float(order_runtime[order_id].get("max_patience", 0.0))
 	order_runtime[order_id]["completed"] = false
 	order_runtime[order_id]["remaining_patience"] = max_pat
 	order_runtime[order_id]["max_patience"] = max_pat
@@ -213,7 +227,9 @@ func reset_order(order_id: String) -> void:
 func reset_all_orders() -> void:
 	for o_id in order_runtime:
 		var req := FloristRequestData.get_request(o_id)
-		var max_pat: float = float(req.get("patience_max_seconds", 75.0))
+		var max_pat: float = float(req.get("patience_max_seconds", 0.0))
+		if max_pat <= 0.0:
+			max_pat = float(order_runtime[o_id].get("max_patience", 0.0))
 		order_runtime[o_id]["completed"] = false
 		order_runtime[o_id]["remaining_patience"] = max_pat
 		order_runtime[o_id]["max_patience"] = max_pat

@@ -45,11 +45,16 @@ func _refresh_tickets() -> void:
 		_ticket_cards.clear()
 		for o_id in FloristRequestData.get_all_request_ids():
 			var req := FloristRequestData.get_request(o_id)
+			var pat: float = 0.0
+			if req.has("patience_max_seconds"):
+				pat = float(req["patience_max_seconds"])
+			else:
+				push_warning("SideOrderRail: Request '%s' missing canonical 'patience_max_seconds'." % o_id)
 			_ticket_cards[o_id] = {
 				"request": req,
 				"is_completed": false,
 				"dialogue": req.get("dialogue", ""),
-				"patience": req.get("patience_max_seconds", 75.0)
+				"patience": pat
 			}
 
 

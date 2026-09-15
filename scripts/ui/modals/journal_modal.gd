@@ -34,10 +34,16 @@ func _populate_entries() -> void:
 	for child in _card_container.get_children():
 		child.queue_free()
 
-	var all_flower_ids: Array[String] = FlowerData.get_all_flower_ids()
+	var catalog: Array[String] = []
+	catalog.append_array(FlowerData.get_cvp_base_species())
+	catalog.append_array(FlowerData.get_curated_hybrids())
+	for leg_id in FlowerData.get_legacy_species():
+		if discovered_flowers.get(leg_id, false):
+			catalog.append(leg_id)
+
 	var discovered_count: int = 0
 
-	for f_id in all_flower_ids:
+	for f_id in catalog:
 		var is_discovered: bool = discovered_flowers.get(f_id, false)
 		if is_discovered:
 			discovered_count += 1
@@ -46,7 +52,7 @@ func _populate_entries() -> void:
 		_card_container.add_child(card)
 
 	if _progress_lbl != null:
-		_progress_lbl.text = "Discovered: %d/%d" % [discovered_count, all_flower_ids.size()]
+		_progress_lbl.text = "Discovered: %d/%d" % [discovered_count, catalog.size()]
 
 
 func _create_entry_card(f_id: String, f_data: Dictionary, is_discovered: bool) -> PanelContainer:

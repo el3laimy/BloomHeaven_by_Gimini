@@ -26,7 +26,10 @@ func _init() -> void:
 	_run_suite("FlowerAssetResolver & Missing Texture Fallback", _test_asset_resolver)
 	_run_suite("Growth Stage Threshold SSoT (0.61)", _test_growth_stage_threshold)
 	_run_suite("Order Patience SSoT & Runtime Preservation", _test_order_patience_ssot)
+	_run_suite("Missing Patience Strict No-Fallback", _test_missing_patience_no_fallback)
 	_run_suite("Bouquet Recipes SSoT", _test_bouquet_recipes_ssot)
+	_run_suite("Strict Status Classification & Reconciliation", _test_status_reconciliation)
+	_run_suite("Fresh CVP Catalog & Legacy Isolation", _test_fresh_cvp_catalog_isolation)
 	
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -315,4 +318,147 @@ func _test_bouquet_recipes_ssot() -> String:
 			if flower.is_empty():
 				return "Bouquet '%s' requires unknown flower ID '%s'" % [b_id, f_id]
 	
+	return ""
+
+
+func _test_missing_patience_no_fallback() -> String:
+	# 1. Verify FloristRequestData does not invent 75.0 when patience_max_seconds is absent
+	var simulated_req: Dictionary = {
+		"id": "test_order_no_patience",
+		"customer_name": "Test Patron",
+		"required_items": {"rose": 1}
+	}
+	var pat_val = simulated_req.get("patience_max_seconds", null)
+	if pat_val != null:
+		return "Simulated request without patience_max_seconds unexpectedly produced: %s" % str(pat_val)
+
+	# 2. In OrderManager, an order missing patience_max_seconds must have max_patience == 0.0 (fails safely, never defaults to 75.0)
+	var om := OrderManager.new()
+	FloristRequestData._ensure_initialized()
+	FloristRequestData._cached_requests["test_no_patience_fixture"] = {
+		"id": "test_no_patience_fixture",
+		"customer_name": "Ghost",
+		"required_items": {"rose": 1}
+	}
+	om._ensure_order_in_runtime("test_no_patience_fixture")
+	var pat: float = om.get_patience("test_no_patience_fixture")
+	FloristRequestData._cached_requests.erase("test_no_patience_fixture")
+
+	if pat == 75.0:
+		return "OrderManager defaulted missing patience to 75.0! Must not invent gameplay values"
+	if pat != 0.0:
+		return "OrderManager did not set 0.0 safe failure for missing patience: got %f" % pat
+
+	return ""
+
+
+func _test_status_reconciliation() -> String:
+	var path := "res://data/flowers.json"
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return "Could not open data/flowers.json"
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK:
+		return "Failed to parse data/flowers.json"
+	var raw_flowers: Dictionary = json.data.get("flowers", {})
+
+	var total_count: int = raw_flowers.size()
+	var base_count: int = 0
+	var hybrid_count: int = 0
+	var legacy_count: int = 0
+	var alias_count: int = 0
+	var unclassified_count: int = 0
+
+	for fid in raw_flowers:
+		var fdef: Dictionary = raw_flowers[fid]
+		var st: String = fdef.get("status", "")
+		match st:
+			"cvp_base":
+				base_count += 1
+			"cvp_hybrid":
+				hybrid_count += 1
+			"legacy":
+				legacy_count += 1
+			"alias":
+				alias_count += 1
+				var target: String = fdef.get("alias_of", "")
+				if target.is_empty():
+					return "Alias '%s' missing 'alias_of'" % fid
+				if target == fid:
+					return "Alias '%s' is self-referential cycle" % fid
+				if not raw_flowers.has(target):
+					return "Alias '%s' target '%s' does not exist" % [fid, target]
+				if raw_flowers[target].get("status") == "alias":
+					return "Alias '%s' points to chained alias '%s'" % [fid, target]
+			_:
+				unclassified_count += 1
+
+	if unclassified_count != 0:
+		return "Found %d unclassified flower entries!" % unclassified_count
+	if total_count != (base_count + hybrid_count + legacy_count + alias_count):
+		return "Total count mismatch: %d != %d + %d + %d + %d" % [total_count, base_count, hybrid_count, legacy_count, alias_count]
+	if base_count != 4 or hybrid_count != 6 or legacy_count != 5 or alias_count != 5:
+		return "Exact status counts mismatch: base=%d, hybrid=%d, legacy=%d, alias=%d" % [base_count, hybrid_count, legacy_count, alias_count]
+
+	return ""
+
+
+func _test_fresh_cvp_catalog_isolation() -> String:
+	# 1. Fresh CVP base catalog strictly contains only the 4 base species
+	var base_species: Array[String] = FlowerData.get_cvp_base_species()
+	for leg_id in ["sunflower", "roselight", "golden_rose", "sunflare_spike", "rose_cream"]:
+		if base_species.has(leg_id):
+			return "Legacy species '%s' leaked into FlowerData.get_cvp_base_species()!" % leg_id
+
+	# 2. Curated hybrids also do not contain legacy species
+	var curated_hybrids: Array[String] = FlowerData.get_curated_hybrids()
+	for leg_id in ["sunflower", "roselight", "golden_rose", "sunflare_spike", "rose_cream"]:
+		if curated_hybrids.has(leg_id):
+			return "Legacy species '%s' leaked into FlowerData.get_curated_hybrids()!" % leg_id
+
+	# 3. InventoryDrawer display policy test:
+	# Fresh game inventory: no flowers owned
+	var fresh_inv: Dictionary = {}
+	var drawer: Control = load("res://scripts/ui/hud/inventory_drawer.gd").new()
+	var grid := GridContainer.new()
+	drawer.crate_grid = grid
+
+	# Fresh inventory update: only base species crates created, zero legacy crates, zero zero-owned hybrid crates
+	drawer.call("update_inventory", fresh_inv, {})
+	var created_ids: Array[String] = []
+	for child in grid.get_children():
+		var fid: String = child.get_meta("flower_id", "")
+		if not fid.is_empty():
+			created_ids.append(fid)
+
+	for leg_id in FlowerData.get_legacy_species():
+		if created_ids.has(leg_id):
+			drawer.queue_free()
+			grid.queue_free()
+			return "Legacy flower '%s' displayed in fresh CVP inventory drawer!" % leg_id
+	for hybrid_id in FlowerData.get_curated_hybrids():
+		if created_ids.has(hybrid_id):
+			drawer.queue_free()
+			grid.queue_free()
+			return "Zero-owned curated hybrid '%s' displayed in fresh CVP inventory drawer!" % hybrid_id
+
+	# 4. Owned legacy compatibility item: if player actually owns it, it appears
+	var legacy_compat_inv: Dictionary = {"sunflower": 3}
+	drawer.call("update_inventory", legacy_compat_inv, {})
+	var compat_ids: Array[String] = []
+	for child in grid.get_children():
+		var fid: String = child.get_meta("flower_id", "")
+		if not fid.is_empty():
+			compat_ids.append(fid)
+
+	drawer.queue_free()
+	grid.queue_free()
+
+	if not compat_ids.has("sunflower"):
+		return "Owned legacy compatibility flower 'sunflower' was not displayed! Found: %s" % str(compat_ids)
+
+	# Zero-owned curated hybrid still not displayed
+	if compat_ids.has("blushbell"):
+		return "Zero-owned hybrid 'blushbell' unexpectedly unlocked/displayed!"
+
 	return ""

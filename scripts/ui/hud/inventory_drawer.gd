@@ -143,6 +143,7 @@ func update_inventory(inventory: Dictionary, bouquet_inventory: Dictionary) -> v
 
 func _create_flower_crate(flower_id: String, name_str: String, count: int, icon: String, base_val: int) -> Control:
 	var crate := Control.new()
+	crate.set_meta("flower_id", flower_id)
 	crate.custom_minimum_size = Vector2(276, 122)
 
 	# 1. Crate Graphic

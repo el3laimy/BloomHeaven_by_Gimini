@@ -61,9 +61,13 @@ func _populate_orders() -> void:
 func _create_order_card(order_id: String) -> PanelContainer:
 	var req: Dictionary = FloristRequestData.get_request(order_id)
 	var is_done: bool = completed_status.get(order_id, false)
-	var max_pat: float = float(req.get("patience_max_seconds", 75.0))
+	var max_pat: float = 0.0
+	if req.has("patience_max_seconds"):
+		max_pat = float(req["patience_max_seconds"])
+	else:
+		push_warning("RequestsModal: Request '%s' missing canonical 'patience_max_seconds'." % order_id)
 	var cur_pat: float = float(live_patience.get(order_id, max_pat))
-	var pat_ratio: float = clamp(cur_pat / max_pat, 0.0, 1.0)
+	var pat_ratio: float = clamp(cur_pat / max(max_pat, 0.001), 0.0, 1.0) if max_pat > 0.0 else 0.0
 
 	var check: Dictionary = FloristRequestData.check_fulfillment(order_id, flower_inventory, bouquet_inventory)
 	var can_fulfill: bool = check.get("can_fulfill", false)

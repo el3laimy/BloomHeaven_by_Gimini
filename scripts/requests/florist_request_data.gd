@@ -53,7 +53,7 @@ static func get_request(order_id: String) -> Dictionary:
 	if _cached_requests.has(order_id):
 		var req: Dictionary = _cached_requests[order_id].duplicate()
 		if not req.has("patience_max_seconds"):
-			req["patience_max_seconds"] = 75.0
+			push_warning("FloristRequestData: Request '%s' missing canonical 'patience_max_seconds'." % order_id)
 		return req
 	return {}
 

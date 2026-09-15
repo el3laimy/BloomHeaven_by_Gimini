@@ -32,11 +32,36 @@ else:
         fdata = json.load(f)
     flowers = fdata.get("flowers", {})
     log_ok(f"Loaded {len(flowers)} flowers: {list(flowers.keys())}")
+    VALID_STATUSES = {"cvp_base", "cvp_hybrid", "legacy", "alias"}
+    status_counts = {"cvp_base": 0, "cvp_hybrid": 0, "legacy": 0, "alias": 0, "unclassified": 0}
     for fid, fdef in flowers.items():
+        st = fdef.get("status")
+        if st in VALID_STATUSES:
+            status_counts[st] += 1
+        else:
+            status_counts["unclassified"] += 1
+            log_err(f"Flower {fid} has invalid or missing status: '{st}'")
+        
+        if st == "alias":
+            target = fdef.get("alias_of", "")
+            if not target:
+                log_err(f"Alias flower {fid} missing 'alias_of'")
+            elif target == fid:
+                log_err(f"Alias flower {fid} has self-referential cycle")
+            elif target not in flowers:
+                log_err(f"Alias flower {fid} points to nonexistent target '{target}'")
+            elif flowers[target].get("status") == "alias":
+                log_err(f"Alias flower {fid} points to chained alias '{target}'")
+
         if "display_name" not in fdef:
             log_err(f"Flower {fid} missing display_name")
         if "base_growth_seconds" not in fdef:
             log_err(f"Flower {fid} missing base_growth_seconds")
+    
+    if status_counts["unclassified"] > 0:
+        log_err(f"Found {status_counts['unclassified']} unclassified flowers!")
+    else:
+        log_ok(f"Flower classifications: {status_counts} (Total: {len(flowers)})")
         
         # check sprite paths
         if "master_sprite" in fdef:
@@ -80,6 +105,11 @@ with open(requests_fp, "r", encoding="utf-8") as f:
     rdata = json.load(f)
 requests = rdata.get("requests", {})
 log_ok(f"Loaded {len(requests)} customer requests: {list(requests.keys())}")
+for rid, rdef in requests.items():
+    if "patience_max_seconds" not in rdef:
+        log_err(f"Request {rid} missing canonical patience_max_seconds")
+    else:
+        log_ok(f"Request {rid} canonical patience: {rdef['patience_max_seconds']}s")
 
 # 5. Validate upgrades.json
 print("\n[5] Checking data/upgrades.json...")

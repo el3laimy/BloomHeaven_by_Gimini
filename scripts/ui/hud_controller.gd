@@ -341,7 +341,7 @@ func _build_hud_ui() -> void:
 	_visual_lab_btn = Button.new()
 	dummy_compat.add_child(_visual_lab_btn)
 
-	for fid in FlowerData.get_all_flower_ids():
+	for fid in FlowerData.get_cvp_base_species():
 		var lbl := Label.new()
 		dummy_compat.add_child(lbl)
 		_inv_labels[fid] = lbl
@@ -1929,6 +1929,15 @@ func update_inventory(
 		var p = get_parent()
 		var pat = p.order_manager.live_orders_patience if (p != null and "order_manager" in p and p.order_manager != null) else {}
 		_side_order_rail.update_state(flowers, bouquets, pat, _cached_completed_requests)
+
+	# Dynamic compatibility path: only accommodate owned legacy or non-base species
+	for flower_id in flowers:
+		if int(flowers[flower_id]) > 0 and not _inv_labels.has(flower_id):
+			var dummy_compat = _root_control.get_node_or_null("LegacyCompat") if is_instance_valid(_root_control) else null
+			if dummy_compat != null:
+				var lbl := Label.new()
+				dummy_compat.add_child(lbl)
+				_inv_labels[flower_id] = lbl
 
 	for flower_id in _inv_labels:
 		if flowers.has(flower_id):

@@ -85,15 +85,7 @@ var live_orders_patience: Dictionary:
 	set(v):
 		if order_manager != null:
 			order_manager.live_orders_patience = v
-		_live_orders_patience_fallback = v
-var _live_orders_patience_fallback: Dictionary = {
-	"order_1": 75.0,
-	"order_2": 80.0,
-	"order_3": 85.0,
-	"order_4": 90.0,
-	"order_5": 80.0,
-	"order_6": 95.0
-}
+var _live_orders_patience_fallback: Dictionary = {}
 
 var completed_requests: Dictionary:
 	get:

@@ -195,7 +195,7 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 		var order_rt: Dictionary = {}
 		var comp_reqs: Dictionary = d.get("completed_requests", {})
 		var live_pat: Dictionary = d.get("live_orders_patience", {})
-		var all_order_ids: Array = ["order_1", "order_2", "order_3", "order_4", "order_5", "order_6"]
+		var all_order_ids: Array = FloristRequestData.get_all_request_ids()
 		for k in comp_reqs:
 			if not all_order_ids.has(k):
 				all_order_ids.append(k)
@@ -205,7 +205,11 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 
 		for o_id in all_order_ids:
 			var req_data := FloristRequestData.get_request(o_id)
-			var max_p: float = float(req_data.get("patience_max_seconds", 75.0)) if not req_data.is_empty() else 75.0
+			var max_p: float = 0.0
+			if req_data.has("patience_max_seconds"):
+				max_p = float(req_data["patience_max_seconds"])
+			else:
+				push_warning("SaveManager: Request '%s' missing canonical 'patience_max_seconds' during migration." % o_id)
 			var is_comp: bool = bool(comp_reqs.get(o_id, false))
 			var rem_p: float = float(live_pat.get(o_id, 0.0 if is_comp else max_p))
 			order_rt[o_id] = {
@@ -222,9 +226,10 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 				if not entry.has("completed"):
 					entry["completed"] = false
 				if not entry.has("max_patience"):
-					entry["max_patience"] = 75.0
+					var req_def := FloristRequestData.get_request(o_id)
+					entry["max_patience"] = float(req_def.get("patience_max_seconds", 0.0))
 				if not entry.has("remaining_patience"):
-					entry["remaining_patience"] = float(entry.get("max_patience", 75.0))
+					entry["remaining_patience"] = float(entry.get("max_patience", 0.0))
 
 	# 5. Specimen Counter: Scan all existing specimen IDs
 	var scanned_max: int = _scan_max_specimen_id(d)

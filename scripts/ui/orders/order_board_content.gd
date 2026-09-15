@@ -365,9 +365,13 @@ func _update_card(card: Control, order_id: String, _card_index: int) -> void:
 		if is_completed:
 			watch_dial.call("set_timer", 0.0, true, Color(0.35, 0.62, 0.35, 1.0))
 		else:
-			var max_pat: float = float(req.get("patience_max_seconds", req.get("patience_sec", 60.0)))
+			var max_pat: float = 0.0
+			if req.has("patience_max_seconds"):
+				max_pat = float(req["patience_max_seconds"])
+			else:
+				push_warning("OrderBoardContent: Request '%s' missing canonical 'patience_max_seconds'." % order_id)
 			var pat: float = float(_patience_data.get(order_id, max_pat))
-			var ratio: float = clampf(pat / max(1.0, max_pat), 0.0, 1.0)
+			var ratio: float = clampf(pat / max(1.0, max_pat), 0.0, 1.0) if max_pat > 0.0 else 0.0
 			var timer_color: Color
 			var wedge_ratio: float = 0.25
 			if ratio > 0.6:
@@ -397,10 +401,14 @@ func _update_live_timers() -> void:
 			continue
 		var watch_dial: Control = card_node.find_child("WatchDial", true, false) as Control
 		if watch_dial != null:
-			var req := FloristRequestData.get_request(o_id)
-			var max_pat: float = float(req.get("patience_max_seconds", req.get("patience_sec", 60.0)))
+			var req: Dictionary = FloristRequestData.get_request(o_id)
+			var max_pat: float = 0.0
+			if req.has("patience_max_seconds"):
+				max_pat = float(req["patience_max_seconds"])
+			else:
+				push_warning("OrderBoardContent: Request '%s' missing canonical 'patience_max_seconds'." % o_id)
 			var pat: float = float(_patience_data.get(o_id, max_pat))
-			var ratio: float = clampf(pat / max(1.0, max_pat), 0.0, 1.0)
+			var ratio: float = clampf(pat / max(1.0, max_pat), 0.0, 1.0) if max_pat > 0.0 else 0.0
 			var timer_color: Color
 			var wedge_ratio: float = 0.25
 			if ratio > 0.6:
