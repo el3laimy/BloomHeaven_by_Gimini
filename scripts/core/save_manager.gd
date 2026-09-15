@@ -172,13 +172,16 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 	# Legacy V1/V2 only stored string IDs (unknown_hybrid_seeds: ["species_id"]).
 	# Historical genotype, phenotype, parents, and generation were not tracked in legacy schemas.
 	# We perform deterministic legacy reconstruction (preserving species_id with valid starter genetics),
-	# explicitly recording "legacy_reconstructed" for lineage, while lossless preservation is guaranteed for V3 serialized specimens.
+	# explicitly recording "legacy_reconstructed" for lineage and stable IDs derived from species & index.
 	if not d.has("pending_hybrid_seeds") or not (d["pending_hybrid_seeds"] is Array):
 		var pending: Array = []
 		if d.has("unknown_hybrid_seeds") and d["unknown_hybrid_seeds"] is Array:
-			for item in d["unknown_hybrid_seeds"]:
+			var legacy_list: Array = d["unknown_hybrid_seeds"]
+			for idx in range(legacy_list.size()):
+				var item = legacy_list[idx]
 				if item is String and not item.is_empty():
-					var starter_sp := GeneticsEngine.create_starter_specimen(item)
+					var stable_id: String = "LEGACY-%s-%03d" % [item.to_upper(), idx + 1]
+					var starter_sp := GeneticsEngine.create_starter_specimen(item, stable_id)
 					starter_sp.parent_a_id = "legacy_reconstructed"
 					starter_sp.parent_b_id = "legacy_reconstructed"
 					starter_sp.generation = 1
@@ -237,6 +240,23 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 	if not d.has("discovered_flowers"): d["discovered_flowers"] = {}
 	if not d.has("active_upgrades"): d["active_upgrades"] = {}
 	if not d.has("tutorial_completed"): d["tutorial_completed"] = false
+
+	# 7. Strip all legacy aliases from root payload so migrated V3 contains only canonical keys
+	d.erase("inventory")
+	d.erase("unknown_hybrid_seeds")
+	d.erase("completed_requests")
+	d.erase("live_orders_patience")
+
+	# 8. Clean up plot duplicate aliases (flower_id -> current_flower_id, specimen -> current_specimen)
+	if d.has("plots") and d["plots"] is Array:
+		for p in d["plots"]:
+			if p is Dictionary:
+				if not p.has("current_flower_id") and p.has("flower_id"):
+					p["current_flower_id"] = p["flower_id"]
+				p.erase("flower_id")
+				if not p.has("current_specimen") and p.has("specimen"):
+					p["current_specimen"] = p["specimen"]
+				p.erase("specimen")
 
 	return out
 
@@ -488,6 +508,23 @@ static func _ensure_canonical_data_shape(state_data: Dictionary) -> Dictionary:
 		d["tutorial_completed"] = false
 	if not d.has("order_runtime"):
 		d["order_runtime"] = {}
+
+	# Strip all legacy aliases so canonical V3 payload contains only single source of truth
+	d.erase("inventory")
+	d.erase("unknown_hybrid_seeds")
+	d.erase("completed_requests")
+	d.erase("live_orders_patience")
+
+	if d.has("plots") and d["plots"] is Array:
+		for p in d["plots"]:
+			if p is Dictionary:
+				if not p.has("current_flower_id") and p.has("flower_id"):
+					p["current_flower_id"] = p["flower_id"]
+				p.erase("flower_id")
+				if not p.has("current_specimen") and p.has("specimen"):
+					p["current_specimen"] = p["specimen"]
+				p.erase("specimen")
+
 	return d
 
 

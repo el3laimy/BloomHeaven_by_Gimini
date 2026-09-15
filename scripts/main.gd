@@ -294,29 +294,23 @@ func _save_game_state() -> void:
 			roster_serialized.append(spec.serialize())
 
 	var pending_serialized: Array = []
-	var legacy_unknown_seeds: Array[String] = []
 	for spec in pending_hybrid_seeds:
 		if is_instance_valid(spec):
 			pending_serialized.append(spec.serialize())
-			legacy_unknown_seeds.append(spec.species_id)
 
 	var state_data: Dictionary = {
 		"coins": coins,
 		"specimen_counter": GeneticsEngine.get_specimen_counter(),
-		"inventory": flower_inventory.get_legacy_view(),
 		"flower_inventory_storage": flower_inventory.serialize(),
 		"seed_inventory": seed_inventory.serialize(),
 		"bouquet_inventory": bouquet_inventory,
 		"perfume_inventory": perfume_inventory,
-		"completed_requests": completed_requests,
-		"live_orders_patience": order_manager.live_orders_patience if order_manager != null else {},
 		"order_runtime": order_manager.serialize().get("order_runtime", {}),
 		"combo_count": order_manager.combo_count if order_manager != null else 0,
 		"combo_timer": order_manager.combo_timer if order_manager != null else 0.0,
 		"discovered_flowers": discovered_flowers,
 		"active_upgrades": upgrade_manager.serialize() if upgrade_manager != null else active_upgrades,
 		"tutorial_completed": tutorial_completed,
-		"unknown_hybrid_seeds": legacy_unknown_seeds,
 		"pending_hybrid_seeds": pending_serialized,
 		"breeding_roster": roster_serialized,
 		"plots": SaveManagerScript.serialize_plots(garden_grid.plots) if is_instance_valid(garden_grid) else []
@@ -363,8 +357,12 @@ func _load_game_state() -> bool:
 				pending_hybrid_seeds.append(FlowerSpecimen.deserialize(s_dict))
 	elif data.has("unknown_hybrid_seeds") and data["unknown_hybrid_seeds"] is Array:
 		pending_hybrid_seeds.clear()
-		for s in data["unknown_hybrid_seeds"]:
-			var reconstructed := GeneticsEngine.create_starter_specimen(str(s))
+		var legacy_list: Array = data["unknown_hybrid_seeds"]
+		for idx in range(legacy_list.size()):
+			var s = legacy_list[idx]
+			var species_str: String = str(s)
+			var stable_id: String = "LEGACY-%s-%03d" % [species_str.to_upper(), idx + 1]
+			var reconstructed := GeneticsEngine.create_starter_specimen(species_str, stable_id)
 			reconstructed.parent_a_id = "legacy_reconstructed"
 			reconstructed.parent_b_id = "legacy_reconstructed"
 			reconstructed.generation = 1

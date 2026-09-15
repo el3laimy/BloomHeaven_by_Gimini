@@ -361,13 +361,12 @@ func reset_to_empty_state() -> void:
 	queue_redraw()
 
 
-## Serializes complete GardenPlot domain state
+## Serializes complete GardenPlot domain state (canonical V3 writer)
 func to_dictionary() -> Dictionary:
 	var d: Dictionary = {
 		"index": plot_index,
 		"state": int(state),
 		"current_flower_id": current_flower_id,
-		"flower_id": current_flower_id, # Backwards compatibility alias
 		"growth_progress": growth_progress,
 		"is_watered": is_watered,
 		"water_duration_remaining": water_duration_remaining,
@@ -378,8 +377,7 @@ func to_dictionary() -> Dictionary:
 		"is_mystery_seed": is_mystery_seed,
 		"is_revealed": is_revealed,
 		"is_hero_showcase": is_hero_showcase,
-		"current_specimen": current_specimen.serialize() if current_specimen != null else null,
-		"specimen": current_specimen.serialize() if current_specimen != null else null # Backwards compatibility alias
+		"current_specimen": current_specimen.serialize() if current_specimen != null else null
 	}
 	return d
 

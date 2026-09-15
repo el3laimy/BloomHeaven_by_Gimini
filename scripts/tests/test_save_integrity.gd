@@ -60,6 +60,8 @@ func _init() -> void:
 	_run_suite("Multi-Tier Recovery Pipeline (V3 -> Bak -> V2 -> V1)", _test_multi_tier_recovery)
 	_run_suite("Invalid Schema Strict Rejection", _test_invalid_schema_rejection)
 	_run_suite("Starter Seeds & Save Existence Edge Cases", _test_starter_seeds_edge_cases)
+	_run_suite("Canonical V3 Writer (No Duplicate Aliases)", _test_canonical_v3_no_legacy_aliases)
+	_run_suite("Deterministic Legacy Reconstruction Reproducibility", _test_deterministic_legacy_reconstruction_reproducibility)
 
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -979,3 +981,175 @@ func _test_starter_seeds_edge_cases() -> String:
 		return "Existing save with 0 seeds was erroneously refilled with starter seeds"
 
 	return ""
+
+
+# ------------------------------------------------------------------------------
+# 23. Canonical V3 Writer (No Duplicate Legacy Aliases)
+# ------------------------------------------------------------------------------
+func _test_canonical_v3_no_legacy_aliases() -> String:
+	_cleanup_test_files()
+
+	var plot := GardenPlot.new()
+	plot.plot_index = 0
+	plot.state = GardenPlot.State.GROWING
+	plot.current_flower_id = "rose"
+	plot.growth_progress = 0.5
+	plot.is_watered = true
+	plot.water_duration_remaining = 15.0
+
+	var f_inv := FlowerInventory.new()
+	f_inv.add_flower("rose", FlowerQuality.Tier.PERFECT, 2)
+
+	var s_inv := SeedInventory.new()
+	s_inv.add_seeds("rose", 5)
+
+	var spec := GeneticsEngine.create_starter_specimen("rose")
+
+	var state: Dictionary = {
+		"coins": 500,
+		"specimen_counter": 100,
+		"flower_inventory_storage": f_inv.serialize(),
+		"seed_inventory": s_inv.serialize(),
+		"plots": [plot.to_dictionary()],
+		"breeding_roster": [],
+		"pending_hybrid_seeds": [spec.serialize()],
+		"bouquet_inventory": {},
+		"order_runtime": {
+			"order_1": {"completed": false, "remaining_patience": 30.0, "max_patience": 60.0}
+		}
+	}
+
+	var saved := SaveManager.save_game(state, TEST_SAVE_BASE)
+	if not saved:
+		return "Failed to save canonical V3 state"
+
+	# Read raw file from disk
+	var file := FileAccess.open(TEST_SAVE_BASE, FileAccess.READ)
+	if file == null:
+		return "Failed to open saved file for alias inspection"
+	var text := file.get_as_text()
+	file.close()
+
+	var json := JSON.new()
+	if json.parse(text) != OK or not (json.data is Dictionary):
+		return "Failed to parse saved V3 JSON"
+
+	var root_dict: Dictionary = json.data
+	if not root_dict.has("data") or not (root_dict["data"] is Dictionary):
+		return "Saved file missing 'data' dictionary"
+	var data: Dictionary = root_dict["data"]
+
+	# Check root-level aliases must NOT exist
+	var forbidden_root_aliases := ["inventory", "unknown_hybrid_seeds", "completed_requests", "live_orders_patience"]
+	for alias in forbidden_root_aliases:
+		if data.has(alias):
+			return "Canonical V3 save contains forbidden legacy alias at root: '%s'" % alias
+
+	# Check canonical root keys exist
+	var required_canonical_keys := ["flower_inventory_storage", "seed_inventory", "order_runtime", "pending_hybrid_seeds", "plots"]
+	for req_key in required_canonical_keys:
+		if not data.has(req_key):
+			return "Canonical V3 save missing required canonical key: '%s'" % req_key
+
+	# Check plot payload: must contain current_flower_id and current_specimen, NOT flower_id or specimen
+	if not (data["plots"] is Array) or data["plots"].is_empty():
+		return "Plots array empty or invalid in saved canonical V3 payload"
+	var p0: Dictionary = data["plots"][0]
+	if not p0.has("current_flower_id"):
+		return "Plot missing canonical 'current_flower_id'"
+	if not p0.has("current_specimen"):
+		return "Plot missing canonical 'current_specimen'"
+	if p0.has("flower_id"):
+		return "Plot contains forbidden legacy alias 'flower_id'"
+	if p0.has("specimen"):
+		return "Plot contains forbidden legacy alias 'specimen'"
+
+	return ""
+
+
+# ------------------------------------------------------------------------------
+# 24. Deterministic Legacy Reconstruction Reproducibility
+# ------------------------------------------------------------------------------
+func _test_deterministic_legacy_reconstruction_reproducibility() -> String:
+	# Create legacy fixture with multiple unknown hybrid seeds
+	var legacy_fixture := {
+		"version": 1,
+		"data": {
+			"coins": 250,
+			"unknown_hybrid_seeds": ["velvet_dusk", "sunfire", "velvet_dusk"]
+		}
+	}
+
+	# Clone duplicate dictionaries
+	var fixture_a: Dictionary = legacy_fixture.duplicate(true)
+	var fixture_b: Dictionary = legacy_fixture.duplicate(true)
+
+	# Migrate fixture A
+	var migrated_a: Dictionary = SaveManager.migrate_to_latest(fixture_a)
+	if migrated_a.is_empty():
+		return "Migration of fixture A failed"
+
+	# Advance specimen counter in between to prove migration uses stable deterministic IDs
+	var dummy_spec := GeneticsEngine.create_starter_specimen("rose")
+
+	# Migrate fixture B
+	var migrated_b: Dictionary = SaveManager.migrate_to_latest(fixture_b)
+	if migrated_b.is_empty():
+		return "Migration of fixture B failed"
+
+	var pending_a: Array = migrated_a.get("data", {}).get("pending_hybrid_seeds", [])
+	var pending_b: Array = migrated_b.get("data", {}).get("pending_hybrid_seeds", [])
+
+	if pending_a.size() != 3:
+		return "Expected 3 reconstructed seeds in A, got %d" % pending_a.size()
+	if pending_b.size() != 3:
+		return "Expected 3 reconstructed seeds in B, got %d" % pending_b.size()
+
+	# Compare each reconstructed specimen across runs for exact deterministic equality
+	for idx in range(3):
+		var s_a: Dictionary = pending_a[idx]
+		var s_b: Dictionary = pending_b[idx]
+
+		var id_a: String = str(s_a.get("specimen_id", ""))
+		var id_b: String = str(s_b.get("specimen_id", ""))
+		if id_a != id_b:
+			return "Specimen ID non-deterministic at index %d: '%s' vs '%s'" % [idx, id_a, id_b]
+
+		# Verify stable ID pattern LEGACY-<SPECIES>-<INDEX>
+		var expected_prefix: String = "LEGACY-%s-%03d" % [str(s_a.get("species_id", "")).to_upper(), idx + 1]
+		if id_a != expected_prefix:
+			return "Specimen ID did not match deterministic format '%s', got '%s'" % [expected_prefix, id_a]
+
+		if str(s_a.get("species_id", "")) != str(s_b.get("species_id", "")):
+			return "Species ID mismatch at index %d" % idx
+		if str(s_a.get("parent_a_id", "")) != str(s_b.get("parent_a_id", "")):
+			return "Parent A mismatch at index %d" % idx
+		if str(s_a.get("parent_b_id", "")) != str(s_b.get("parent_b_id", "")):
+			return "Parent B mismatch at index %d" % idx
+		if int(s_a.get("generation", 0)) != int(s_b.get("generation", 0)):
+			return "Generation mismatch at index %d" % idx
+
+		var geno_a: Dictionary = s_a.get("genotype", {})
+		var geno_b: Dictionary = s_b.get("genotype", {})
+		for trait_key in ["color", "petal", "fragrance", "vigor"]:
+			if geno_a.get(trait_key, []) != geno_b.get(trait_key, []):
+				return "Genotype mismatch for trait '%s' at index %d" % [trait_key, idx]
+
+	# Also verify that raw file migration from fixture path reproduces same deterministic results
+	var v1_fixture_path := "res://tests/fixtures/baseline_saves/finest_garden_save_v1.json"
+	if FileAccess.file_exists(v1_fixture_path):
+		var f := FileAccess.open(v1_fixture_path, FileAccess.READ)
+		var txt := f.get_as_text()
+		f.close()
+		var j1 := JSON.new()
+		var j2 := JSON.new()
+		if j1.parse(txt) == OK and j2.parse(txt) == OK:
+			var m1 := SaveManager.migrate_to_latest(j1.data)
+			var m2 := SaveManager.migrate_to_latest(j2.data)
+			var p1: Array = m1.get("data", {}).get("pending_hybrid_seeds", [])
+			var p2: Array = m2.get("data", {}).get("pending_hybrid_seeds", [])
+			if p1.size() != p2.size():
+				return "Mismatch in baseline v1 pending hybrid count: %d vs %d" % [p1.size(), p2.size()]
+
+	return ""
+
