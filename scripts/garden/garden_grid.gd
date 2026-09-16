@@ -139,6 +139,16 @@ func get_plot_spacing() -> float:
 	return min_dist if min_dist != INF else 0.0
 
 
+## Multiplier on minimum inter-plot pitch (spacing) to determine immediate spatial neighbors.
+## In a grid layout with pitch S:
+## - Orthogonal neighbors are at distance 1.0 * S
+## - Diagonal neighbors are at distance sqrt(2) * S ~= 1.4142 * S
+## - Second-ring neighbors are at distance >= 2.0 * S
+## Setting ADJACENCY_RADIUS_FACTOR = sqrt(2) + epsilon (~1.48) guarantees that all immediate
+## orthogonal and diagonal adjacent plots are included, while strictly excluding the second ring.
+const ADJACENCY_RADIUS_FACTOR: float = 1.48
+
+
 func get_adjacent_plots(target_plot: GardenPlot) -> Array[GardenPlot]:
 	var result: Array[GardenPlot] = []
 	if target_plot == null or not is_instance_valid(target_plot):
@@ -146,7 +156,7 @@ func get_adjacent_plots(target_plot: GardenPlot) -> Array[GardenPlot]:
 	var min_spacing := get_plot_spacing()
 	if min_spacing <= 0.0:
 		return result
-	var threshold: float = min_spacing * 1.55
+	var threshold: float = min_spacing * ADJACENCY_RADIUS_FACTOR
 	for p in plots:
 		if p == target_plot or not is_instance_valid(p):
 			continue

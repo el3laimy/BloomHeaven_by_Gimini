@@ -17,6 +17,7 @@ var _passed_tests: int = 0
 var _failed_tests: int = 0
 
 const BreedingService := preload("res://scripts/domain/breeding_service.gd")
+const AudioManagerScript := preload("res://scripts/core/audio_manager.gd")
 
 
 func _init() -> void:
@@ -40,17 +41,19 @@ func _run_all_tests() -> void:
 	await _run_suite("6. Resume Unpauses Scene Tree", _test_resume_unpauses_scene_tree)
 	await _run_suite("7. Settings Sub-Menu Preserves Pause On Close", _test_settings_sub_menu_preserves_pause_on_close)
 	await _run_suite("8. Main Menu Transition Clears Pause", _test_main_menu_transition_clears_pause)
-	await _run_suite("9. Audio Bus & Canonical SFX IDs", _test_audio_bus_and_sfx)
-	await _run_suite("10. Order Card No Duplicate Callbacks After Refreshes", _test_order_card_no_duplicate_callbacks)
-	await _run_suite("11. Specimen Reveal No Leak On Repeated Shows", _test_specimen_reveal_no_leak)
-	await _run_suite("12. Flower Stand Toggle Single Callback", _test_flower_stand_toggle_single_callback)
-	await _run_suite("13. Breeding Validator Accepts Valid Pair", _test_breeding_validator_accepts_valid_pair)
-	await _run_suite("14. Breeding Validator Rejects Incompatible Species", _test_breeding_validator_rejects_incompatible)
-	await _run_suite("15. Breeding Validator Rejects Same Specimen In Both Slots", _test_breeding_validator_rejects_same_specimen)
-	await _run_suite("16. Garden Adjacency Nearest Neighbor Geometry", _test_garden_adjacency_nearest_neighbor)
-	await _run_suite("17. Camera Lerp Clamped On Extreme Delta", _test_camera_lerp_clamped)
-	await _run_suite("18. RMB Drag Preserves Action Queue, Clean Click Cancels", _test_rmb_drag_vs_click_queue)
-	await _run_suite("19. Character Action Completion Callback Lifecycle", _test_character_action_completion_callback)
+	await _run_suite("9. Audio Bus & Canonical SFX Resolution", _test_audio_bus_and_sfx)
+	await _run_suite("10. Audio Settings Volume Routing & Isolation", _test_audio_settings_routing)
+	await _run_suite("11. Order Card No Duplicate Callbacks After Refreshes", _test_order_card_no_duplicate_callbacks)
+	await _run_suite("12. Specimen Reveal No Leak On Repeated Shows", _test_specimen_reveal_no_leak)
+	await _run_suite("13. Flower Stand Toggle Single Callback", _test_flower_stand_toggle_single_callback)
+	await _run_suite("14. Breeding Validator Accepts Valid Pair", _test_breeding_validator_accepts_valid_pair)
+	await _run_suite("15. Breeding Validator Rejects Incompatible Species", _test_breeding_validator_rejects_incompatible)
+	await _run_suite("16. Breeding Validator Rejects Same Specimen In Both Slots", _test_breeding_validator_rejects_same_specimen)
+	await _run_suite("17. Breeding Validator Enforces Roster Ownership", _test_breeding_validator_enforces_roster_ownership)
+	await _run_suite("18. Garden Adjacency Explicit Geometry & Ring Filtering", _test_garden_adjacency_nearest_neighbor)
+	await _run_suite("19. Camera Lerp Clamped On Extreme Delta", _test_camera_lerp_clamped)
+	await _run_suite("20. RMB Drag Preserves Action Queue, Clean Click Cancels", _test_rmb_drag_vs_click_queue)
+	await _run_suite("21. Character Action Completion Callback Lifecycle (Production Path)", _test_character_action_completion_callback)
 
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -274,19 +277,94 @@ func _test_audio_bus_and_sfx() -> String:
 	if sfx_idx == -1:
 		return "SFX bus not found in AudioServer"
 
-	# 2. Canonical SFX IDs
+	var audio_mgr: AudioManagerClass = AudioManagerScript.new()
+
+	# 2. Canonical SFX IDs & Stream Resolution
 	var expected_ids := ["click", "coin", "plant", "water", "prune", "harvest", "upgrade", "error", "step"]
 	for id in expected_ids:
-		if not AudioManager.CANONICAL_SFX_IDS.has(id):
-			return "Missing canonical SFX ID: %s" % id
+		if not audio_mgr.CANONICAL_SFX_IDS.has(id):
+			audio_mgr.free()
+			return "Missing canonical SFX ID in list: %s" % id
+		var stream := audio_mgr.get_sfx_stream(id)
+		if stream == null:
+			audio_mgr.free()
+			return "AudioManager failed to resolve canonical SFX ID '%s' to an audio stream" % id
+		if not (stream is AudioStream):
+			audio_mgr.free()
+			return "Resolved stream for '%s' is not of type AudioStream" % id
 
 	# 3. Aliases
-	if not AudioManager.SFX_ALIASES.has("sfx_click") or AudioManager.SFX_ALIASES["sfx_click"] != "click":
+	if not audio_mgr.SFX_ALIASES.has("sfx_click") or audio_mgr.SFX_ALIASES["sfx_click"] != "click":
+		audio_mgr.free()
 		return "SFX alias sfx_click -> click missing or incorrect"
-	if not AudioManager.SFX_ALIASES.has("craft") or AudioManager.SFX_ALIASES["craft"] != "harvest":
+	if not audio_mgr.SFX_ALIASES.has("craft") or audio_mgr.SFX_ALIASES["craft"] != "harvest":
+		audio_mgr.free()
 		return "SFX alias craft -> harvest missing or incorrect"
+	var alias_stream := audio_mgr.get_sfx_stream("sfx_click")
+	if alias_stream == null or alias_stream != audio_mgr.get_sfx_stream("click"):
+		audio_mgr.free()
+		return "Alias sfx_click did not resolve to canonical click stream"
 
+	audio_mgr.free()
 	return ""
+
+
+func _test_audio_settings_routing() -> String:
+	var master_idx := AudioServer.get_bus_index("Master")
+	var music_idx := AudioServer.get_bus_index("Music")
+	var sfx_idx := AudioServer.get_bus_index("SFX")
+
+	if master_idx == -1 or music_idx == -1 or sfx_idx == -1:
+		return "Required audio buses (Master, Music, SFX) not found in AudioServer"
+
+	# Save initial values for teardown
+	var init_master_db := AudioServer.get_bus_volume_db(master_idx)
+	var init_music_db := AudioServer.get_bus_volume_db(music_idx)
+	var init_sfx_db := AudioServer.get_bus_volume_db(sfx_idx)
+
+	var settings_scene := preload("res://scenes/ui/settings_menu.tscn")
+	var settings: SettingsMenu = settings_scene.instantiate()
+	root.add_child(settings)
+	await process_frame
+
+	var err := ""
+
+	# 1. Test Music routing
+	settings._on_music_volume_changed(0.4)
+	var expected_music_db := linear_to_db(0.4)
+	var new_music_db := AudioServer.get_bus_volume_db(music_idx)
+	var cur_sfx_db := AudioServer.get_bus_volume_db(sfx_idx)
+	var cur_master_db := AudioServer.get_bus_volume_db(master_idx)
+
+	if abs(new_music_db - expected_music_db) > 0.01:
+		err = "Changing Music volume failed to update Music bus db: expected %f, got %f" % [expected_music_db, new_music_db]
+	elif abs(cur_sfx_db - init_sfx_db) > 0.01:
+		err = "Changing Music volume unexpectedly altered SFX bus db: was %f, now %f" % [init_sfx_db, cur_sfx_db]
+	elif abs(cur_master_db - init_master_db) > 0.01:
+		err = "Changing Music volume unexpectedly altered Master bus db: was %f, now %f" % [init_master_db, cur_master_db]
+
+	# 2. Test SFX routing
+	if err.is_empty():
+		settings._on_sfx_volume_changed(0.7)
+		var expected_sfx_db := linear_to_db(0.7)
+		var new_sfx_db := AudioServer.get_bus_volume_db(sfx_idx)
+		var cur_music_db := AudioServer.get_bus_volume_db(music_idx)
+		cur_master_db = AudioServer.get_bus_volume_db(master_idx)
+
+		if abs(new_sfx_db - expected_sfx_db) > 0.01:
+			err = "Changing SFX volume failed to update SFX bus db: expected %f, got %f" % [expected_sfx_db, new_sfx_db]
+		elif abs(cur_music_db - expected_music_db) > 0.01:
+			err = "Changing SFX volume unexpectedly altered Music bus db: was %f, now %f" % [expected_music_db, cur_music_db]
+		elif abs(cur_master_db - init_master_db) > 0.01:
+			err = "Changing SFX volume unexpectedly altered Master bus db: was %f, now %f" % [init_master_db, cur_master_db]
+
+	# Teardown: restore initial bus volume settings
+	AudioServer.set_bus_volume_db(master_idx, init_master_db)
+	AudioServer.set_bus_volume_db(music_idx, init_music_db)
+	AudioServer.set_bus_volume_db(sfx_idx, init_sfx_db)
+
+	settings.free()
+	return err
 
 
 func _test_order_card_no_duplicate_callbacks() -> String:
@@ -447,46 +525,134 @@ func _test_breeding_validator_rejects_same_specimen() -> String:
 	return ""
 
 
+func _test_breeding_validator_enforces_roster_ownership() -> String:
+	var spec_a := FlowerSpecimen.new()
+	spec_a.specimen_id = "SPEC-A"
+	spec_a.species_id = "rose"
+
+	var spec_b := FlowerSpecimen.new()
+	spec_b.specimen_id = "SPEC-B"
+	spec_b.species_id = "lavender"
+
+	# Roster only contains spec_a
+	var roster: Array[FlowerSpecimen] = [spec_a]
+	var inv := {"rose": 5, "lavender": 5}
+
+	# 1. Slot 1 in roster, Slot 2 NOT in roster
+	var res1 := BreedingService.validate_pair("SPEC-A", "SPEC-B", spec_a, spec_b, inv, roster)
+	if res1.get("valid", false):
+		return "Accepted unrostered specimen in Slot B"
+	if res1.get("error", "").find("Parent B") == -1:
+		return "Error did not identify Parent B missing from stock: %s" % res1.get("error", "")
+
+	# 2. Slot 1 NOT in roster, Slot 2 in roster
+	var res2 := BreedingService.validate_pair("SPEC-B", "SPEC-A", spec_b, spec_a, inv, roster)
+	if res2.get("valid", false):
+		return "Accepted unrostered specimen in Slot A"
+	if res2.get("error", "").find("Parent A") == -1:
+		return "Error did not identify Parent A missing from stock: %s" % res2.get("error", "")
+
+	# 3. Verify zero inventory or roster mutation
+	if inv["rose"] != 5 or inv["lavender"] != 5:
+		return "Inventory was mutated during failed validation"
+	if roster.size() != 1 or roster[0] != spec_a:
+		return "Roster was mutated during failed validation"
+
+	# 4. Verify that standard species/inventory breeding without roster still works normally
+	var res_species := BreedingService.validate_pair("rose", "lavender", null, null, inv, [])
+	if not res_species.get("valid", false):
+		return "Standard species inventory breeding without roster unexpectedly rejected: %s" % res_species.get("error", "")
+
+	return ""
+
+
 func _test_garden_adjacency_nearest_neighbor() -> String:
 	var grid := GardenGrid.new()
-	grid.total_plots = 6
 	root.add_child(grid)
 	await process_frame
 
-	if grid.plots.size() < 2:
+	# Clear any auto-generated plots and construct a controlled geometric grid
+	for child in grid.get_children():
+		if child is GardenPlot:
+			child.queue_free()
+	grid.plots.clear()
+
+	# Grid geometry with known spacing S = 60.0:
+	# Center plot: (60, 60)
+	# Orthogonal neighbor: (60, 120) -> distance = 60.0 (1.0 * S)
+	# Diagonal neighbor: (120, 120) -> distance = 60 * sqrt(2) ~= 84.85 (~1.414 * S)
+	# Second-ring neighbor: (60, 180) -> distance = 120.0 (2.0 * S)
+	# Far plot: (300, 300) -> distance ~= 339.4 (> 5.0 * S)
+	var p_center := GardenPlot.new()
+	p_center.position = Vector2(60, 60)
+	grid.add_child(p_center)
+	grid.plots.append(p_center)
+
+	var p_ortho := GardenPlot.new()
+	p_ortho.position = Vector2(60, 120)
+	grid.add_child(p_ortho)
+	grid.plots.append(p_ortho)
+
+	var p_diag := GardenPlot.new()
+	p_diag.position = Vector2(120, 120)
+	grid.add_child(p_diag)
+	grid.plots.append(p_diag)
+
+	var p_second_ring := GardenPlot.new()
+	p_second_ring.position = Vector2(60, 180)
+	grid.add_child(p_second_ring)
+	grid.plots.append(p_second_ring)
+
+	var p_far := GardenPlot.new()
+	p_far.position = Vector2(300, 300)
+	grid.add_child(p_far)
+	grid.plots.append(p_far)
+
+	await process_frame
+
+	# 1. Test adjacent plots calculation (must include orthogonal & diagonal, exclude ring 2 & far)
+	var adj := grid.get_adjacent_plots(p_center)
+
+	if not adj.has(p_ortho):
 		grid.free()
-		return "GardenGrid did not create plots"
-
-	var plot0: GardenPlot = grid.plots[0]
-	var adjacent := grid.get_adjacent_plots(plot0)
-	if adjacent.is_empty():
+		return "Orthogonal neighbor (distance 1.0*S) was not included in adjacent plots"
+	if not adj.has(p_diag):
 		grid.free()
-		return "No adjacent plots found for plot 0"
+		return "Diagonal neighbor (distance sqrt(2)*S) was not included in adjacent plots"
+	if adj.has(p_second_ring):
+		grid.free()
+		return "Second-ring neighbor (distance 2.0*S) was incorrectly included in adjacent plots"
+	if adj.has(p_far):
+		grid.free()
+		return "Far plot was incorrectly included in adjacent plots"
+	if adj.size() != 2:
+		grid.free()
+		return "Expected exactly 2 adjacent plots (orthogonal + diagonal), got %d" % adj.size()
 
-	var min_spacing := grid.get_plot_spacing()
-	for adj in adjacent:
-		var d := plot0.position.distance_to(adj.position)
-		if d > min_spacing * 1.55:
-			grid.free()
-			return "Plot at distance %f included in adjacent (threshold %f)" % [d, min_spacing * 1.55]
+	# 2. Test that shuffling the plots array does not change the result
+	grid.plots.shuffle()
+	var adj_shuffled := grid.get_adjacent_plots(p_center)
+	if adj_shuffled.size() != 2 or not adj_shuffled.has(p_ortho) or not adj_shuffled.has(p_diag):
+		grid.free()
+		return "Adjacency result changed after plots array was shuffled"
 
-	# Test get_nearest_valid_neighbor with predicate
-	adjacent[0].state = GardenPlot.State.GROWING
-	adjacent[0].is_watered = false
-	var nearest := grid.get_nearest_valid_neighbor(plot0, func(p: GardenPlot) -> bool:
+	# 3. Test get_nearest_valid_neighbor with predicate
+	p_ortho.state = GardenPlot.State.GROWING
+	p_ortho.is_watered = false
+	var nearest := grid.get_nearest_valid_neighbor(p_center, func(p: GardenPlot) -> bool:
 		return p.state == GardenPlot.State.GROWING and not p.is_watered
 	)
-	if nearest != adjacent[0]:
+	if nearest != p_ortho:
 		grid.free()
 		return "get_nearest_valid_neighbor failed to find matching neighbor"
 
-	# Test when predicate fails: must return null, never fall back to distant plots
-	var none_valid := grid.get_nearest_valid_neighbor(plot0, func(_p: GardenPlot) -> bool:
+	# 4. Test when no adjacent plot matches predicate: must return null
+	var none_valid := grid.get_nearest_valid_neighbor(p_center, func(_p: GardenPlot) -> bool:
 		return false
 	)
 	if none_valid != null:
 		grid.free()
-		return "get_nearest_valid_neighbor returned non-null when predicate failed"
+		return "get_nearest_valid_neighbor returned non-null when predicate failed on all adjacent plots"
 
 	grid.free()
 	return ""
@@ -591,41 +757,54 @@ func _test_character_action_completion_callback() -> String:
 		plot.free()
 		return "Action not queued in character"
 
-	# Directly execute tool action callback to simulate completion
-	var task: Dictionary = char_node.task_queue[0]
-	var cb: Callable = task.get("on_complete", Callable())
-	task["on_complete"] = Callable()
-	if not char_node.task_queue.is_empty():
-		char_node.task_queue.pop_front()
-	if cb.is_valid():
-		cb.call()
+	# Call the real production completion method that runtime uses when tool action finishes
+	char_node._finish_current_task(true)
 
 	if complete_called[0] != 1:
 		char_node.free()
 		plot.free()
 		return "Expected complete callback to fire once on task completion, got %d" % complete_called[0]
 
-	# Verify callback cleared to prevent double fire
-	if task["on_complete"].is_valid():
+	# Extra frames / ticks / extra calls must NOT fire a second time
+	char_node._finish_current_task(true)
+	char_node._physics_process(0.1)
+	if complete_called[0] != 1:
 		char_node.free()
 		plot.free()
-		return "Task on_complete callable was not cleared after execution"
+		return "Complete callback fired a second time after task was finished: %d" % complete_called[0]
 
-	# 2. Test rejection (plot == null) -> complete_called should not increase
-	var before_count: int = complete_called[0]
-	char_node.perform_action_at_plot(null, "water", Callable(), func(): complete_called[0] += 10)
-	if complete_called[0] != before_count:
+	# 2. Test rejection (plot == null) -> complete_called should not fire (0 calls)
+	var rejected_called := [0]
+	char_node.perform_action_at_plot(null, "water", Callable(), func(): rejected_called[0] += 1)
+	if rejected_called[0] != 0:
 		char_node.free()
 		plot.free()
-		return "Callback invoked on rejected action"
+		return "Callback invoked on rejected action (plot == null)"
+	if not char_node.task_queue.is_empty():
+		char_node.free()
+		plot.free()
+		return "Rejected action was placed in task queue"
 
-	# 3. Test interruption (clear_queue)
-	char_node.perform_action_at_plot(plot, "prune", Callable(), func(): complete_called[0] += 100)
+	# 3. Test cancellation via clear_queue() -> complete callback must not fire
+	var cancelled_called := [0]
+	char_node.queue_action_at_plot(plot, "prune", Callable(), func(): cancelled_called[0] += 1)
+	if char_node.task_queue.size() != 1:
+		char_node.free()
+		plot.free()
+		return "Task was not queued for cancellation test"
+
 	char_node.clear_queue()
-	if complete_called[0] != before_count:
+	if not char_node.task_queue.is_empty():
 		char_node.free()
 		plot.free()
-		return "Callback invoked after action queue was cleared"
+		return "Task queue not empty after clear_queue"
+
+	# Even if completion method is invoked after clear_queue, callback must not fire
+	char_node._finish_current_task(true)
+	if cancelled_called[0] != 0:
+		char_node.free()
+		plot.free()
+		return "Callback invoked after action queue was cleared/cancelled"
 
 	char_node.free()
 	plot.free()

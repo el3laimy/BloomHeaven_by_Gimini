@@ -188,5 +188,12 @@ func has_sfx(sfx_name: String) -> bool:
 	return _sfx_cache.has(sfx_name)
 
 
+func get_sfx_stream(sfx_name: String) -> AudioStream:
+	var resolved_name := sfx_name
+	if SFX_ALIASES.has(sfx_name):
+		resolved_name = SFX_ALIASES[sfx_name]
+	return _sfx_cache.get(resolved_name, null)
+
+
 func has_music(track_name: String) -> bool:
 	return _music_cache.has(track_name)

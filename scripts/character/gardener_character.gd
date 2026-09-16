@@ -271,27 +271,34 @@ func _process_next_queue_task() -> void:
 	var current_task: Dictionary = task_queue[0]
 	var target_plot: GardenPlot = current_task.plot
 	if not is_instance_valid(target_plot):
-		task_queue.pop_front()
-		queue_updated.emit(task_queue.size())
-		_process_next_queue_task()
+		_finish_current_task(false)
 		return
 
 	var stand_pos := target_plot.global_position + Vector2(0, 30.0)
 	walk_to(stand_pos, func() -> void:
 		_execute_tool_action(target_plot, current_task.action, current_task.on_trigger, func() -> void:
-			var cb: Callable = current_task.get("on_complete", Callable())
-			current_task["on_complete"] = Callable()
-			if not task_queue.is_empty():
-				task_queue.pop_front()
-			queue_updated.emit(task_queue.size())
-			if cb.is_valid():
-				cb.call()
-			_process_next_queue_task()
+			_finish_current_task(true)
 		)
 	)
 
 
+## Single production completion point for queue tasks. Responsible for firing and clearing on_complete.
+func _finish_current_task(success: bool = true) -> void:
+	if task_queue.is_empty():
+		return
+	var current_task: Dictionary = task_queue[0]
+	var cb: Callable = current_task.get("on_complete", Callable())
+	current_task["on_complete"] = Callable()
+	task_queue.pop_front()
+	queue_updated.emit(task_queue.size())
+	if success and cb.is_valid():
+		cb.call()
+	_process_next_queue_task()
+
+
 func clear_queue() -> void:
+	for task in task_queue:
+		task["on_complete"] = Callable()
 	task_queue.clear()
 	target_pos = Vector2.INF
 	velocity = Vector2.ZERO
