@@ -2,6 +2,7 @@
 import os
 import json
 import re
+import sys
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
@@ -22,132 +23,229 @@ print("==================================================")
 print("🌿 FINEST GARDEN — COMPREHENSIVE PROJECT VALIDATOR 🌿")
 print("==================================================")
 
-# 1. Validate flowers.json
-print("\n[1] Checking data/flowers.json...")
+# 1. Validate flowers.json & Sprites
+print("\n[1] Checking data/flowers.json & Asset Sprites...")
 flowers_fp = os.path.join(DATA_DIR, "flowers.json")
+flowers = {}
 if not os.path.exists(flowers_fp):
     log_err("data/flowers.json does not exist!")
 else:
-    with open(flowers_fp, "r", encoding="utf-8") as f:
-        fdata = json.load(f)
-    flowers = fdata.get("flowers", {})
-    log_ok(f"Loaded {len(flowers)} flowers: {list(flowers.keys())}")
+    try:
+        with open(flowers_fp, "r", encoding="utf-8") as f:
+            fdata = json.load(f)
+        flowers = fdata.get("flowers", {})
+        log_ok(f"Loaded {len(flowers)} flowers: {list(flowers.keys())}")
+    except Exception as e:
+        log_err(f"Failed to parse flowers.json: {e}")
+
+if flowers:
     VALID_STATUSES = {"cvp_base", "cvp_hybrid", "legacy", "alias"}
     status_counts = {"cvp_base": 0, "cvp_hybrid": 0, "legacy": 0, "alias": 0, "unclassified": 0}
+    
+    # Expected core sets
+    EXPECTED_CVP_BASE = {"rose", "lavender", "tulip", "daisy"}
+    EXPECTED_CVP_HYBRID = {"blushbell", "velvet_dusk", "twilight_bell", "sunburst_daisy", "crown_petal", "meadow_mist"}
+    
     for fid, fdef in flowers.items():
         st = fdef.get("status")
         if st in VALID_STATUSES:
             status_counts[st] += 1
         else:
             status_counts["unclassified"] += 1
-            log_err(f"Flower {fid} has invalid or missing status: '{st}'")
+            log_err(f"Flower '{fid}' has invalid or missing status: '{st}'")
         
         if st == "alias":
             target = fdef.get("alias_of", "")
             if not target:
-                log_err(f"Alias flower {fid} missing 'alias_of'")
+                log_err(f"Alias flower '{fid}' missing 'alias_of'")
             elif target == fid:
-                log_err(f"Alias flower {fid} has self-referential cycle")
+                log_err(f"Alias flower '{fid}' has self-referential cycle")
             elif target not in flowers:
-                log_err(f"Alias flower {fid} points to nonexistent target '{target}'")
+                log_err(f"Alias flower '{fid}' points to nonexistent target '{target}'")
             elif flowers[target].get("status") == "alias":
-                log_err(f"Alias flower {fid} points to chained alias '{target}'")
+                log_err(f"Alias flower '{fid}' points to chained alias '{target}'")
+        else:
+            if "display_name" not in fdef:
+                log_err(f"Flower '{fid}' missing display_name")
+            if "base_growth_seconds" not in fdef or fdef["base_growth_seconds"] <= 0:
+                log_err(f"Flower '{fid}' missing or invalid base_growth_seconds")
+            
+            # Check master sprite for every non-alias flower
+            if "master_sprite" in fdef:
+                rel = fdef["master_sprite"].replace("res://", "")
+                full = os.path.join(ROOT_DIR, rel)
+                if not os.path.exists(full):
+                    log_err(f"Flower '{fid}' master_sprite missing on disk: {full}")
+            
+            # Check branching stage sprites
+            if "branching_stages" in fdef:
+                bstages = fdef["branching_stages"]
+                for sname, spath in bstages.items():
+                    rel = spath.replace("res://", "")
+                    full = os.path.join(ROOT_DIR, rel)
+                    if not os.path.exists(full):
+                        log_err(f"Flower '{fid}' branching stage '{sname}' sprite missing: {full}")
 
-        if "display_name" not in fdef:
-            log_err(f"Flower {fid} missing display_name")
-        if "base_growth_seconds" not in fdef:
-            log_err(f"Flower {fid} missing base_growth_seconds")
-    
+    for expected in EXPECTED_CVP_BASE:
+        if expected not in flowers or flowers[expected].get("status") != "cvp_base":
+            log_err(f"Expected CVP base flower '{expected}' missing or not classified as cvp_base")
+
+    for expected in EXPECTED_CVP_HYBRID:
+        if expected not in flowers or flowers[expected].get("status") != "cvp_hybrid":
+            log_err(f"Expected CVP hybrid flower '{expected}' missing or not classified as cvp_hybrid")
+
     if status_counts["unclassified"] > 0:
         log_err(f"Found {status_counts['unclassified']} unclassified flowers!")
     else:
-        log_ok(f"Flower classifications: {status_counts} (Total: {len(flowers)})")
-        
-        # check sprite paths
-        if "master_sprite" in fdef:
-            rel = fdef["master_sprite"].replace("res://", "")
-            full = os.path.join(ROOT_DIR, rel)
-            if not os.path.exists(full):
-                log_err(f"Flower {fid} master_sprite missing on disk: {full}")
-            else:
-                log_ok(f"Found master sprite for {fid}: {rel}")
-        
-        if "branching_stages" in fdef:
-            bstages = fdef["branching_stages"]
-            for sname, spath in bstages.items():
-                rel = spath.replace("res://", "")
-                full = os.path.join(ROOT_DIR, rel)
-                if not os.path.exists(full):
-                    log_err(f"Flower {fid} branching stage '{sname}' sprite missing: {full}")
-                else:
-                    log_ok(f"Found branching sprite for {fid} ({sname}): {rel}")
+        log_ok(f"Flower classifications valid: {status_counts} (Total: {len(flowers)})")
 
 # 2. Validate bouquets.json
 print("\n[2] Checking data/bouquets.json...")
 bouquets_fp = os.path.join(DATA_DIR, "bouquets.json")
-with open(bouquets_fp, "r", encoding="utf-8") as f:
-    bdata = json.load(f)
-bouquets = bdata.get("bouquets", {})
-log_ok(f"Loaded {len(bouquets)} bouquets: {list(bouquets.keys())}")
+bouquets = {}
+if not os.path.exists(bouquets_fp):
+    log_err("data/bouquets.json does not exist!")
+else:
+    try:
+        with open(bouquets_fp, "r", encoding="utf-8") as f:
+            bdata = json.load(f)
+        bouquets = bdata.get("bouquets", {})
+        log_ok(f"Loaded {len(bouquets)} bouquets: {list(bouquets.keys())}")
+        for bid, bdef in bouquets.items():
+            if "display_name" not in bdef:
+                log_err(f"Bouquet '{bid}' missing display_name")
+            if "base_value" not in bdef or bdef["base_value"] <= 0:
+                log_err(f"Bouquet '{bid}' missing or invalid base_value")
+            ings = bdef.get("ingredients", {})
+            if not ings:
+                log_err(f"Bouquet '{bid}' has empty ingredients")
+            for ing_id, qty in ings.items():
+                if ing_id not in flowers:
+                    log_err(f"Bouquet '{bid}' references unknown ingredient flower '{ing_id}'")
+                elif qty <= 0:
+                    log_err(f"Bouquet '{bid}' has non-positive quantity for ingredient '{ing_id}'")
+    except Exception as e:
+        log_err(f"Failed to parse bouquets.json: {e}")
 
 # 3. Validate perfumes.json
 print("\n[3] Checking data/perfumes.json...")
 perfumes_fp = os.path.join(DATA_DIR, "perfumes.json")
-with open(perfumes_fp, "r", encoding="utf-8") as f:
-    pdata = json.load(f)
-perfumes = pdata.get("perfumes", {})
-log_ok(f"Loaded {len(perfumes)} perfumes: {list(perfumes.keys())}")
+perfumes = {}
+if not os.path.exists(perfumes_fp):
+    log_err("data/perfumes.json does not exist!")
+else:
+    try:
+        with open(perfumes_fp, "r", encoding="utf-8") as f:
+            pdata = json.load(f)
+        perfumes = pdata.get("perfumes", {})
+        log_ok(f"Loaded {len(perfumes)} perfumes: {list(perfumes.keys())}")
+        for pid, pdef in perfumes.items():
+            if "display_name" not in pdef:
+                log_err(f"Perfume '{pid}' missing display_name")
+            if "base_value" not in pdef or pdef["base_value"] <= 0:
+                log_err(f"Perfume '{pid}' missing or invalid base_value")
+            if "distillation_seconds" not in pdef or pdef["distillation_seconds"] <= 0:
+                log_err(f"Perfume '{pid}' missing or invalid distillation_seconds")
+            p_ings = pdef.get("ingredients", {})
+            if not p_ings:
+                log_err(f"Perfume '{pid}' has empty ingredients")
+            for ing_id, qty in p_ings.items():
+                if ing_id not in flowers:
+                    log_err(f"Perfume '{pid}' references unknown ingredient flower '{ing_id}'")
+                elif qty <= 0:
+                    log_err(f"Perfume '{pid}' has non-positive quantity for ingredient '{ing_id}'")
+    except Exception as e:
+        log_err(f"Failed to parse perfumes.json: {e}")
 
 # 4. Validate requests.json
 print("\n[4] Checking data/requests.json...")
 requests_fp = os.path.join(DATA_DIR, "requests.json")
-with open(requests_fp, "r", encoding="utf-8") as f:
-    rdata = json.load(f)
-requests = rdata.get("requests", {})
-log_ok(f"Loaded {len(requests)} customer requests: {list(requests.keys())}")
-for rid, rdef in requests.items():
-    if "patience_max_seconds" not in rdef:
-        log_err(f"Request {rid} missing canonical patience_max_seconds")
-    else:
-        log_ok(f"Request {rid} canonical patience: {rdef['patience_max_seconds']}s")
+requests = {}
+if not os.path.exists(requests_fp):
+    log_err("data/requests.json does not exist!")
+else:
+    try:
+        with open(requests_fp, "r", encoding="utf-8") as f:
+            rdata = json.load(f)
+        requests = rdata.get("requests", {})
+        log_ok(f"Loaded {len(requests)} customer requests: {list(requests.keys())}")
+        for rid, rdef in requests.items():
+            if "patience_max_seconds" not in rdef:
+                log_err(f"Request '{rid}' missing canonical patience_max_seconds")
+            elif rdef["patience_max_seconds"] <= 0:
+                log_err(f"Request '{rid}' has non-positive patience_max_seconds: {rdef['patience_max_seconds']}")
+            else:
+                log_ok(f"Request '{rid}' canonical patience: {rdef['patience_max_seconds']}s")
+            
+            rtype = rdef.get("type", "")
+            req_items = rdef.get("required_items", {})
+            if not req_items:
+                log_err(f"Request '{rid}' has empty required_items")
+            
+            for item_id, count in req_items.items():
+                if count <= 0:
+                    log_err(f"Request '{rid}' requires non-positive amount ({count}) for '{item_id}'")
+                if rtype == "flowers":
+                    if item_id not in flowers:
+                        log_err(f"Request '{rid}' references unknown flower '{item_id}'")
+                elif rtype == "bouquet":
+                    if item_id not in bouquets:
+                        log_err(f"Request '{rid}' references unknown bouquet '{item_id}'")
+                elif rtype == "perfume":
+                    if item_id not in perfumes:
+                        log_err(f"Request '{rid}' references unknown perfume '{item_id}'")
+                else:
+                    log_err(f"Request '{rid}' has unknown request type '{rtype}'")
+    except Exception as e:
+        log_err(f"Failed to parse requests.json: {e}")
 
 # 5. Validate upgrades.json
 print("\n[5] Checking data/upgrades.json...")
 upgrades_fp = os.path.join(DATA_DIR, "upgrades.json")
-with open(upgrades_fp, "r", encoding="utf-8") as f:
-    udata = json.load(f)
-upgrades_list = udata.get("upgrades", [])
-log_ok(f"Loaded {len(upgrades_list)} tool upgrades: {[u.get('id') for u in upgrades_list]}")
+if not os.path.exists(upgrades_fp):
+    log_err("data/upgrades.json does not exist!")
+else:
+    try:
+        with open(upgrades_fp, "r", encoding="utf-8") as f:
+            udata = json.load(f)
+        upgrades_list = udata.get("upgrades", [])
+        log_ok(f"Loaded {len(upgrades_list)} tool upgrades: {[u.get('id') for u in upgrades_list]}")
+        for u in upgrades_list:
+            uid = u.get("id", "")
+            if not uid:
+                log_err("Upgrade entry missing 'id'")
+            if "name" not in u:
+                log_err(f"Upgrade '{uid}' missing 'name'")
+            cost = u.get("cost", 0)
+            if cost <= 0:
+                log_err(f"Upgrade '{uid}' has invalid or missing cost: {cost}")
+    except Exception as e:
+        log_err(f"Failed to parse upgrades.json: {e}")
 
-# 6. Check Core and UI Scenes (19 Scenes)
-print("\n[6] Checking All Scenes...")
-scenes_to_check = [
-    "scenes/main.tscn",
-    "scenes/character/lily.tscn",
-    "scenes/ui/main_menu.tscn",
-    "scenes/ui/pause_menu.tscn",
-    "scenes/ui/settings_menu.tscn",
-    "scenes/ui/tutorial_overlay.tscn",
-    "scenes/ui/tool_dock.tscn",
-    "scenes/ui/seed_bar.tscn",
-    "scenes/ui/plot_card.tscn",
-    "scenes/ui/hud_top_bar.tscn",
-    "scenes/ui/hud/top_left_cluster.tscn",
-    "scenes/ui/hud/side_order_rail.tscn",
-    "scenes/ui/hud/lily_hub_popup.tscn",
-    "scenes/ui/hud/inventory_drawer.tscn",
-    "scenes/ui/modals/breeding_modal.tscn",
-    "scenes/ui/modals/bouquet_modal.tscn",
-    "scenes/ui/modals/requests_modal.tscn",
-    "scenes/ui/modals/upgrades_modal.tscn",
-    "scenes/ui/modals/journal_modal.tscn"
-]
-for sc in scenes_to_check:
-    fp = os.path.join(ROOT_DIR, sc)
-    if os.path.exists(fp):
-        log_ok(f"Scene exists: {sc}")
-    else:
-        log_err(f"Scene missing: {sc}")
+# 6. Check Core and UI Scenes & Scan for Broken External Resources
+print("\n[6] Checking All Scenes & External Resource Linkages...")
+scenes_checked = 0
+broken_scene_deps = 0
+for root, _, files in os.walk(SCENES_DIR):
+    for f in files:
+        if f.endswith(".tscn"):
+            scenes_checked += 1
+            sc_path = os.path.join(root, f)
+            rel_path = os.path.relpath(sc_path, ROOT_DIR)
+            try:
+                with open(sc_path, "r", encoding="utf-8") as fh:
+                    txt = fh.read()
+                for m in re.finditer(r'path=\"res://([^\"]+)\"', txt):
+                    target_rel = m.group(1)
+                    target_full = os.path.join(ROOT_DIR, target_rel)
+                    if not os.path.exists(target_full):
+                        log_err(f"Scene '{rel_path}' references missing resource: res://{target_rel}")
+                        broken_scene_deps += 1
+            except Exception as e:
+                log_err(f"Failed to read scene '{rel_path}': {e}")
+
+if broken_scene_deps == 0:
+    log_ok(f"All {scenes_checked} scenes scanned: 0 broken external resources found.")
 
 # 7. Check Core and Gameplay Scripts
 print("\n[7] Checking Core, Genetics, Garden, Character & UI Scripts...")
@@ -157,6 +255,10 @@ scripts_to_check = [
     "scripts/core/order_manager.gd",
     "scripts/core/upgrade_manager.gd",
     "scripts/core/audio_manager.gd",
+    "scripts/domain/flower_quality.gd",
+    "scripts/domain/flower_inventory.gd",
+    "scripts/domain/seed_inventory.gd",
+    "scripts/domain/breeding_service.gd",
     "scripts/genetics/genetics_engine.gd",
     "scripts/genetics/flower_genotype.gd",
     "scripts/genetics/flower_phenotype.gd",
@@ -168,6 +270,7 @@ scripts_to_check = [
     "scripts/garden/garden_environment.gd",
     "scripts/garden/garden_layout_manager.gd",
     "scripts/flowers/flower_data.gd",
+    "scripts/flowers/flower_asset_resolver.gd",
     "scripts/flowers/flower_visual.gd",
     "scripts/flowers/modular_flower_visual.gd",
     "scripts/crafting/bouquet_data.gd",
@@ -195,26 +298,27 @@ for sc in scripts_to_check:
     else:
         log_err(f"Script missing: {sc}")
 
-# 8. Check Audio Assets
-print("\n[8] Checking Audio SFX and Music Assets...")
-audio_to_check = [
-    "assets/audio/music/bgm_garden_loop.wav",
-    "assets/audio/sfx/sfx_click.wav",
-    "assets/audio/sfx/sfx_plant.wav",
-    "assets/audio/sfx/sfx_water.wav",
-    "assets/audio/sfx/sfx_prune.wav",
-    "assets/audio/sfx/sfx_harvest.wav",
-    "assets/audio/sfx/sfx_coin.wav",
-    "assets/audio/sfx/sfx_upgrade.wav",
-    "assets/audio/sfx/sfx_error.wav",
-    "assets/audio/sfx/sfx_step.wav"
-]
-for a in audio_to_check:
-    fp = os.path.join(ROOT_DIR, a)
-    if os.path.exists(fp):
-        log_ok(f"Audio asset exists: {a}")
+# 8. Check Audio Assets & Godot Imports
+print("\n[8] Checking Audio SFX & Music Assets (.wav + .import)...")
+CANONICAL_SFX_IDS = ["click", "coin", "plant", "water", "prune", "harvest", "upgrade", "error", "step"]
+for sfx_id in CANONICAL_SFX_IDS:
+    rel_wav = f"assets/audio/sfx/sfx_{sfx_id}.wav"
+    wav_fp = os.path.join(ROOT_DIR, rel_wav)
+    import_fp = wav_fp + ".import"
+    if not os.path.exists(wav_fp):
+        log_err(f"SFX file missing: {rel_wav}")
+    elif not os.path.exists(import_fp):
+        log_err(f"SFX import definition missing: {rel_wav}.import")
     else:
-        log_err(f"Audio asset missing: {a}")
+        log_ok(f"Canonical SFX '{sfx_id}' verified with .import.")
+
+music_wav = os.path.join(ROOT_DIR, "assets/audio/music/bgm_garden_loop.wav")
+if not os.path.exists(music_wav):
+    log_err("Music track missing: assets/audio/music/bgm_garden_loop.wav")
+elif not os.path.exists(music_wav + ".import"):
+    log_err("Music import definition missing: bgm_garden_loop.wav.import")
+else:
+    log_ok("Garden BGM track verified with .import.")
 
 # 9. Check 25 Growth Stage Assets
 print("\n[9] Checking 25 Growth Stage Assets across 5 Species...")
@@ -231,8 +335,8 @@ for sp in species_list:
 print("\n==================================================")
 if errors:
     print(f"❌ VALIDATION FAILED WITH {len(errors)} ERRORS.")
-    exit(1)
+    sys.exit(1)
 else:
     print("🎉 ALL COMPREHENSIVE VALIDATION CHECKS PASSED (0 ERRORS)!")
     print("==================================================")
-    exit(0)
+    sys.exit(0)
