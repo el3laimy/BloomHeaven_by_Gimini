@@ -48,6 +48,10 @@
       "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage.",
       "status": "cvp_base",
       "visual_profile": {
+        "mode": "sprite",
+        "icon": {
+          "sprite": "res://assets/flowers/rose/red/icon_rose_red.png"
+        },
         "ground_anchor": [
           0.5,
           1.0
@@ -56,48 +60,72 @@
         "sway_intensity": 1.0,
         "stages": {
           "sprout": {
-            "sprite": "res://assets/flowers/growth_stages/rose_crimson_sprout.png",
+            "sprite": "res://assets/flowers/rose/shared/plant_rose_shared_young.png",
             "target_height": 38.0,
-            "offset": [
-              0.0,
-              0.0
-            ]
-          },
-          "vegetative_single": {
-            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_single.png",
-            "target_height": 52.0,
+            "ground_anchor": [
+              0.5029,
+              0.9199
+            ],
             "offset": [
               0.0,
               0.0
             ]
           },
           "vegetative_branching": {
-            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "sprite": "res://assets/flowers/rose/shared/plant_rose_shared_branching.png",
             "target_height": 52.0,
+            "ground_anchor": [
+              0.4951,
+              0.9824
+            ],
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/rose/red/plant_rose_red_prime_bud.png",
+            "target_height": 52.0,
+            "ground_anchor": [
+              0.4941,
+              0.9785
+            ],
             "offset": [
               0.0,
               0.0
             ]
           },
           "vegetative_late_unpruned": {
-            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
-            "target_height": 52.0,
+            "sprite": "res://assets/flowers/rose/red/plant_rose_red_cluster_buds.png",
+            "target_height": 54.0,
+            "ground_anchor": [
+              0.5068,
+              0.9844
+            ],
             "offset": [
               0.0,
               0.0
             ]
           },
           "bloom_standard": {
-            "sprite": "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png",
+            "sprite": "res://assets/flowers/rose/red/plant_rose_red_cluster_bloom.png",
             "target_height": 66.0,
+            "ground_anchor": [
+              0.4766,
+              0.9688
+            ],
             "offset": [
               0.0,
               0.0
             ]
           },
           "bloom_hero": {
-            "sprite": "res://assets/flowers/growth_stages/rose_crimson_bloom_premium.png",
+            "sprite": "res://assets/flowers/rose/red/plant_rose_red_prime_bloom.png",
             "target_height": 80.0,
+            "ground_anchor": [
+              0.5186,
+              0.9258
+            ],
             "offset": [
               0.0,
               0.0

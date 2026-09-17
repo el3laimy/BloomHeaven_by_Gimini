@@ -89,6 +89,17 @@ if flowers:
                 if vmode not in {"sprite", "procedural"}:
                     log_err(f"Flower '{fid}' visual_profile has invalid mode '{vmode}'")
                 elif vmode == "sprite":
+                    # Validate icon if present
+                    if "icon" in vprof and isinstance(vprof["icon"], dict):
+                        icon_sp = vprof["icon"].get("sprite", "")
+                        if not icon_sp.startswith("res://"):
+                            log_err(f"Flower '{fid}' icon sprite must start with 'res://': {icon_sp}")
+                        elif "ArtSource" in icon_sp:
+                            log_err(f"Flower '{fid}' icon sprite references ArtSource: {icon_sp}")
+                        else:
+                            icon_full = os.path.join(ROOT_DIR, icon_sp.replace("res://", ""))
+                            if not os.path.exists(icon_full):
+                                log_err(f"Flower '{fid}' icon sprite missing on disk: {icon_full}")
                     # Validate ground_anchor
                     if "ground_anchor" in vprof:
                         ga = vprof["ground_anchor"]
@@ -465,6 +476,102 @@ if flowers:
             log_err("Bouquet 'solar_grandeur' must be explicitly classified as 'legacy' / post-CVP.")
         else:
             log_ok("Bouquet 'solar_grandeur' correctly isolated as 'legacy' post-CVP.")
+
+# 11. Production Flower Pack Validation (Red Rose)
+print("\n[11] Checking Production Flower Pack (Red Rose)...")
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+ACTIVE_ROSE_SPRITES = [
+    "assets/flowers/rose/shared/plant_rose_shared_young.png",
+    "assets/flowers/rose/shared/plant_rose_shared_branching.png",
+    "assets/flowers/rose/red/plant_rose_red_prime_bud.png",
+    "assets/flowers/rose/red/plant_rose_red_cluster_buds.png",
+    "assets/flowers/rose/red/plant_rose_red_cluster_bloom.png",
+    "assets/flowers/rose/red/plant_rose_red_prime_bloom.png",
+    "assets/flowers/rose/red/icon_rose_red.png"
+]
+
+RESERVED_REGROWTH_SPRITES = [
+    "plant_rose_shared_prime_harvested.png",
+    "plant_rose_shared_cluster_harvested.png",
+    "plant_rose_shared_regrowth_branching.png"
+]
+
+# Check active production derivatives
+for rel_path in ACTIVE_ROSE_SPRITES:
+    full_path = os.path.join(ROOT_DIR, rel_path)
+    import_path = full_path + ".import"
+    if not os.path.exists(full_path):
+        log_err(f"Active Red Rose sprite missing: {rel_path}")
+    elif not os.path.exists(import_path):
+        log_err(f"Active Red Rose sprite import definition missing: {rel_path}.import")
+    else:
+        if Image:
+            try:
+                with Image.open(full_path) as im:
+                    if im.size != (512, 512):
+                        log_err(f"Active Red Rose sprite '{rel_path}' has non-standard size {im.size} (expected 512x512)")
+                    elif im.mode != "RGBA":
+                        log_err(f"Active Red Rose sprite '{rel_path}' has non-RGBA mode '{im.mode}'")
+                    else:
+                        log_ok(f"Production sprite verified (512x512 RGBA + .import): {os.path.basename(rel_path)}")
+            except Exception as e:
+                log_err(f"Failed to inspect image '{rel_path}': {e}")
+        else:
+            log_ok(f"Production sprite verified on disk (+ .import): {os.path.basename(rel_path)}")
+
+# Guard: Ensure reserved regrowth/harvested assets do NOT leak into runtime repository
+for root, _, files in os.walk(os.path.join(ROOT_DIR, "assets")):
+    for f in files:
+        if f in RESERVED_REGROWTH_SPRITES:
+            log_err(f"Reserved regrowth/harvested asset '{f}' leaked into runtime assets: {os.path.join(root, f)}")
+
+# Guard: Ensure no unscaled 1254x1254 masters exist in Red Rose production pack directories
+if Image:
+    for sub in ["shared", "red"]:
+        pack_dir = os.path.join(ROOT_DIR, "assets", "flowers", "rose", sub)
+        if os.path.exists(pack_dir):
+            for root, _, files in os.walk(pack_dir):
+                for f in files:
+                    if f.lower().endswith(".png"):
+                        fp = os.path.join(root, f)
+                        try:
+                            with Image.open(fp) as im:
+                                if im.size == (1254, 1254):
+                                    log_err(f"Unscaled 1254x1254 master leaked into runtime assets: {os.path.relpath(fp, ROOT_DIR)}")
+                                elif im.size != (512, 512):
+                                    log_err(f"Production sprite '{os.path.relpath(fp, ROOT_DIR)}' has unexpected dimensions {im.size} (expected 512x512)")
+                        except Exception:
+                            pass
+
+# Guard: Verify rose visual_profile configuration in data/flowers.json
+if flowers and "rose" in flowers:
+    rose_prof = flowers["rose"].get("visual_profile", {})
+    rose_icon = rose_prof.get("icon", {}).get("sprite", "")
+    if rose_icon != "res://assets/flowers/rose/red/icon_rose_red.png":
+        log_err(f"Rose visual_profile icon sprite mismatch: '{rose_icon}' (expected res://assets/flowers/rose/red/icon_rose_red.png)")
+    else:
+        log_ok("Rose visual_profile icon correctly wired to icon_rose_red.png")
+
+    rose_stages = rose_prof.get("stages", {})
+    expected_stage_sprites = {
+        "sprout": "res://assets/flowers/rose/shared/plant_rose_shared_young.png",
+        "vegetative_branching": "res://assets/flowers/rose/shared/plant_rose_shared_branching.png",
+        "vegetative_single": "res://assets/flowers/rose/red/plant_rose_red_prime_bud.png",
+        "vegetative_late_unpruned": "res://assets/flowers/rose/red/plant_rose_red_cluster_buds.png",
+        "bloom_standard": "res://assets/flowers/rose/red/plant_rose_red_cluster_bloom.png",
+        "bloom_hero": "res://assets/flowers/rose/red/plant_rose_red_prime_bloom.png"
+    }
+    for st_name, exp_sp in expected_stage_sprites.items():
+        act_sp = rose_stages.get(st_name, {}).get("sprite", "")
+        if act_sp != exp_sp:
+            log_err(f"Rose stage '{st_name}' sprite mismatch: got '{act_sp}', expected '{exp_sp}'")
+        else:
+            log_ok(f"Rose stage '{st_name}' correctly wired to {os.path.basename(act_sp)}")
+
 
 print("\n==================================================")
 if errors:
