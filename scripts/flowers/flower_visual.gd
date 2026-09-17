@@ -139,18 +139,6 @@ func _draw() -> void:
 			_draw_blooming_stage(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale, fragrance_rating)
 
 
-static var _growth_tex_cache: Dictionary = {}
-
-static func _load_cached_tex(path: String) -> Texture2D:
-	if _growth_tex_cache.has(path):
-		return _growth_tex_cache[path]
-	if ResourceLoader.exists(path):
-		var tex := load(path) as Texture2D
-		_growth_tex_cache[path] = tex
-		return tex
-	return null
-
-
 func _update_branching_sprite() -> bool:
 	if not is_instance_valid(_branch_sprite):
 		_setup_branch_sprite()
@@ -160,61 +148,32 @@ func _update_branching_sprite() -> bool:
 			_branch_sprite.visible = false
 		return false
 
-	var sp_key := _get_species_key()
-	var tex: Texture2D = null
+	var state_key := FlowerVisualStateResolver.resolve_visual_state(current_stage, is_pruned)
+	if state_key.is_empty():
+		if is_instance_valid(_branch_sprite):
+			_branch_sprite.visible = false
+		return false
 
-	match current_stage:
-		Stage.SPROUT:
-			var sprout_sp := sp_key
-			if sprout_sp == "sunflower" or sprout_sp.is_empty():
-				sprout_sp = "daisy"
-			elif sprout_sp in ["roselight", "golden_rose"]:
-				sprout_sp = "rose_crimson"
-			tex = _load_cached_tex("res://assets/flowers/growth_stages/%s_sprout.png" % sprout_sp)
+	var asset_dict := FlowerAssetResolver.resolve_visual_stage_asset(flower_id, state_key)
+	if asset_dict.is_empty():
+		if is_instance_valid(_branch_sprite):
+			_branch_sprite.visible = false
+		return false
 
-		Stage.VEGETATIVE:
-			var veg_sp := sp_key
-			if veg_sp == "sunflower" or veg_sp.is_empty():
-				veg_sp = "daisy"
-			elif veg_sp in ["roselight", "golden_rose"]:
-				veg_sp = "rose_crimson"
-			var veg_suffix := "veg_single" if is_pruned else "veg_bush"
-			tex = _load_cached_tex("res://assets/flowers/growth_stages/%s_%s.png" % [veg_sp, veg_suffix])
-			if tex == null:
-				tex = _load_cached_tex("res://assets/flowers/growth_stages/%s_veg_bush.png" % veg_sp)
-
-		Stage.BLOOMING:
-			if flower_id == "sunflower":
-				tex = _load_cached_tex("res://assets/flowers/master_sunflower.png")
-			elif flower_id == "roselight":
-				tex = _load_cached_tex("res://assets/flowers/master_roselight.png")
-			elif flower_id == "golden_rose":
-				tex = _load_cached_tex("res://assets/flowers/master_golden_rose.png")
-			elif flower_id == "sunflare_spike":
-				tex = _load_cached_tex("res://assets/flowers/master_sunflare_spike.png")
-			else:
-				var bloom_sp := sp_key if not sp_key.is_empty() else "rose_crimson"
-				var bloom_suffix := "bloom_premium" if is_pruned else "bloom_standard"
-				tex = _load_cached_tex("res://assets/flowers/growth_stages/%s_%s.png" % [bloom_sp, bloom_suffix])
-				if tex == null:
-					tex = _load_cached_tex("res://assets/flowers/growth_stages/%s_bloom_standard.png" % bloom_sp)
-
+	var tex: Texture2D = asset_dict.get("texture")
 	if tex != null and is_instance_valid(_branch_sprite):
 		_branch_sprite.texture = tex
 		_branch_sprite.visible = true
 
-		var target_height: float = 64.0
-		if current_stage == Stage.SPROUT:
-			target_height = 38.0
-		elif current_stage == Stage.VEGETATIVE:
-			target_height = 52.0
-		elif current_stage == Stage.BLOOMING:
-			target_height = 80.0 if is_pruned else 66.0
-
+		var target_height: float = float(asset_dict.get("target_height", 64.0))
 		var s: float = target_height / float(tex.get_height())
 		_branch_sprite.scale = Vector2(s, s)
-		_branch_sprite.offset = Vector2(0, -tex.get_height() * 0.5)
-		_branch_sprite.position = Vector2(0, 2.0)
+
+		var offset_vec: Vector2 = asset_dict.get("offset", Vector2.ZERO)
+		_branch_sprite.offset = Vector2(0, -tex.get_height() * 0.5) + offset_vec
+
+		var ground_y: float = float(asset_dict.get("ground_position_y", 2.0))
+		_branch_sprite.position = Vector2(0, ground_y)
 		return true
 
 	if is_instance_valid(_branch_sprite):
@@ -244,38 +203,9 @@ func _draw_seed_stage() -> void:
 		draw_circle(Vector2(6, -5), 1.4, Color(1.0, 0.95, 0.6, 0.7))
 
 
-func _get_species_key() -> String:
-	var canon_id := FlowerData.get_canonical_id(flower_id)
-	if canon_id == "rose":
-		return "rose_crimson"
-	return canon_id
-
-
-func _get_growth_sprite(stage_suffix: String) -> Texture2D:
-	var sp_key := _get_species_key()
-	if sp_key != "":
-		var p := "res://assets/flowers/growth_stages/%s_%s.png" % [sp_key, stage_suffix]
-		if ResourceLoader.exists(p):
-			return load(p)
-	return null
-
-
 func _draw_sprout_stage(leaf_col: Color, stem_col: Color) -> void:
 	# Soft grounding shadow
 	_draw_custom_ellipse(Vector2(1, 4), 10.0, 4.5, Color(0.06, 0.11, 0.07, 0.25))
-
-	if not is_mystery or is_revealed:
-		var tex := _get_growth_sprite("sprout")
-		if tex != null:
-			var spr_w := 34.0
-			var spr_h := 48.0
-			if is_instance_valid(_branch_sprite):
-				_branch_sprite.texture = tex
-				_branch_sprite.scale = Vector2(spr_w / float(tex.get_width()), spr_h / float(tex.get_height()))
-				_branch_sprite.offset = Vector2(0, -tex.get_height() * 0.5)
-				_branch_sprite.position = Vector2(0, 4.0)
-				_branch_sprite.visible = true
-			return
 
 	if is_instance_valid(_branch_sprite):
 		_branch_sprite.visible = false
@@ -308,22 +238,6 @@ func _draw_sprout_stage(leaf_col: Color, stem_col: Color) -> void:
 func _draw_vegetative_stage(stem_col: Color, leaf_col: Color, bud_col: Color) -> void:
 	# Soft grounding shadow
 	_draw_custom_ellipse(Vector2(2, 4), 12.0, 5.5, Color(0.06, 0.11, 0.07, 0.25))
-
-	if not is_mystery or is_revealed:
-		var veg_key := "veg_single" if is_pruned else "veg_bush"
-		var tex := _get_growth_sprite(veg_key)
-		if tex == null:
-			tex = _get_growth_sprite("veg_bush")
-		if tex != null:
-			var spr_w := 46.0
-			var spr_h := 58.0
-			if is_instance_valid(_branch_sprite):
-				_branch_sprite.texture = tex
-				_branch_sprite.scale = Vector2(spr_w / float(tex.get_width()), spr_h / float(tex.get_height()))
-				_branch_sprite.offset = Vector2(0, -tex.get_height() * 0.5)
-				_branch_sprite.position = Vector2(0, 4.0)
-				_branch_sprite.visible = true
-			return
 
 	if is_instance_valid(_branch_sprite):
 		_branch_sprite.visible = false
@@ -393,50 +307,10 @@ func _draw_blooming_stage(
 	# Soft Warm Grounding Shadow at stem base
 	_draw_custom_ellipse(Vector2(2, 4), 14.0 * vigor_scale, 6.0 * vigor_scale, Color(0.06, 0.11, 0.07, 0.25))
 
-	var tex: Texture2D = null
+	if is_instance_valid(_branch_sprite):
+		_branch_sprite.visible = false
 
-	# 1. Check for Dedicated Master Growth Sheet Stage (Standard vs Premium)
-	var bloom_key := "bloom_premium" if (vigor_scale > 1.1 or is_pruned) else "bloom_standard"
-	tex = _get_growth_sprite(bloom_key)
-	if tex == null and bloom_key == "bloom_premium":
-		tex = _get_growth_sprite("bloom_standard")
-
-	# 2. Check for Dedicated Hybrid Specimen Sprites
-	if tex == null:
-		if flower_id == "roselight":
-			match petal_form:
-				"star":
-					if ResourceLoader.exists("res://assets/flowers/roselight_specimen_b.png"):
-						tex = load("res://assets/flowers/roselight_specimen_b.png")
-				"pointed":
-					if ResourceLoader.exists("res://assets/flowers/roselight_specimen_c.png"):
-						tex = load("res://assets/flowers/roselight_specimen_c.png")
-				_:
-					if ResourceLoader.exists("res://assets/flowers/roselight_specimen_a.png"):
-						tex = load("res://assets/flowers/roselight_specimen_a.png")
-		elif flower_id == "rose" and vigor_scale > 1.1:
-			if ResourceLoader.exists("res://assets/flowers/rose_premium_form.png"):
-				tex = load("res://assets/flowers/rose_premium_form.png")
-			elif ResourceLoader.exists("res://assets/flowers/master_rose.png"):
-				tex = load("res://assets/flowers/master_rose.png")
-		elif flower_id == "rose" and ResourceLoader.exists("res://assets/flowers/rose_standard_form.png"):
-			tex = load("res://assets/flowers/rose_standard_form.png")
-		else:
-			tex = FlowerAssetResolver.resolve_flower_texture(flower_id)
-
-	if tex != null:
-		var spr_w: float = 52.0 * vigor_scale
-		var spr_h: float = 68.0 * vigor_scale
-		if is_instance_valid(_branch_sprite):
-			_branch_sprite.texture = tex
-			_branch_sprite.scale = Vector2(spr_w / float(tex.get_width()), spr_h / float(tex.get_height()))
-			_branch_sprite.offset = Vector2(0, -tex.get_height() * 0.5)
-			_branch_sprite.position = Vector2(0, 4.0)
-			_branch_sprite.visible = true
-	else:
-		if is_instance_valid(_branch_sprite):
-			_branch_sprite.visible = false
-		# Fallback to procedural vector rendering
+	# Fallback to procedural vector rendering
 		match flower_id:
 			"rose":
 				_draw_blooming_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
