@@ -188,7 +188,11 @@ static func resolve_phenotype(genotype: FlowerGenotype, species_id: String) -> F
 
 
 static func create_starter_specimen(species_id: String, custom_id: String = "") -> FlowerSpecimen:
-	var tpl: Dictionary = STARTER_GENOTYPES.get(species_id, STARTER_GENOTYPES["rose"])
+	if not STARTER_GENOTYPES.has(species_id):
+		push_error("GeneticsEngine: Unsupported starter species '%s'. No starter template defined." % species_id)
+		return null
+
+	var tpl: Dictionary = STARTER_GENOTYPES[species_id]
 	var c_arr: Array[String] = [String(tpl["color"][0]), String(tpl["color"][1])]
 	var p_arr: Array[String] = [String(tpl["petal"][0]), String(tpl["petal"][1])]
 	var f_arr: Array[String] = [String(tpl["fragrance"][0]), String(tpl["fragrance"][1])]
@@ -204,6 +208,49 @@ static func create_starter_specimen(species_id: String, custom_id: String = "") 
 
 	var specimen := FlowerSpecimen.new(s_id, species_id, 0, genotype, phenotype)
 	return specimen
+
+
+## Deterministic reconstruction for legacy saves lacking historical genetics.
+## Tags specimens as 'legacy_reconstructed' and rejects unknown species.
+static func create_reconstructed_legacy_specimen(species_id: String, custom_id: String = "") -> FlowerSpecimen:
+	var f_data := FlowerData.get_flower(species_id)
+	if f_data.is_empty():
+		push_error("GeneticsEngine: Cannot reconstruct legacy specimen for unknown species '%s'." % species_id)
+		return null
+
+	var s_id := custom_id
+	if s_id.is_empty():
+		_specimen_counter += 1
+		s_id = "LEGACY-%s-%03d" % [species_id.to_upper(), _specimen_counter]
+
+	if STARTER_GENOTYPES.has(species_id):
+		var starter := create_starter_specimen(species_id, s_id)
+		if starter != null:
+			starter.parent_a_id = "legacy_reconstructed"
+			starter.parent_b_id = "legacy_reconstructed"
+			starter.generation = 1
+		return starter
+
+	var parents: Array = f_data.get("parents", [])
+	if parents.size() >= 2:
+		var p_a: String = str(parents[0])
+		var p_b: String = str(parents[1])
+		if STARTER_GENOTYPES.has(p_a) and STARTER_GENOTYPES.has(p_b):
+			var tpl_a: Dictionary = STARTER_GENOTYPES[p_a]
+			var tpl_b: Dictionary = STARTER_GENOTYPES[p_b]
+			var c_arr: Array[String] = [String(tpl_a["color"][0]), String(tpl_b["color"][0])]
+			var p_arr: Array[String] = [String(tpl_a["petal"][0]), String(tpl_b["petal"][0])]
+			var f_arr: Array[String] = [String(tpl_a["fragrance"][0]), String(tpl_b["fragrance"][0])]
+			var v_arr: Array[String] = [String(tpl_a["vigor"][0]), String(tpl_b["vigor"][0])]
+			var genotype := FlowerGenotype.new(c_arr, p_arr, f_arr, v_arr)
+			var phenotype := resolve_phenotype(genotype, species_id)
+			var specimen := FlowerSpecimen.new(s_id, species_id, 1, genotype, phenotype)
+			specimen.parent_a_id = "legacy_reconstructed"
+			specimen.parent_b_id = "legacy_reconstructed"
+			return specimen
+
+	push_error("GeneticsEngine: Cannot reconstruct legacy specimen for species '%s' without valid lineage templates." % species_id)
+	return null
 
 
 static func cross_specimens(

@@ -156,7 +156,7 @@ func fulfill_order(order_id: String, flower_inventory, bouquet_inventory: Dictio
 		elif flower_inventory is Dictionary:
 			for flower_id in items:
 				flower_inventory[flower_id] -= int(items[flower_id])
-	elif req_type == "bouquets":
+	elif req_type == "bouquet":
 		for b_id in items:
 			bouquet_inventory[b_id] -= int(items[b_id])
 
@@ -244,7 +244,8 @@ func serialize() -> Dictionary:
 		"order_runtime": order_runtime.duplicate(true),
 		"completed_requests": completed_requests,
 		"live_orders_patience": live_orders_patience,
-		"combo_count": combo_count
+		"combo_count": combo_count,
+		"combo_timer": combo_timer
 	}
 
 
@@ -266,3 +267,16 @@ func deserialize(data: Dictionary) -> void:
 
 	if data.has("combo_count"):
 		combo_count = int(data["combo_count"])
+	if data.has("combo_timer"):
+		combo_timer = max(0.0, float(data["combo_timer"]))
+	else:
+		combo_timer = 0.0
+	if combo_timer <= 0.0:
+		combo_count = 0
+
+	# Enforce 0.0 <= remaining_patience <= max_patience
+	for o_id in order_runtime:
+		var entry: Dictionary = order_runtime[o_id]
+		var max_p: float = float(entry.get("max_patience", 0.0))
+		var rem_p: float = float(entry.get("remaining_patience", max_p))
+		entry["remaining_patience"] = clamp(rem_p, 0.0, max_p)

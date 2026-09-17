@@ -64,6 +64,44 @@ static func delete_save(target_path: String = SAVE_PATH_V3) -> bool:
 	return success
 
 
+static func _validate_specimen_dict(spec: Dictionary) -> Dictionary:
+	if not (spec is Dictionary):
+		return {"valid": false, "error": "Specimen must be a Dictionary"}
+	if not spec.has("specimen_id") or not (spec["specimen_id"] is String) or (spec["specimen_id"] as String).is_empty():
+		return {"valid": false, "error": "Specimen missing or empty 'specimen_id'"}
+	if not spec.has("species_id") or not (spec["species_id"] is String) or (spec["species_id"] as String).is_empty():
+		return {"valid": false, "error": "Specimen missing or empty 'species_id'"}
+	var sp_id: String = spec["species_id"]
+	if FlowerData.get_flower(sp_id).is_empty():
+		return {"valid": false, "error": "Specimen '%s' has unknown species_id '%s'" % [spec["specimen_id"], sp_id]}
+	if spec.has("generation") and (not (spec["generation"] is int or spec["generation"] is float) or int(spec["generation"]) < 0):
+		return {"valid": false, "error": "Specimen '%s' has invalid generation: %s" % [spec["specimen_id"], str(spec.get("generation"))]}
+	if spec.has("quality_tier"):
+		var q = int(spec["quality_tier"])
+		if not FlowerQuality.is_valid(q):
+			return {"valid": false, "error": "Specimen '%s' has invalid quality_tier: %s" % [spec["specimen_id"], str(spec.get("quality_tier"))]}
+	if not spec.has("genotype") or not (spec["genotype"] is Dictionary):
+		return {"valid": false, "error": "Specimen '%s' missing or invalid genotype" % spec["specimen_id"]}
+	var geno: Dictionary = spec["genotype"]
+	var required_loci: Dictionary = {
+		"color": FlowerGenotype.VALID_COLOR_ALLELES,
+		"petal": FlowerGenotype.VALID_PETAL_ALLELES,
+		"fragrance": FlowerGenotype.VALID_FRAGRANCE_ALLELES,
+		"vigor": FlowerGenotype.VALID_VIGOR_ALLELES
+	}
+	for locus in required_loci:
+		if not geno.has(locus) or not (geno[locus] is Array):
+			return {"valid": false, "error": "Specimen '%s' genotype missing locus '%s'" % [spec["specimen_id"], locus]}
+		var arr: Array = geno[locus]
+		if arr.size() != 2:
+			return {"valid": false, "error": "Specimen '%s' locus '%s' allele count is %d (expected 2)" % [spec["specimen_id"], locus, arr.size()]}
+		var valid_alleles: Array[String] = required_loci[locus]
+		for a in arr:
+			if not (a is String) or not valid_alleles.has(a):
+				return {"valid": false, "error": "Specimen '%s' locus '%s' contains invalid allele '%s'" % [spec["specimen_id"], locus, str(a)]}
+	return {"valid": true, "error": ""}
+
+
 ## Validates V3 root schema. Strictly validates only; never clamps or modifies data.
 static func validate_schema(root_dict: Dictionary) -> Dictionary:
 	if root_dict == null or not (root_dict is Dictionary):
@@ -87,25 +125,112 @@ static func validate_schema(root_dict: Dictionary) -> Dictionary:
 	if not data.has("flower_inventory_storage") or not (data["flower_inventory_storage"] is Dictionary):
 		return {"valid": false, "error": "Missing or invalid 'flower_inventory_storage'"}
 
+	for f_id in data["flower_inventory_storage"]:
+		if not (f_id is String) or FlowerData.get_flower(f_id).is_empty():
+			return {"valid": false, "error": "flower_inventory_storage contains unknown flower_id '%s'" % str(f_id)}
+		var tiers = data["flower_inventory_storage"][f_id]
+		if not (tiers is Dictionary):
+			return {"valid": false, "error": "flower_inventory_storage['%s'] must be a Dictionary" % str(f_id)}
+		for q_key in tiers:
+			var q_int := int(str(q_key))
+			if not FlowerQuality.is_valid(q_int):
+				return {"valid": false, "error": "flower_inventory_storage['%s'] invalid quality tier '%s'" % [str(f_id), str(q_key)]}
+			var cnt = tiers[q_key]
+			if not (cnt is int or cnt is float) or cnt < 0:
+				return {"valid": false, "error": "flower_inventory_storage['%s']['%s'] count must be non-negative" % [str(f_id), str(q_key)]}
+
 	if not data.has("seed_inventory") or not (data["seed_inventory"] is Dictionary):
 		return {"valid": false, "error": "Missing or invalid 'seed_inventory'"}
 
 	for s_key in data["seed_inventory"]:
+		if not (s_key is String) or FlowerData.get_flower(s_key).is_empty():
+			return {"valid": false, "error": "seed_inventory contains unknown flower_id '%s'" % str(s_key)}
 		var s_val = data["seed_inventory"][s_key]
 		if not (s_val is int or s_val is float) or s_val < 0:
 			return {"valid": false, "error": "Invalid seed count for '%s': %s" % [str(s_key), str(s_val)]}
 
+	if not data.has("bouquet_inventory") or not (data["bouquet_inventory"] is Dictionary):
+		return {"valid": false, "error": "Missing or invalid 'bouquet_inventory'"}
+
+	for b_id in data["bouquet_inventory"]:
+		if not (b_id is String) or not BouquetData.get_all_bouquet_ids().has(b_id):
+			return {"valid": false, "error": "bouquet_inventory contains unknown bouquet_id '%s'" % str(b_id)}
+		var b_val = data["bouquet_inventory"][b_id]
+		if not (b_val is int or b_val is float) or b_val < 0:
+			return {"valid": false, "error": "Invalid bouquet count for '%s': %s" % [str(b_id), str(b_val)]}
+
+	if data.has("perfume_inventory") and (data["perfume_inventory"] is Dictionary):
+		for p_id in data["perfume_inventory"]:
+			if not (p_id is String) or not PerfumeData.get_all_perfume_ids().has(p_id):
+				return {"valid": false, "error": "perfume_inventory contains unknown perfume_id '%s'" % str(p_id)}
+			var p_val = data["perfume_inventory"][p_id]
+			if not (p_val is int or p_val is float) or p_val < 0:
+				return {"valid": false, "error": "Invalid perfume count for '%s': %s" % [str(p_id), str(p_val)]}
+
+	if data.has("discovered_flowers") and (data["discovered_flowers"] is Dictionary):
+		for df_id in data["discovered_flowers"]:
+			if not (df_id is String) or FlowerData.get_flower(df_id).is_empty():
+				return {"valid": false, "error": "discovered_flowers contains unknown flower_id '%s'" % str(df_id)}
+			if not (data["discovered_flowers"][df_id] is bool):
+				return {"valid": false, "error": "discovered_flowers['%s'] must be boolean" % str(df_id)}
+
+	if data.has("active_upgrades") and (data["active_upgrades"] is Dictionary):
+		for u_id in data["active_upgrades"]:
+			if not (data["active_upgrades"][u_id] is bool):
+				return {"valid": false, "error": "active_upgrades['%s'] must be boolean" % str(u_id)}
+
 	if not data.has("plots") or not (data["plots"] is Array):
 		return {"valid": false, "error": "Missing or invalid 'plots' array"}
+
+	for idx in range(data["plots"].size()):
+		var p = data["plots"][idx]
+		if not (p is Dictionary):
+			return {"valid": false, "error": "Plot at index %d is not a Dictionary" % idx}
+		if not p.has("state") or not (p["state"] is int or p["state"] is float):
+			return {"valid": false, "error": "Plot at index %d missing or non-numeric 'state'" % idx}
+		var st: int = int(p["state"])
+		if st < 0 or st > 2:
+			return {"valid": false, "error": "Plot at index %d has invalid state %d (expected 0..2)" % [idx, st]}
+		var fid: String = str(p.get("current_flower_id", p.get("flower_id", "")))
+		if st == 0:
+			# Empty plot: flower_id may be empty or null
+			pass
+		else:
+			# Growing (1) or Mature (2): must have valid flower_id
+			if fid.is_empty() or FlowerData.get_flower(fid).is_empty():
+				return {"valid": false, "error": "Plot at index %d (state %d) missing or invalid flower_id '%s'" % [idx, st, fid]}
+		if p.has("current_specimen") and p["current_specimen"] != null:
+			if not (p["current_specimen"] is Dictionary):
+				return {"valid": false, "error": "Plot at index %d has non-dictionary current_specimen" % idx}
+			var spec_res := _validate_specimen_dict(p["current_specimen"])
+			if not spec_res.get("valid", false):
+				return spec_res
+		if p.has("quality"):
+			var q: int = int(p["quality"])
+			if not FlowerQuality.is_valid(q):
+				return {"valid": false, "error": "Plot at index %d has invalid quality %d" % [idx, q]}
 
 	if not data.has("breeding_roster") or not (data["breeding_roster"] is Array):
 		return {"valid": false, "error": "Missing or invalid 'breeding_roster' array"}
 
+	for idx in range(data["breeding_roster"].size()):
+		var item = data["breeding_roster"][idx]
+		if not (item is Dictionary):
+			return {"valid": false, "error": "breeding_roster[%d] must be a Dictionary" % idx}
+		var spec_res := _validate_specimen_dict(item)
+		if not spec_res.get("valid", false):
+			return spec_res
+
 	if not data.has("pending_hybrid_seeds") or not (data["pending_hybrid_seeds"] is Array):
 		return {"valid": false, "error": "Missing or invalid 'pending_hybrid_seeds' array"}
 
-	if not data.has("bouquet_inventory") or not (data["bouquet_inventory"] is Dictionary):
-		return {"valid": false, "error": "Missing or invalid 'bouquet_inventory'"}
+	for idx in range(data["pending_hybrid_seeds"].size()):
+		var item = data["pending_hybrid_seeds"][idx]
+		if not (item is Dictionary):
+			return {"valid": false, "error": "pending_hybrid_seeds[%d] must be a Dictionary" % idx}
+		var spec_res := _validate_specimen_dict(item)
+		if not spec_res.get("valid", false):
+			return spec_res
 
 	if not data.has("order_runtime") or not (data["order_runtime"] is Dictionary):
 		return {"valid": false, "error": "Missing or invalid 'order_runtime'"}
@@ -120,6 +245,12 @@ static func validate_schema(root_dict: Dictionary) -> Dictionary:
 			return {"valid": false, "error": "Missing or non-numeric 'remaining_patience' in order_runtime['%s']" % str(o_id)}
 		if not o_entry.has("max_patience") or not (o_entry["max_patience"] is int or o_entry["max_patience"] is float):
 			return {"valid": false, "error": "Missing or non-numeric 'max_patience' in order_runtime['%s']" % str(o_id)}
+		var rem_p: float = float(o_entry["remaining_patience"])
+		var max_p: float = float(o_entry["max_patience"])
+		if max_p < 0.0:
+			return {"valid": false, "error": "order_runtime['%s'] has negative max_patience: %s" % [str(o_id), str(max_p)]}
+		if rem_p < -0.001 or rem_p > max_p + 0.001:
+			return {"valid": false, "error": "Invalid patience range for order '%s': remaining %s not in [0, %s]" % [str(o_id), str(rem_p), str(max_p)]}
 
 	return {"valid": true, "error": ""}
 
@@ -181,11 +312,11 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 				var item = legacy_list[idx]
 				if item is String and not item.is_empty():
 					var stable_id: String = "LEGACY-%s-%03d" % [item.to_upper(), idx + 1]
-					var starter_sp := GeneticsEngine.create_starter_specimen(item, stable_id)
-					starter_sp.parent_a_id = "legacy_reconstructed"
-					starter_sp.parent_b_id = "legacy_reconstructed"
-					starter_sp.generation = 1
-					pending.append(starter_sp.serialize())
+					var starter_sp := GeneticsEngine.create_reconstructed_legacy_specimen(item, stable_id)
+					if starter_sp != null:
+						pending.append(starter_sp.serialize())
+					else:
+						push_warning("SaveManager: Unknown or unconstructible legacy species '%s' rejected during migration." % item)
 				elif item is Dictionary:
 					pending.append(item)
 		d["pending_hybrid_seeds"] = pending
@@ -341,11 +472,8 @@ static func save_game(state_data: Dictionary, target_path: String = SAVE_PATH_V3
 		else:
 			push_warning("SaveManager: Current primary %s is corrupt. Preserving existing backup and skipping backup rotation." % target_path)
 
-	# 6. Promote temp file to primary
-	var promote_ok := _copy_file(tmp_path, target_path)
-	if FileAccess.file_exists(tmp_path):
-		DirAccess.remove_absolute(tmp_path)
-
+	# 6. Promote temp file to primary atomically
+	var promote_ok := _promote_temp_to_primary(tmp_path, target_path, bak_path)
 	if not promote_ok:
 		printerr("SaveManager: Failed to promote temp save to primary: %s" % target_path)
 		return false
@@ -531,6 +659,37 @@ static func _ensure_canonical_data_shape(state_data: Dictionary) -> Dictionary:
 				p.erase("specimen")
 
 	return d
+
+
+static func _promote_temp_to_primary(tmp_path: String, target_path: String, bak_path: String) -> bool:
+	if not FileAccess.file_exists(tmp_path):
+		printerr("SaveManager: Temp file %s does not exist for promotion." % tmp_path)
+		return false
+
+	# 1. Try atomic rename directly
+	var err := DirAccess.rename_absolute(tmp_path, target_path)
+	if err == OK:
+		return true
+
+	# 2. If direct rename failed, target may exist and OS does not overwrite on rename
+	if FileAccess.file_exists(target_path):
+		var remove_err := DirAccess.remove_absolute(target_path)
+		if remove_err == OK:
+			err = DirAccess.rename_absolute(tmp_path, target_path)
+			if err == OK:
+				return true
+			# Promotion failed after removing target: restore from backup if available
+			push_error("SaveManager: Rename failed after target removal (code %d). Restoring target from backup %s..." % [err, bak_path])
+			if FileAccess.file_exists(bak_path):
+				_copy_file(bak_path, target_path)
+		else:
+			push_error("SaveManager: Failed to remove existing target %s for promotion (code %d)." % [target_path, remove_err])
+
+	# 3. Clean up tmp file on failure if still present
+	if FileAccess.file_exists(tmp_path):
+		DirAccess.remove_absolute(tmp_path)
+
+	return false
 
 
 static func _copy_file(src: String, dst: String) -> bool:

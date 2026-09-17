@@ -54,6 +54,8 @@ func _run_all_tests() -> void:
 	await _run_suite("19. Camera Lerp Clamped On Extreme Delta", _test_camera_lerp_clamped)
 	await _run_suite("20. RMB Drag Preserves Action Queue, Clean Click Cancels", _test_rmb_drag_vs_click_queue)
 	await _run_suite("21. Character Action Completion Callback Lifecycle (Production Path)", _test_character_action_completion_callback)
+	await _run_suite("22. Exact Breeding Specimen Identity Transaction", _test_exact_breeding_specimen_identity_transaction)
+	await _run_suite("23. Quick Sell All Aborts On Unknown ID (Zero Mutation)", _test_quick_sell_all_abort_on_unknown_id)
 
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -86,6 +88,7 @@ func _run_suite(suite_name: String, test_func: Callable) -> void:
 func _setup_main_node() -> MainGame:
 	var main_scene_res := load("res://scenes/main.tscn")
 	var main_node: MainGame = main_scene_res.instantiate() as MainGame
+	main_node.active_save_path = "user://test_sandbox_ui.json"
 	root.add_child(main_node)
 	return main_node
 
@@ -808,4 +811,102 @@ func _test_character_action_completion_callback() -> String:
 
 	char_node.free()
 	plot.free()
+	return ""
+
+
+func _test_exact_breeding_specimen_identity_transaction() -> String:
+	var main_node := _setup_main_node()
+	await process_frame
+
+	# Setup Roster with two specimens
+	var sp_a := GeneticsEngine.create_starter_specimen("rose", "SPEC-A-001")
+	var sp_b := GeneticsEngine.create_starter_specimen("lavender", "SPEC-B-002")
+	main_node.breeding_roster = [sp_a, sp_b]
+	main_node.flower_inventory.clear()
+	main_node.pending_hybrid_seeds.clear()
+
+	# Case 1: Roster + Roster (both specimens from roster, inventory is 0)
+	main_node._on_breed_requested("SPEC-A-001", "SPEC-B-002", 0)
+	if main_node.pending_hybrid_seeds.size() != 1:
+		main_node.free()
+		return "Roster+Roster breeding failed to create pending hybrid seed"
+
+	var hybrid1: FlowerSpecimen = main_node.pending_hybrid_seeds[0]
+	if hybrid1.parent_a_id != "SPEC-A-001" or hybrid1.parent_b_id != "SPEC-B-002":
+		main_node.free()
+		return "Roster+Roster failed to preserve exact specimen IDs: got (%s, %s)" % [hybrid1.parent_a_id, hybrid1.parent_b_id]
+
+	# Zero flower inventory deduction for roster breeding
+	if main_node.flower_inventory.get_flower_count("rose") != 0 or main_node.flower_inventory.get_flower_count("lavender") != 0:
+		main_node.free()
+		return "Inventory was mutated during roster+roster breeding"
+
+	# Case 2: Roster + Inventory (Parent A from roster, Parent B from inventory)
+	main_node.flower_inventory.add_flower("tulip", FlowerQuality.Tier.NORMAL, 1)
+	main_node._on_breed_requested("SPEC-A-001", "tulip", 0)
+	if main_node.pending_hybrid_seeds.size() != 2:
+		main_node.free()
+		return "Roster+Inventory breeding failed to create second pending hybrid seed"
+
+	var hybrid2: FlowerSpecimen = main_node.pending_hybrid_seeds[1]
+	if hybrid2.parent_a_id != "SPEC-A-001":
+		main_node.free()
+		return "Roster+Inventory failed to preserve exact parent A ID: got %s" % hybrid2.parent_a_id
+	if hybrid2.parent_b_id.is_empty():
+		main_node.free()
+		return "Roster+Inventory failed to assign inventory parent B ID"
+	if main_node.flower_inventory.get_flower_count("tulip") != 0:
+		main_node.free()
+		return "Tulip flower not deducted from inventory after inventory breeding"
+
+	# Case 3: Same species inventory breeding when stock == 1 (requires 2, but only 1 available)
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 1)
+	var prev_seeds_count := main_node.pending_hybrid_seeds.size()
+	main_node._on_breed_requested("rose", "rose", 0)
+	if main_node.pending_hybrid_seeds.size() != prev_seeds_count:
+		main_node.free()
+		return "Same species breeding with insufficient stock (1 < 2) created hybrid unexpectedly"
+	if main_node.flower_inventory.get_flower_count("rose") != 1:
+		main_node.free()
+		return "Zero mutation failure: rose count mutated on failed same-species breeding"
+
+	# Cleanup
+	if FileAccess.file_exists("user://test_sandbox_ui.json"):
+		DirAccess.remove_absolute("user://test_sandbox_ui.json")
+	main_node.free()
+	return ""
+
+
+func _test_quick_sell_all_abort_on_unknown_id() -> String:
+	var main_node := _setup_main_node()
+	await process_frame
+
+	main_node.coins = 100
+	main_node.flower_inventory.clear()
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 5)
+	main_node.flower_inventory.add_flower("daisy", FlowerQuality.Tier.FINE, 3)
+
+	# Maliciously inject an invalid/unknown flower species into storage
+	main_node.flower_inventory._storage["non_existent_cosmic_rose"] = {"1": 10}
+
+	var res := main_node.quick_sell_all_flowers()
+	if res:
+		main_node.free()
+		return "quick_sell_all_flowers succeeded despite unknown flower ID present"
+
+	# Verify ZERO MUTATION: coins remain 100, flowers remain untouched
+	if main_node.coins != 100:
+		main_node.free()
+		return "Zero mutation failure: coins mutated on aborted quick sell all (expected 100, got %d)" % main_node.coins
+	if main_node.flower_inventory.get_flower_count("rose") != 5:
+		main_node.free()
+		return "Zero mutation failure: rose count mutated on aborted quick sell all"
+	if main_node.flower_inventory.get_flower_count("daisy") != 3:
+		main_node.free()
+		return "Zero mutation failure: daisy count mutated on aborted quick sell all"
+
+	# Cleanup
+	if FileAccess.file_exists("user://test_sandbox_ui.json"):
+		DirAccess.remove_absolute("user://test_sandbox_ui.json")
+	main_node.free()
 	return ""

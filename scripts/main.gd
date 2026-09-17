@@ -46,6 +46,7 @@ var order_manager: OrderManager = OrderManager.new()
 var upgrade_manager: UpgradeManager = UpgradeManager.new()
 
 var coins: int = 0
+var active_save_path: String = ""
 
 var combo_count: int:
 	get:
@@ -319,7 +320,7 @@ func _toggle_pause_menu() -> void:
 		get_tree().paused = true
 
 
-func _save_game_state() -> void:
+func get_save_data() -> Dictionary:
 	var roster_serialized: Array = []
 	for spec in breeding_roster:
 		if is_instance_valid(spec):
@@ -330,14 +331,14 @@ func _save_game_state() -> void:
 		if is_instance_valid(spec):
 			pending_serialized.append(spec.serialize())
 
-	var state_data: Dictionary = {
+	return {
 		"coins": coins,
 		"specimen_counter": GeneticsEngine.get_specimen_counter(),
 		"flower_inventory_storage": flower_inventory.serialize(),
 		"seed_inventory": seed_inventory.serialize(),
 		"bouquet_inventory": bouquet_inventory,
 		"perfume_inventory": perfume_inventory,
-		"order_runtime": order_manager.serialize().get("order_runtime", {}),
+		"order_runtime": order_manager.serialize().get("order_runtime", {}) if order_manager != null else {},
 		"combo_count": order_manager.combo_count if order_manager != null else 0,
 		"combo_timer": order_manager.combo_timer if order_manager != null else 0.0,
 		"discovered_flowers": discovered_flowers,
@@ -347,13 +348,11 @@ func _save_game_state() -> void:
 		"breeding_roster": roster_serialized,
 		"plots": SaveManagerScript.serialize_plots(garden_grid.plots) if is_instance_valid(garden_grid) else []
 	}
-	SaveManagerScript.save_game(state_data)
 
 
-func _load_game_state() -> bool:
-	var data := SaveManagerScript.load_game()
+func apply_save_data(data: Dictionary) -> void:
 	if data.is_empty():
-		return false
+		return
 
 	coins = int(data.get("coins", coins))
 	var saved_counter: int = int(data.get("specimen_counter", 100))
@@ -394,11 +393,9 @@ func _load_game_state() -> bool:
 			var s = legacy_list[idx]
 			var species_str: String = str(s)
 			var stable_id: String = "LEGACY-%s-%03d" % [species_str.to_upper(), idx + 1]
-			var reconstructed := GeneticsEngine.create_starter_specimen(species_str, stable_id)
-			reconstructed.parent_a_id = "legacy_reconstructed"
-			reconstructed.parent_b_id = "legacy_reconstructed"
-			reconstructed.generation = 1
-			pending_hybrid_seeds.append(reconstructed)
+			var reconstructed := GeneticsEngine.create_reconstructed_legacy_specimen(species_str, stable_id)
+			if reconstructed != null:
+				pending_hybrid_seeds.append(reconstructed)
 
 	if data.has("breeding_roster") and data["breeding_roster"] is Array:
 		breeding_roster.clear()
@@ -423,6 +420,18 @@ func _load_game_state() -> bool:
 				all_loaded_ids.append(plot.current_specimen.specimen_id)
 	GeneticsEngine.scan_and_register_ids(all_loaded_ids)
 
+
+func _save_game_state() -> void:
+	var path := active_save_path if not active_save_path.is_empty() else SaveManagerScript.SAVE_PATH_V3
+	SaveManagerScript.save_game(get_save_data(), path)
+
+
+func _load_game_state() -> bool:
+	var path := active_save_path if not active_save_path.is_empty() else SaveManagerScript.SAVE_PATH_V3
+	var data := SaveManagerScript.load_game(path)
+	if data.is_empty():
+		return false
+	apply_save_data(data)
 	return true
 
 
@@ -745,58 +754,68 @@ func _on_flower_revealed(flower_id: String, plot: GardenPlot) -> void:
 
 
 func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int) -> void:
-	var val_res := BreedingService.validate_pair(parent_a_id, parent_b_id, null, null, flower_inventory, breeding_roster)
+	# 1. Resolve both parents from breeding_roster if they match specimen_ids
+	var specimen_a: FlowerSpecimen = null
+	var specimen_b: FlowerSpecimen = null
+
+	for spec in breeding_roster:
+		if is_instance_valid(spec):
+			if spec.specimen_id == parent_a_id and specimen_a == null:
+				specimen_a = spec
+			if spec.specimen_id == parent_b_id and specimen_b == null:
+				specimen_b = spec
+
+	# 2. Specimen self-breeding prevention
+	if specimen_a != null and specimen_b != null and (specimen_a == specimen_b or specimen_a.specimen_id == specimen_b.specimen_id):
+		_play_sfx("error")
+		if hud != null:
+			hud.show_toast("Cannot breed a specimen with itself!", Color(0.9, 0.4, 0.4))
+		return
+
+	# 3. Validate pair compatibility and domain rules
+	var val_res := BreedingService.validate_pair(parent_a_id, parent_b_id, specimen_a, specimen_b, flower_inventory, breeding_roster)
 	if not val_res.get("valid", false):
 		_play_sfx("error")
 		if hud != null:
 			hud.show_toast(val_res.get("error", "Breeding validation failed!"), Color(0.9, 0.4, 0.4))
 		return
 
-	var specimen_a: FlowerSpecimen = null
-	var specimen_b: FlowerSpecimen = null
-	var deduct_inventory_a: String = ""
-	var deduct_inventory_b: String = ""
-
-	# 1. Direct match by specimen_id in breeding_roster (Preserved Stock)
-	for spec in breeding_roster:
-		if is_instance_valid(spec):
-			if spec.specimen_id == parent_a_id and specimen_a == null:
-				specimen_a = spec
-			elif spec.specimen_id == parent_b_id and specimen_b == null:
-				specimen_b = spec
-
-	# 2. If parent_a_id is a species from garden inventory:
+	# 4. Transactional inventory requirement aggregation
+	var needed_inventory: Dictionary = {}
 	if specimen_a == null:
-		var needed_a := 2 if parent_a_id == parent_b_id else 1
-		if flower_inventory.get_flower_count(parent_a_id) >= needed_a:
-			for spec in breeding_roster:
-				if is_instance_valid(spec) and spec.species_id == parent_a_id:
-					specimen_a = spec
-					break
-			if specimen_a == null:
-				specimen_a = GeneticsEngine.create_starter_specimen(parent_a_id)
-			deduct_inventory_a = parent_a_id
-
-	# 3. If parent_b_id is a species from garden inventory:
+		var sp_a := parent_a_id
+		needed_inventory[sp_a] = needed_inventory.get(sp_a, 0) + 1
 	if specimen_b == null:
-		var available_b: int = flower_inventory.get_flower_count(parent_b_id)
-		if deduct_inventory_a == parent_b_id:
-			available_b -= 1
-		if available_b >= 1:
-			for spec in breeding_roster:
-				if is_instance_valid(spec) and spec.species_id == parent_b_id and (spec != specimen_a or parent_a_id != parent_b_id):
-					specimen_b = spec
-					break
-			if specimen_b == null:
-				specimen_b = GeneticsEngine.create_starter_specimen(parent_b_id)
-			deduct_inventory_b = parent_b_id
+		var sp_b := parent_b_id
+		needed_inventory[sp_b] = needed_inventory.get(sp_b, 0) + 1
 
-	if specimen_a == null or specimen_b == null:
-		_play_sfx("error")
-		if hud != null:
-			hud.show_toast("Parent specimens or required inventory flowers not available!", Color(0.9, 0.4, 0.4))
-		return
+	# 5. Validate stock for all required inventory flowers before ANY mutation
+	for sp_id in needed_inventory:
+		var needed_count: int = needed_inventory[sp_id]
+		if flower_inventory.get_flower_count(sp_id) < needed_count:
+			_play_sfx("error")
+			if hud != null:
+				hud.show_toast("Insufficient harvested %s in inventory!" % FlowerData.get_flower(sp_id).get("display_name", sp_id), Color(0.9, 0.4, 0.4))
+			return
 
+	# 6. Instantiate starter specimens for inventory parents if needed
+	if specimen_a == null:
+		specimen_a = GeneticsEngine.create_starter_specimen(parent_a_id)
+		if specimen_a == null:
+			_play_sfx("error")
+			if hud != null:
+				hud.show_toast("Failed to initialize genetics for parent %s!" % parent_a_id, Color(0.9, 0.4, 0.4))
+			return
+
+	if specimen_b == null:
+		specimen_b = GeneticsEngine.create_starter_specimen(parent_b_id)
+		if specimen_b == null:
+			_play_sfx("error")
+			if hud != null:
+				hud.show_toast("Failed to initialize genetics for parent %s!" % parent_b_id, Color(0.9, 0.4, 0.4))
+			return
+
+	# 7. Perform genetic cross
 	var cross_result: Dictionary = GeneticsEngine.cross_specimens(specimen_a, specimen_b, rng_seed)
 	var hybrid_species: String = cross_result.get("species", "")
 	var offspring: FlowerSpecimen = cross_result.get("specimen", null)
@@ -807,11 +826,9 @@ func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int
 			hud.show_toast("These parent species cannot produce a viable hybrid!", Color(0.9, 0.6, 0.4))
 		return
 
-	# Deduct inventory if used from garden harvest
-	if not deduct_inventory_a.is_empty():
-		flower_inventory.consume_requirements({deduct_inventory_a: 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
-	if not deduct_inventory_b.is_empty():
-		flower_inventory.consume_requirements({deduct_inventory_b: 1}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
+	# 8. Commit deductions atomically only after full success
+	for sp_id in needed_inventory:
+		flower_inventory.consume_requirements({sp_id: needed_inventory[sp_id]}, FlowerInventory.ConsumptionPolicy.LOWEST_QUALITY_FIRST)
 
 	pending_hybrid_seeds.append(offspring)
 
@@ -935,8 +952,6 @@ func _on_sell_all_requested() -> void:
 
 ## Sells all harvestable flowers currently stored in inventory.
 func quick_sell_all_flowers() -> int:
-	var total_earned: int = 0
-	var total_flowers_sold: int = 0
 	var all_flowers: Dictionary = flower_inventory.get_all_flowers()
 
 	if all_flowers.is_empty():
@@ -944,9 +959,33 @@ func quick_sell_all_flowers() -> int:
 			hud.show_toast("No flowers to sell in inventory!", Color(0.8, 0.8, 0.8))
 		return 0
 
+	# Phase 1: Strict pre-validation of all flower IDs and quality tiers before any mutation
 	for flower_id in all_flowers:
 		var f_data := FlowerData.get_flower(flower_id)
-		var base_val: int = int(f_data.get("base_value", 10))
+		if f_data.is_empty() or not f_data.has("base_value") or int(f_data.get("base_value", 0)) <= 0:
+			push_error("quick_sell_all_flowers: Unknown or invalid flower ID '%s'. Aborting entire sale (zero mutation)." % flower_id)
+			if is_instance_valid(hud):
+				hud.show_toast("Cannot sell: unknown flower '%s' in basket!" % flower_id, Color(0.9, 0.4, 0.4))
+			return 0
+		var tiers_dict: Dictionary = all_flowers[flower_id]
+		for tier_key in tiers_dict:
+			var tier: int = int(tier_key)
+			if not FlowerQuality.is_valid(tier):
+				push_error("quick_sell_all_flowers: Invalid quality tier '%s' for flower '%s'. Aborting sale." % [tier_key, flower_id])
+				if is_instance_valid(hud):
+					hud.show_toast("Cannot sell: corrupted quality tier!", Color(0.9, 0.4, 0.4))
+				return 0
+			var count: int = int(tiers_dict[tier_key])
+			if count < 0:
+				push_error("quick_sell_all_flowers: Negative count (%d) for flower '%s'. Aborting sale." % [count, flower_id])
+				return 0
+
+	# Phase 2: Calculate total revenue
+	var total_earned: int = 0
+	var total_flowers_sold: int = 0
+	for flower_id in all_flowers:
+		var f_data := FlowerData.get_flower(flower_id)
+		var base_val: int = int(f_data["base_value"])
 		var tiers_dict: Dictionary = all_flowers[flower_id]
 		for tier_key in tiers_dict:
 			var tier: int = int(tier_key)
@@ -960,6 +999,7 @@ func quick_sell_all_flowers() -> int:
 	if total_flowers_sold == 0 or total_earned == 0:
 		return 0
 
+	# Phase 3: Atomically clear inventory and award coins
 	flower_inventory.clear()
 	coins += total_earned
 

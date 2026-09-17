@@ -30,6 +30,7 @@ func _init() -> void:
 	_run_suite("Transactional Quick Sell & Quality Multipliers", _test_quick_sell_transactions)
 	_run_suite("Atomic Bouquet Crafting & Transaction Rollback", _test_atomic_bouquet_crafting)
 	_run_suite("CVP Starter Seeds & Quality Consumption Policy", _test_cvp_starter_seeds_and_consumption_policy)
+	_run_suite("Order 3 Bouquet Deduction & Combo Timer Integrity", _test_order_3_bouquet_deduction_and_combo_timer)
 	
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -473,10 +474,10 @@ func _test_atomic_bouquet_crafting() -> String:
 	if not b_inv.is_empty():
 		return "b_inv must remain empty on invalid recipe"
 
-	# Recipe: garden_harmony requires {rose: 1, lavender: 1, sunflower: 1}
+	# Recipe: garden_harmony requires {rose: 1, lavender: 1, daisy: 1}
 	# 2. Insufficient ingredients (multi-ingredient rollback & zero mutation)
 	f_inv.add_flower("rose", FlowerQuality.Tier.NORMAL, 2)
-	f_inv.add_flower("sunflower", FlowerQuality.Tier.FINE, 1)
+	f_inv.add_flower("daisy", FlowerQuality.Tier.FINE, 1)
 	# Note: lavender is missing (count == 0)
 	
 	var res_fail := BouquetData.craft_bouquet("garden_harmony", f_inv, b_inv)
@@ -484,8 +485,8 @@ func _test_atomic_bouquet_crafting() -> String:
 		return "craft_bouquet must fail when missing lavender"
 	if f_inv.get_flower_count("rose") != 2:
 		return "Zero mutation failure: rose count changed after failed craft"
-	if f_inv.get_flower_count("sunflower") != 1:
-		return "Zero mutation failure: sunflower count changed after failed craft"
+	if f_inv.get_flower_count("daisy") != 1:
+		return "Zero mutation failure: daisy count changed after failed craft"
 	if f_inv.get_flower_count("lavender") != 0:
 		return "Zero mutation failure: lavender count changed after failed craft"
 	if not b_inv.is_empty():
@@ -499,8 +500,8 @@ func _test_atomic_bouquet_crafting() -> String:
 	
 	if f_inv.get_flower_count("rose") != 1:
 		return "Exact deduction failure: rose count should be 1 (was 2, deducted 1)"
-	if f_inv.get_flower_count("sunflower") != 0:
-		return "Exact deduction failure: sunflower count should be 0 (was 1, deducted 1)"
+	if f_inv.get_flower_count("daisy") != 0:
+		return "Exact deduction failure: daisy count should be 0 (was 1, deducted 1)"
 	if f_inv.get_flower_count("lavender") != 0:
 		return "Exact deduction failure: lavender count should be 0 (was 1, deducted 1)"
 	if b_inv.get("garden_harmony", 0) != 1:
@@ -627,6 +628,93 @@ func _test_cvp_starter_seeds_and_consumption_policy() -> String:
 	# HERO must remain completely untouched: exactly 5!
 	if hero_preservation_inv.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 5:
 		return "HERO tier flowers were consumed when lower tiers were sufficient to fulfill demand!"
+
+	return ""
+
+
+func _test_order_3_bouquet_deduction_and_combo_timer() -> String:
+	# -------------------------------------------------------------
+	# 1. Point 1: order_3 Bouquet Fulfillment & Deduction SSoT
+	# -------------------------------------------------------------
+	var order_mgr := OrderManager.new()
+	var f_inv := FlowerInventory.new()
+	var b_inv: Dictionary = {"garden_harmony": 1}
+
+	if b_inv.get("garden_harmony", 0) != 1:
+		return "Initial bouquet inventory expected 1 garden_harmony"
+
+	# order_3 requires 1 garden_harmony bouquet
+	var res_fulfill: Dictionary = order_mgr.fulfill_order("order_3", f_inv, b_inv)
+	if not res_fulfill.get("success", false):
+		return "Fulfillment of order_3 failed: %s" % res_fulfill.get("error", "")
+
+	# Verify bouquet count is decremented exactly to 0
+	if b_inv.get("garden_harmony", -1) != 0:
+		return "Bouquet count expected 0 after fulfillment, got %d" % b_inv.get("garden_harmony", -1)
+
+	# Verify reward coins awarded
+	var coins_reward: int = int(res_fulfill.get("total_coins", 0))
+	if coins_reward <= 0:
+		return "Expected positive reward coins from order_3 fulfillment, got %d" % coins_reward
+
+	# Verify order marked completed in order_runtime
+	if not order_mgr.order_runtime.get("order_3", {}).get("completed", false):
+		return "order_3 completed state expected true in order_runtime"
+
+	# Verify duplicate fulfillment attempt is rejected with ZERO mutation
+	var res_dup: Dictionary = order_mgr.fulfill_order("order_3", f_inv, b_inv)
+	if res_dup.get("success", false):
+		return "Duplicate fulfillment of order_3 succeeded unexpectedly"
+
+	if b_inv.get("garden_harmony", -1) != 0:
+		return "Zero mutation failure: bouquet count mutated on duplicate fulfillment attempt"
+
+	# -------------------------------------------------------------
+	# 2. Point 3: Combo Timer Restoration & Expiry Integrity
+	# -------------------------------------------------------------
+	order_mgr.combo_count = 4
+	order_mgr.combo_timer = 15.0
+
+	var serialized: Dictionary = order_mgr.serialize()
+	if not serialized.has("combo_timer"):
+		return "Serialized order data missing 'combo_timer'"
+	if abs(float(serialized["combo_timer"]) - 15.0) > 0.001:
+		return "Serialized combo_timer mismatch: expected 15.0, got %s" % str(serialized["combo_timer"])
+	if int(serialized.get("combo_count", 0)) != 4:
+		return "Serialized combo_count mismatch: expected 4, got %s" % str(serialized.get("combo_count"))
+
+	var order_mgr2 := OrderManager.new()
+	order_mgr2.deserialize(serialized)
+
+	if order_mgr2.combo_count != 4:
+		return "Deserialized combo_count mismatch: expected 4, got %d" % order_mgr2.combo_count
+	if abs(order_mgr2.combo_timer - 15.0) > 0.001:
+		return "Deserialized combo_timer mismatch: expected 15.0, got %f" % order_mgr2.combo_timer
+
+	# Tick patience: 5.0 seconds decay
+	order_mgr2.tick(5.0)
+	if order_mgr2.combo_count != 4:
+		return "Combo count mutated during active timer tick"
+	if abs(order_mgr2.combo_timer - 10.0) > 0.001:
+		return "Combo timer did not decay correctly: expected 10.0, got %f" % order_mgr2.combo_timer
+
+	# Tick patience: 12.0 seconds decay -> triggers timer expiry (<= 0.0)
+	order_mgr2.tick(12.0)
+	if order_mgr2.combo_timer != 0.0:
+		return "Combo timer expected 0.0 after expiry, got %f" % order_mgr2.combo_timer
+	if order_mgr2.combo_count != 0:
+		return "Combo count expected 0 after timer expiry, got %d" % order_mgr2.combo_count
+
+	# Test deserialization with non-positive combo_timer resets combo_count to 0
+	var stale_timer_data := {
+		"combo_count": 3,
+		"combo_timer": 0.0,
+		"order_runtime": {}
+	}
+	var order_mgr3 := OrderManager.new()
+	order_mgr3.deserialize(stale_timer_data)
+	if order_mgr3.combo_count != 0:
+		return "Deserializing non-positive combo_timer must reset combo_count to 0"
 
 	return ""
 

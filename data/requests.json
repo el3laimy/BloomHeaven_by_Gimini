@@ -9,9 +9,9 @@
       "type": "flowers",
       "required_items": {
         "lavender": 2,
-        "sunflower": 1
+        "daisy": 1
       },
-      "dialogue": "I'm styling a summer outdoor wedding altar. I need fragrant lavender and radiant sunflowers!",
+      "dialogue": "I'm styling a summer outdoor wedding altar. I need fragrant lavender and radiant daisies!",
       "coin_reward": 25,
       "reputation_reward": 10,
       "patience_max_seconds": 75.0

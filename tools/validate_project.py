@@ -332,6 +332,72 @@ for sp in species_list:
         else:
             log_err(f"Missing growth stage sprite: {sp}_{st}.png")
 
+# 10. Clean-Game Content Reachability Fixed-Point Closure Validator (SSoT)
+print("\n[10] Checking Clean-Game Content Reachability (Fixed-Point Closure)...")
+if flowers:
+    reachable_flowers = set()
+    for fid, fdef in flowers.items():
+        if fdef.get("status") == "cvp_base":
+            reachable_flowers.add(fid)
+    
+    # Fixed-point iteration for reachable hybrids
+    changed = True
+    iteration = 0
+    while changed:
+        changed = False
+        iteration += 1
+        for fid, fdef in flowers.items():
+            if fdef.get("status") == "cvp_hybrid" and fid not in reachable_flowers:
+                parents = fdef.get("parents", [])
+                if parents and all(p in reachable_flowers for p in parents):
+                    reachable_flowers.add(fid)
+                    changed = True
+
+    log_ok(f"Fixed-point progression closure converged in {iteration} rounds. Reachable flowers ({len(reachable_flowers)}): {sorted(list(reachable_flowers))}")
+
+    # Validate active customer requests
+    for rid, rdef in requests.items():
+        rtype = rdef.get("type", "")
+        req_items = rdef.get("required_items", {})
+        if rtype == "flowers":
+            for fid in req_items:
+                if fid not in reachable_flowers:
+                    log_err(f"Active request '{rid}' demands unreachable flower '{fid}' from clean new game!")
+                else:
+                    log_ok(f"Request '{rid}' flower '{fid}' is reachable.")
+        elif rtype == "bouquet":
+            for bid in req_items:
+                if bid not in bouquets:
+                    log_err(f"Active request '{rid}' demands nonexistent bouquet '{bid}'")
+                    continue
+                bdef = bouquets[bid]
+                b_ings = bdef.get("ingredients", {})
+                for ing_id in b_ings:
+                    if ing_id not in reachable_flowers:
+                        log_err(f"Active request '{rid}' bouquet '{bid}' requires unreachable ingredient '{ing_id}'!")
+                    else:
+                        log_ok(f"Request '{rid}' bouquet '{bid}' ingredient '{ing_id}' is reachable.")
+        elif rtype == "perfume":
+            for pid in req_items:
+                if pid not in perfumes:
+                    log_err(f"Active request '{rid}' demands nonexistent perfume '{pid}'")
+                    continue
+                pdef = perfumes[pid]
+                p_ings = pdef.get("ingredients", {})
+                for ing_id in p_ings:
+                    if ing_id not in reachable_flowers:
+                        log_err(f"Active request '{rid}' perfume '{pid}' requires unreachable ingredient '{ing_id}'!")
+                    else:
+                        log_ok(f"Request '{rid}' perfume '{pid}' ingredient '{ing_id}' is reachable.")
+
+    # Validate solar_grandeur exclusion from active CVP
+    if "solar_grandeur" in bouquets:
+        sg = bouquets["solar_grandeur"]
+        if sg.get("status") != "legacy":
+            log_err("Bouquet 'solar_grandeur' must be explicitly classified as 'legacy' / post-CVP.")
+        else:
+            log_ok("Bouquet 'solar_grandeur' correctly isolated as 'legacy' post-CVP.")
+
 print("\n==================================================")
 if errors:
     print(f"❌ VALIDATION FAILED WITH {len(errors)} ERRORS.")

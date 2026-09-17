@@ -272,7 +272,7 @@ func plant(new_flower_id: String, mystery: bool = false, specimen: FlowerSpecime
 		current_specimen = GeneticsEngine.create_starter_specimen(new_flower_id)
 
 	_flower_visual.flower_id = current_flower_id
-	_flower_visual.phenotype = current_specimen.phenotype
+	_flower_visual.phenotype = current_specimen.phenotype if current_specimen != null else null
 	_flower_visual.is_mystery = mystery
 	_flower_visual.is_revealed = is_revealed
 	_flower_visual.is_pruned = false

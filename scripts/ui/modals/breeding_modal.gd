@@ -337,7 +337,7 @@ func _create_grid_specimen_card(specimen: FlowerSpecimen) -> PanelContainer:
 	btn_a.add_theme_font_size_override("font_size", 10)
 	btn_a.pressed.connect(func():
 		_play_click()
-		selected_parent_a_id = specimen.species_id
+		selected_parent_a_id = specimen.specimen_id
 		selected_specimen_a = specimen
 		_pop_pedestal(_slot_a_panel)
 		_update_slots_ui()
@@ -352,7 +352,7 @@ func _create_grid_specimen_card(specimen: FlowerSpecimen) -> PanelContainer:
 	btn_b.add_theme_font_size_override("font_size", 10)
 	btn_b.pressed.connect(func():
 		_play_click()
-		selected_parent_b_id = specimen.species_id
+		selected_parent_b_id = specimen.specimen_id
 		selected_specimen_b = specimen
 		_pop_pedestal(_slot_b_panel)
 		_update_slots_ui()
@@ -381,7 +381,8 @@ func _update_slots_ui() -> void:
 			_slot_a_label.text = name_a
 			_slot_a_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
 			if _slot_a_tex != null:
-				_slot_a_tex.texture = get_flower_texture(selected_parent_a_id)
+				var tex_id_a := selected_specimen_a.species_id if selected_specimen_a != null else selected_parent_a_id
+				_slot_a_tex.texture = get_flower_texture(tex_id_a)
 				_slot_a_tex.visible = true
 			if _slot_a_trait != null:
 				_slot_a_trait.text = _get_flower_trait_summary(selected_parent_a_id, selected_specimen_a)
@@ -406,7 +407,8 @@ func _update_slots_ui() -> void:
 			_slot_b_label.text = name_b
 			_slot_b_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
 			if _slot_b_tex != null:
-				_slot_b_tex.texture = get_flower_texture(selected_parent_b_id)
+				var tex_id_b := selected_specimen_b.species_id if selected_specimen_b != null else selected_parent_b_id
+				_slot_b_tex.texture = get_flower_texture(tex_id_b)
 				_slot_b_tex.visible = true
 			if _slot_b_trait != null:
 				_slot_b_trait.text = _get_flower_trait_summary(selected_parent_b_id, selected_specimen_b)

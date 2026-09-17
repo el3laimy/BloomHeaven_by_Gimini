@@ -8,9 +8,75 @@ const SaveManagerScript := preload("res://scripts/core/save_manager.gd")
 const GeneticsEngineScript := preload("res://scripts/genetics/genetics_engine.gd")
 const AudioManagerScript := preload("res://scripts/core/audio_manager.gd")
 
+const REAL_SAVE_PATHS: Array[String] = [
+	"user://bloomhaven_save_v3.json",
+	"user://bloomhaven_save_v3.bak",
+	"user://bloomhaven_save_v3.tmp",
+	"user://bloomhaven_save_v2.json",
+	"user://bloomhaven_save_v2.bak",
+	"user://finest_garden_save_v1.json"
+]
+
+const SANDBOX_MAIN_SAVE: String = "user://playtest_sandbox_runtime.json"
+
 var _passed_count: int = 0
 var _failed_count: int = 0
 var _scenario_results: Array[Dictionary] = []
+
+
+static func _snapshot_real_saves() -> Dictionary:
+	var snap: Dictionary = {}
+	for p in REAL_SAVE_PATHS:
+		if FileAccess.file_exists(p):
+			var f := FileAccess.open(p, FileAccess.READ)
+			if f != null:
+				var content := f.get_as_text()
+				f.close()
+				snap[p] = {"exists": true, "sha256": content.sha256_text()}
+			else:
+				snap[p] = {"exists": true, "sha256": "unreadable"}
+		else:
+			snap[p] = {"exists": false, "sha256": ""}
+	return snap
+
+
+static func _verify_real_saves_untouched(before_snap: Dictionary) -> String:
+	for p in REAL_SAVE_PATHS:
+		var b_info: Dictionary = before_snap.get(p, {"exists": false, "sha256": ""})
+		var now_exists := FileAccess.file_exists(p)
+		if b_info["exists"] != now_exists:
+			return "Real user save file existence changed for '%s': was %s, now %s" % [p, b_info["exists"], now_exists]
+		if now_exists:
+			var f := FileAccess.open(p, FileAccess.READ)
+			if f == null:
+				return "Real user save file '%s' unreadable after playtest" % p
+			var content := f.get_as_text()
+			f.close()
+			var now_hash := content.sha256_text()
+			if now_hash != b_info["sha256"]:
+				return "Real user save file '%s' was modified during playtest! SHA256 mismatch: %s vs %s" % [p, b_info["sha256"], now_hash]
+	return ""
+
+
+static func _cleanup_sandbox_files() -> void:
+	var sandbox_patterns := [
+		"user://playtest_sandbox_runtime.json",
+		"user://playtest_sandbox_runtime.bak",
+		"user://playtest_sandbox_runtime.tmp",
+		"user://playtest_scenario_2_sandbox.json",
+		"user://playtest_scenario_2_sandbox.bak",
+		"user://playtest_scenario_2_sandbox.tmp",
+		"user://playtest_scenario_10_sandbox.json",
+		"user://playtest_scenario_10_sandbox.bak",
+		"user://playtest_scenario_10_sandbox.tmp",
+		"user://playtest_session_12.json",
+		"user://playtest_session_12.bak",
+		"user://playtest_session_12.tmp",
+		"user://playtest_legacy_temp.json"
+	]
+	for p in sandbox_patterns:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
 
 
 func _init() -> void:
@@ -23,17 +89,9 @@ func _run_all_scenarios() -> void:
 	print("🌸 BLOOMHAVEN — FINAL RUNTIME PLAYTEST GATE (SCENARIOS 1–12) 🌸")
 	print("========================================================================")
 
-	# Backup primary save to ensure clean sandbox environment during playtests
-	var primary_save := "user://bloomhaven_save_v3.json"
-	var primary_pretest_bak := "user://bloomhaven_save_v3.json.pretest_bak"
-	if FileAccess.file_exists(primary_save):
-		var src := FileAccess.open(primary_save, FileAccess.READ)
-		var content := src.get_as_text()
-		src.close()
-		var dst := FileAccess.open(primary_pretest_bak, FileAccess.WRITE)
-		dst.store_string(content)
-		dst.close()
-		DirAccess.remove_absolute(primary_save)
+	# Clean sandbox files and snapshot real user save files to guarantee zero modification
+	_cleanup_sandbox_files()
+	var pretest_snapshot := _snapshot_real_saves()
 
 	# Execute all 12 Scenarios sequentially
 	await _run_scenario("Scenario 1: Complete Flower Lifecycle", _scenario_1_flower_lifecycle)
@@ -49,15 +107,14 @@ func _run_all_scenarios() -> void:
 	await _run_scenario("Scenario 11: UI Wiring Stress", _scenario_11_ui_wiring_stress)
 	await _run_scenario("Scenario 12: Full Extended Natural Session", _scenario_12_full_session_simulation)
 
-	# Restore pretest save if it existed
-	if FileAccess.file_exists(primary_pretest_bak):
-		var src := FileAccess.open(primary_pretest_bak, FileAccess.READ)
-		var content := src.get_as_text()
-		src.close()
-		var dst := FileAccess.open(primary_save, FileAccess.WRITE)
-		dst.store_string(content)
-		dst.close()
-		DirAccess.remove_absolute(primary_pretest_bak)
+	# Verify real user save files remain 100% byte-exact untouched
+	var save_integrity_err := _verify_real_saves_untouched(pretest_snapshot)
+	if not save_integrity_err.is_empty():
+		printerr("\n❌ REAL USER SAVE VIOLATION: %s" % save_integrity_err)
+		_failed_count += 1
+
+	# Clean up temporary sandbox files
+	_cleanup_sandbox_files()
 
 	# Print Final Summary Table
 	print("\n========================================================================")
@@ -103,84 +160,17 @@ func _run_scenario(sc_name: String, test_func: Callable) -> void:
 
 func _setup_main() -> MainGame:
 	var main: MainGame = MainGameScene.instantiate() as MainGame
+	main.active_save_path = SANDBOX_MAIN_SAVE
 	root.add_child(main)
 	return main
 
 
 func _extract_save_dict(main: MainGame) -> Dictionary:
-	var roster_serialized: Array = []
-	for spec in main.breeding_roster:
-		if is_instance_valid(spec):
-			roster_serialized.append(spec.serialize())
-
-	var pending_serialized: Array = []
-	for spec in main.pending_hybrid_seeds:
-		if is_instance_valid(spec):
-			pending_serialized.append(spec.serialize())
-
-	return {
-		"coins": main.coins,
-		"specimen_counter": GeneticsEngine.get_specimen_counter(),
-		"flower_inventory_storage": main.flower_inventory.serialize(),
-		"seed_inventory": main.seed_inventory.serialize(),
-		"bouquet_inventory": main.bouquet_inventory,
-		"perfume_inventory": main.perfume_inventory,
-		"order_runtime": main.order_manager.serialize().get("order_runtime", {}),
-		"combo_count": main.order_manager.combo_count if main.order_manager != null else 0,
-		"combo_timer": main.order_manager.combo_timer if main.order_manager != null else 0.0,
-		"discovered_flowers": main.discovered_flowers,
-		"active_upgrades": main.upgrade_manager.serialize() if main.upgrade_manager != null else main.active_upgrades,
-		"tutorial_completed": main.tutorial_completed,
-		"pending_hybrid_seeds": pending_serialized,
-		"breeding_roster": roster_serialized,
-		"plots": SaveManagerScript.serialize_plots(main.garden_grid.plots) if is_instance_valid(main.garden_grid) else []
-	}
+	return main.get_save_data()
 
 
 func _apply_data_to_main(main: MainGame, data: Dictionary) -> void:
-	if data.is_empty():
-		return
-	main.coins = int(data.get("coins", main.coins))
-	var saved_counter: int = int(data.get("specimen_counter", 100))
-	GeneticsEngine.set_specimen_counter(saved_counter)
-
-	if data.has("flower_inventory_storage") and data["flower_inventory_storage"] is Dictionary:
-		main.flower_inventory.deserialize(data["flower_inventory_storage"])
-	elif data.has("inventory") and data["inventory"] is Dictionary:
-		main.flower_inventory.deserialize(data["inventory"])
-
-	if data.has("seed_inventory") and data["seed_inventory"] is Dictionary:
-		main.seed_inventory.deserialize(data["seed_inventory"])
-
-	main.bouquet_inventory = data.get("bouquet_inventory", main.bouquet_inventory)
-	main.perfume_inventory = data.get("perfume_inventory", main.perfume_inventory)
-
-	if main.order_manager != null:
-		main.order_manager.deserialize(data)
-	main.completed_requests = main.order_manager.completed_requests if main.order_manager != null else data.get("completed_requests", main.completed_requests)
-
-	main.discovered_flowers = data.get("discovered_flowers", main.discovered_flowers)
-	if main.upgrade_manager != null and data.has("active_upgrades") and data["active_upgrades"] is Dictionary:
-		main.upgrade_manager.deserialize(data["active_upgrades"])
-	main.active_upgrades = main.upgrade_manager.active_upgrades if main.upgrade_manager != null else data.get("active_upgrades", main.active_upgrades)
-	main._apply_all_active_upgrades()
-
-	main.tutorial_completed = bool(data.get("tutorial_completed", false))
-
-	if data.has("pending_hybrid_seeds") and data["pending_hybrid_seeds"] is Array:
-		main.pending_hybrid_seeds.clear()
-		for s_dict in data["pending_hybrid_seeds"]:
-			if s_dict is Dictionary:
-				main.pending_hybrid_seeds.append(FlowerSpecimen.deserialize(s_dict))
-
-	if data.has("breeding_roster") and data["breeding_roster"] is Array:
-		main.breeding_roster.clear()
-		for s_dict in data["breeding_roster"]:
-			if s_dict is Dictionary:
-				main.breeding_roster.append(FlowerSpecimen.deserialize(s_dict))
-
-	if data.has("plots") and data["plots"] is Array and is_instance_valid(main.garden_grid):
-		SaveManagerScript.deserialize_plots(data["plots"], main.garden_grid.plots)
+	main.apply_save_data(data)
 
 
 # -----------------------------------------------------------------------------
@@ -353,15 +343,14 @@ func _scenario_2_hero_persistence_and_sale() -> String:
 		main2.queue_free()
 		return "Expected revenue 25, got %d" % expected_revenue
 
-	var consumed: bool = main2.flower_inventory.remove_flower("rose", FlowerQuality.Tier.HERO, 1)
-	if not consumed:
+	var earned := main2.quick_sell_flower("rose", 1, FlowerQuality.Tier.HERO)
+	if earned <= 0:
 		main2.queue_free()
-		return "Failed to consume Hero Rose from inventory"
-	main2.coins += expected_revenue
+		return "Failed to sell Hero Rose via quick_sell_flower"
 
-	if main2.coins != pre_coins + 25:
+	if main2.coins != pre_coins + earned:
 		main2.queue_free()
-		return "Coins after sale expected %d, got %d" % [pre_coins + 25, main2.coins]
+		return "Coins after sale expected %d, got %d" % [pre_coins + earned, main2.coins]
 	if main2.flower_inventory.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO) != 0:
 		main2.queue_free()
 		return "Hero Rose count did not decrement to 0"
@@ -571,12 +560,12 @@ func _scenario_6_bouquet_atomicity() -> String:
 	await process_frame
 	await process_frame
 
-	# Setup ingredients for garden_harmony (requires 1 rose, 1 lavender, 1 sunflower)
+	# Setup ingredients for garden_harmony (requires 1 rose, 1 lavender, 1 daisy)
 	main.flower_inventory.clear()
 	main.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 2)
 	main.flower_inventory.add_flower("rose", FlowerQuality.Tier.HERO, 1) # Must NOT be consumed!
 	main.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 1)
-	main.flower_inventory.add_flower("sunflower", FlowerQuality.Tier.NORMAL, 1)
+	main.flower_inventory.add_flower("daisy", FlowerQuality.Tier.NORMAL, 1)
 	main.bouquet_inventory["garden_harmony"] = 0
 
 	# 1. Success case
@@ -594,11 +583,11 @@ func _scenario_6_bouquet_atomicity() -> String:
 	if main.flower_inventory.get_flower_count_by_quality("lavender", FlowerQuality.Tier.NORMAL) != 0:
 		main.queue_free()
 		return "Lavender not decremented"
-	if main.flower_inventory.get_flower_count_by_quality("sunflower", FlowerQuality.Tier.NORMAL) != 0:
+	if main.flower_inventory.get_flower_count_by_quality("daisy", FlowerQuality.Tier.NORMAL) != 0:
 		main.queue_free()
-		return "Sunflower not decremented"
+		return "Daisy not decremented"
 
-	# 2. Failure case: Attempt craft when missing lavender and sunflower
+	# 2. Failure case: Attempt craft when missing lavender and daisy
 	var pre_rose_norm: int = main.flower_inventory.get_flower_count_by_quality("rose", FlowerQuality.Tier.NORMAL)
 	var pre_rose_hero: int = main.flower_inventory.get_flower_count_by_quality("rose", FlowerQuality.Tier.HERO)
 	var pre_bq_count: int = int(main.bouquet_inventory.get("garden_harmony", 0))
@@ -633,11 +622,11 @@ func _scenario_7_order_atomicity() -> String:
 	main.order_manager.reset_all_orders()
 	main.completed_requests.clear()
 
-	# order_1 requires: lavender: 2, sunflower: 1, base reward: 25 coins
+	# order_1 requires: lavender: 2, daisy: 1, base reward: 25 coins
 	main.coins = 50
 	main.flower_inventory.clear()
 	main.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 2)
-	main.flower_inventory.add_flower("sunflower", FlowerQuality.Tier.NORMAL, 1)
+	main.flower_inventory.add_flower("daisy", FlowerQuality.Tier.NORMAL, 1)
 
 	# 1. Successful Fulfillment
 	var pre_coins: int = main.coins
@@ -650,9 +639,9 @@ func _scenario_7_order_atomicity() -> String:
 	if main.flower_inventory.get_flower_count_by_quality("lavender", FlowerQuality.Tier.NORMAL) != 0:
 		main.queue_free()
 		return "Lavender not consumed"
-	if main.flower_inventory.get_flower_count_by_quality("sunflower", FlowerQuality.Tier.NORMAL) != 0:
+	if main.flower_inventory.get_flower_count_by_quality("daisy", FlowerQuality.Tier.NORMAL) != 0:
 		main.queue_free()
-		return "Sunflower not consumed"
+		return "Daisy not consumed"
 	if not main.order_manager.order_runtime.get("order_1", {}).get("completed", false):
 		main.queue_free()
 		return "order_1 completed state expected true in order_runtime"
@@ -1025,13 +1014,15 @@ func _scenario_12_full_session_simulation() -> String:
 				f, main.flower_inventory.get_flower_count_by_quality(f, FlowerQuality.Tier.HERO)
 			]
 
-	# Step 6: Quick Sell 2 Hero Flowers (Rose: 25, Tulip: 20 -> +45 coins)
+	# Step 6: Quick Sell 2 Hero Flowers via production quick_sell_flower
 	var coins_before: int = main.coins
-	main.flower_inventory.remove_flower("rose", FlowerQuality.Tier.HERO, 1)
-	main.coins += 25
-	main.flower_inventory.remove_flower("tulip", FlowerQuality.Tier.HERO, 1)
-	main.coins += 20
-	if main.coins != coins_before + 45:
+	var earned_rose := main.quick_sell_flower("rose", 1, FlowerQuality.Tier.HERO)
+	var earned_tulip := main.quick_sell_flower("tulip", 1, FlowerQuality.Tier.HERO)
+	if earned_rose <= 0 or earned_tulip <= 0:
+		main.queue_free()
+		return "Session step 6 failed: quick_sell_flower returned <= 0"
+	var total_sale := earned_rose + earned_tulip
+	if main.coins != coins_before + total_sale:
 		main.queue_free()
 		return "Session step 6 failed: coins mismatch after sale"
 
@@ -1054,8 +1045,9 @@ func _scenario_12_full_session_simulation() -> String:
 		main.queue_free()
 		return "Session step 8 failed: mystery hybrid planting mismatch"
 
-	# Step 9: Save game, reboot session, reload
-	var save_ok := SaveManagerScript.save_game(_extract_save_dict(main), session_save)
+	# Step 9: Save game via production get_save_data / SaveManager, reboot session, reload via apply_save_data
+	var save_dict: Dictionary = main.get_save_data()
+	var save_ok := SaveManagerScript.save_game(save_dict, session_save)
 	if not save_ok:
 		main.queue_free()
 		return "Session step 9 failed: save game failed"
@@ -1066,10 +1058,10 @@ func _scenario_12_full_session_simulation() -> String:
 	var main2: MainGame = _setup_main()
 	await process_frame
 	await process_frame
-	_apply_data_to_main(main2, loaded_data)
+	main2.apply_save_data(loaded_data)
 
 	# Verify loaded state consistency
-	if main2.coins != coins_before + 45:
+	if main2.coins != coins_before + total_sale:
 		main2.queue_free()
 		return "Session step 9 failed: coins mismatch after reload"
 	if main2.garden_grid.plots[0].current_flower_id != "velvet_dusk":

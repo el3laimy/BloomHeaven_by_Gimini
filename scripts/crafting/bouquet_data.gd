@@ -35,26 +35,26 @@ static func _ensure_initialized() -> void:
 			"garden_harmony": {
 				"id": "garden_harmony",
 				"display_name": "Garden Harmony",
-				"ingredients": {"rose": 1, "lavender": 1, "sunflower": 1},
+				"ingredients": {"rose": 1, "lavender": 1, "daisy": 1},
 				"is_hybrid": false,
 				"primary_color": Color(0.90, 0.78, 0.35, 1.0),
-				"description": "A balanced arrangement uniting red rose, lavender, and sunflower."
+				"description": "A balanced arrangement uniting red rose, lavender, and daisy."
 			},
 			"crimson_romance": {
 				"id": "crimson_romance",
 				"display_name": "Crimson Romance",
-				"ingredients": {"rose": 2, "lavender": 1},
+				"ingredients": {"rose": 3},
 				"is_hybrid": false,
-				"primary_color": Color(0.92, 0.28, 0.42, 1.0),
-				"description": "A classic romantic bouquet featuring velvety crimson roses."
+				"primary_color": Color(0.85, 0.20, 0.25, 1.0),
+				"description": "A classic arrangement of deep red roses."
 			},
 			"ethereal_lumina": {
 				"id": "ethereal_lumina",
 				"display_name": "Ethereal Lumina",
-				"ingredients": {"roselight": 1, "rose": 1},
+				"ingredients": {"velvet_dusk": 1, "rose": 1},
 				"is_hybrid": true,
 				"primary_color": Color(0.92, 0.45, 0.88, 1.0),
-				"description": "A showcase bouquet pairing rose with glowing Roselight petals."
+				"description": "A showcase bouquet pairing rose with glowing Velvet Dusk petals."
 			}
 		}
 	

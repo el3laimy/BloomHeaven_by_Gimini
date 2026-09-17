@@ -31,19 +31,7 @@ static func _ensure_initialized() -> void:
 					_cached_requests[r_id] = entry
 	
 	if _cached_requests.is_empty():
-		_cached_requests = {
-			"order_1": {
-				"id": "order_1",
-				"customer_name": "Maya",
-				"customer_title": "Wedding Stylist",
-				"avatar_color": Color(0.85, 0.45, 0.65, 1.0),
-				"avatar_badge": "M",
-				"type": "flowers",
-				"required_items": {"lavender": 2, "sunflower": 1},
-				"dialogue": "I'm styling an outdoor wedding altar. I need fragrant lavender and sunflowers!",
-				"coin_reward": 25
-			}
-		}
+		push_error("FloristRequestData: Failed to load requests from res://data/requests.json; no fallback is permitted (SSoT).")
 	
 	_is_initialized = true
 

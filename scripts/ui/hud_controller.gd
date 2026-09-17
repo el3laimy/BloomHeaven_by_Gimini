@@ -1814,8 +1814,10 @@ func _update_visual_lab_state() -> void:
 	_parent_b_title_lbl.text = "Parent B (%s)" % parent_b_id.capitalize()
 	_hybrid_title_lbl.text = "Hybrid (%s)" % hybrid_name
 
-	var ph_a: FlowerPhenotype = GeneticsEngine.create_starter_specimen(parent_a_id).phenotype
-	var ph_b: FlowerPhenotype = GeneticsEngine.create_starter_specimen(parent_b_id).phenotype
+	var sp_a: FlowerSpecimen = GeneticsEngine.create_starter_specimen(parent_a_id)
+	var ph_a: FlowerPhenotype = sp_a.phenotype if sp_a != null else null
+	var sp_b: FlowerSpecimen = GeneticsEngine.create_starter_specimen(parent_b_id)
+	var ph_b: FlowerPhenotype = sp_b.phenotype if sp_b != null else null
 
 	var g_hyb := FlowerGenotype.new(["Cr", "Cp"], ["Ps", "Pr"], ["F+", "F+"], ["V+", "v-"])
 	if _selected_hybrid_cross == "golden_rose":

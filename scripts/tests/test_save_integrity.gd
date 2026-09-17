@@ -62,6 +62,9 @@ func _init() -> void:
 	_run_suite("Starter Seeds & Save Existence Edge Cases", _test_starter_seeds_edge_cases)
 	_run_suite("Canonical V3 Writer (No Duplicate Aliases)", _test_canonical_v3_no_legacy_aliases)
 	_run_suite("Deterministic Legacy Reconstruction Reproducibility", _test_deterministic_legacy_reconstruction_reproducibility)
+	_run_suite("Atomic Promotion & Safe Replacement", _test_atomic_promotion_and_backup_recovery)
+	_run_suite("Tightened Domain Schema Validation", _test_tightened_domain_schema_validation)
+	_run_suite("Unknown Legacy Species Rejection", _test_unknown_legacy_species_rejection)
 
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -746,7 +749,7 @@ func _test_garden_plot_mystery_reveal_roundtrip() -> String:
 	p0.growth_progress = 0.30
 	p0.is_mystery_seed = true
 	p0.is_revealed = false
-	p0.current_specimen = GeneticsEngine.create_starter_specimen("velvet_dusk")
+	p0.current_specimen = GeneticsEngine.create_reconstructed_legacy_specimen("velvet_dusk")
 
 	var p1 := GardenPlot.new()
 	p1.plot_index = 1
@@ -755,7 +758,7 @@ func _test_garden_plot_mystery_reveal_roundtrip() -> String:
 	p1.growth_progress = 0.80
 	p1.is_mystery_seed = true
 	p1.is_revealed = true
-	p1.current_specimen = GeneticsEngine.create_starter_specimen("golden_rose")
+	p1.current_specimen = GeneticsEngine.create_reconstructed_legacy_specimen("golden_rose")
 
 	var state := {
 		"coins": 100,
@@ -787,10 +790,10 @@ func _test_specimen_counter_contract() -> String:
 		"coins": 100,
 		"specimen_counter": 250,
 		"breeding_roster": [
-			{"specimen_id": "SPEC-00275", "species_id": "rose"}
+			GeneticsEngine.create_starter_specimen("rose", "SPEC-00275").serialize()
 		],
 		"pending_hybrid_seeds": [
-			{"specimen_id": "SPEC-00310", "species_id": "velvet_dusk"}
+			GeneticsEngine.create_reconstructed_legacy_specimen("velvet_dusk", "SPEC-00310").serialize()
 		]
 	}
 
@@ -1076,7 +1079,7 @@ func _test_deterministic_legacy_reconstruction_reproducibility() -> String:
 		"version": 1,
 		"data": {
 			"coins": 250,
-			"unknown_hybrid_seeds": ["velvet_dusk", "sunfire", "velvet_dusk"]
+			"unknown_hybrid_seeds": ["velvet_dusk", "blushbell", "velvet_dusk"]
 		}
 	}
 
@@ -1150,6 +1153,220 @@ func _test_deterministic_legacy_reconstruction_reproducibility() -> String:
 			var p2: Array = m2.get("data", {}).get("pending_hybrid_seeds", [])
 			if p1.size() != p2.size():
 				return "Mismatch in baseline v1 pending hybrid count: %d vs %d" % [p1.size(), p2.size()]
+
+	return ""
+
+
+# ------------------------------------------------------------------------------
+# 24. Atomic Promotion & Safe Replacement (Point 7)
+# ------------------------------------------------------------------------------
+func _test_atomic_promotion_and_backup_recovery() -> String:
+	_cleanup_test_files()
+
+	# A. Promotion to non-existent target
+	var initial_state := {"coins": 100, "inventory": {"rose": 2}}
+	var ok_initial := SaveManager.save_game(initial_state, TEST_SAVE_BASE)
+	if not ok_initial:
+		return "Failed to save initial state to non-existent target"
+	if not FileAccess.file_exists(TEST_SAVE_BASE):
+		return "Primary save file does not exist after promotion"
+	if FileAccess.file_exists(TEST_SAVE_TMP):
+		return "Temp save file was not cleaned up after promotion"
+
+	# Verify loaded coins
+	var l_init := SaveManager.load_game(TEST_SAVE_BASE)
+	if l_init.get("coins", 0) != 100:
+		return "Loaded initial coins mismatch: expected 100, got %s" % str(l_init.get("coins"))
+
+	# B. Direct test of _promote_temp_to_primary helper
+	# Create a valid temp file with coins = 200
+	var payload_b: Dictionary = {
+		"version": 3,
+		"timestamp": Time.get_unix_time_from_system(),
+		"game_title": "BloomHaven CVP",
+		"data": {
+			"coins": 200,
+			"specimen_counter": 100,
+			"flower_inventory_storage": {"rose": {"1": 2}},
+			"seed_inventory": {"rose": 5},
+			"bouquet_inventory": {},
+			"perfume_inventory": {},
+			"plots": [],
+			"breeding_roster": [],
+			"pending_hybrid_seeds": [],
+			"order_runtime": {}
+		}
+	}
+	var f_tmp := FileAccess.open(TEST_SAVE_TMP, FileAccess.WRITE)
+	if f_tmp == null: return "Could not open TEST_SAVE_TMP for writing"
+	f_tmp.store_string(JSON.stringify(payload_b))
+	f_tmp.close()
+
+	# Ensure backup exists
+	SaveManager._copy_file(TEST_SAVE_BASE, TEST_SAVE_BAK)
+
+	# Promote temp to primary
+	var promote_ok := SaveManager._promote_temp_to_primary(TEST_SAVE_TMP, TEST_SAVE_BASE, TEST_SAVE_BAK)
+	if not promote_ok:
+		return "_promote_temp_to_primary failed"
+	if FileAccess.file_exists(TEST_SAVE_TMP):
+		return "Temp file still exists after successful promotion"
+
+	# Verify primary now has 200 coins
+	var l_promoted := SaveManager.load_game(TEST_SAVE_BASE)
+	if l_promoted.get("coins", 0) != 200:
+		return "Promoted primary coins expected 200, got %s" % str(l_promoted.get("coins"))
+
+	# C. Non-existent temp returns false
+	var fail_promote := SaveManager._promote_temp_to_primary("user://non_existent_file.tmp", TEST_SAVE_BASE, TEST_SAVE_BAK)
+	if fail_promote:
+		return "_promote_temp_to_primary succeeded with non-existent temp file"
+
+	return ""
+
+
+# ------------------------------------------------------------------------------
+# 25. Tightened Domain Schema Validation (Point 8)
+# ------------------------------------------------------------------------------
+func _test_tightened_domain_schema_validation() -> String:
+	var base_valid := {
+		"version": 3,
+		"data": {
+			"coins": 100,
+			"specimen_counter": 100,
+			"flower_inventory_storage": {"rose": {"1": 2}},
+			"seed_inventory": {"rose": 5},
+			"bouquet_inventory": {"garden_harmony": 1},
+			"perfume_inventory": {"lavender_mist": 1},
+			"discovered_flowers": {"rose": true},
+			"active_upgrades": {"swift_boots": true},
+			"plots": [
+				{"index": 0, "state": 0, "current_flower_id": "", "current_specimen": null},
+				{"index": 1, "state": 1, "current_flower_id": "rose", "current_specimen": null}
+			],
+			"breeding_roster": [],
+			"pending_hybrid_seeds": [],
+			"order_runtime": {
+				"order_1": {"completed": false, "remaining_patience": 50.0, "max_patience": 75.0}
+			}
+		}
+	}
+
+	var base_res := SaveManager.validate_schema(base_valid)
+	if not base_res.get("valid", false):
+		return "Base valid schema failed validation: %s" % base_res.get("error", "")
+
+	# 1. Invalid plot state (3)
+	var bad_st := base_valid.duplicate(true)
+	bad_st["data"]["plots"][0]["state"] = 3
+	if SaveManager.validate_schema(bad_st)["valid"]:
+		return "Accepted invalid plot state 3"
+
+	# 2. Invalid plot state (-1)
+	var bad_st2 := base_valid.duplicate(true)
+	bad_st2["data"]["plots"][0]["state"] = -1
+	if SaveManager.validate_schema(bad_st2)["valid"]:
+		return "Accepted invalid plot state -1"
+
+	# 3. Growing plot with empty flower_id
+	var bad_fid := base_valid.duplicate(true)
+	bad_fid["data"]["plots"][1]["current_flower_id"] = ""
+	if SaveManager.validate_schema(bad_fid)["valid"]:
+		return "Accepted growing plot with empty flower_id"
+
+	# 4. Growing plot with unknown flower_id
+	var bad_fid2 := base_valid.duplicate(true)
+	bad_fid2["data"]["plots"][1]["current_flower_id"] = "unknown_flower_xyz"
+	if SaveManager.validate_schema(bad_fid2)["valid"]:
+		return "Accepted growing plot with unknown flower_id"
+
+	# 5. Invalid specimen allele in genotype
+	var starter := GeneticsEngine.create_starter_specimen("rose")
+	var bad_spec: Dictionary = starter.serialize()
+	bad_spec["genotype"]["color"] = ["INVALID", "Cr"]
+	var bad_geno := base_valid.duplicate(true)
+	bad_geno["data"]["breeding_roster"].append(bad_spec)
+	if SaveManager.validate_schema(bad_geno)["valid"]:
+		return "Accepted specimen with invalid allele 'INVALID'"
+
+	# 6. Specimen locus size != 2
+	var bad_spec2: Dictionary = starter.serialize()
+	bad_spec2["genotype"]["color"] = ["Cr"]
+	var bad_geno2 := base_valid.duplicate(true)
+	bad_geno2["data"]["breeding_roster"].append(bad_spec2)
+	if SaveManager.validate_schema(bad_geno2)["valid"]:
+		return "Accepted specimen with locus size != 2"
+
+	# 7. Negative remaining patience
+	var bad_pat := base_valid.duplicate(true)
+	bad_pat["data"]["order_runtime"]["order_1"]["remaining_patience"] = -1.0
+	if SaveManager.validate_schema(bad_pat)["valid"]:
+		return "Accepted negative remaining patience in order_runtime"
+
+	# 8. Remaining patience > max_patience
+	var bad_pat2 := base_valid.duplicate(true)
+	bad_pat2["data"]["order_runtime"]["order_1"]["remaining_patience"] = 100.0
+	bad_pat2["data"]["order_runtime"]["order_1"]["max_patience"] = 75.0
+	if SaveManager.validate_schema(bad_pat2)["valid"]:
+		return "Accepted remaining patience exceeding max_patience in order_runtime"
+
+	# 9. Unknown flower in seed_inventory
+	var bad_seed := base_valid.duplicate(true)
+	bad_seed["data"]["seed_inventory"]["unknown_species_abc"] = 5
+	if SaveManager.validate_schema(bad_seed)["valid"]:
+		return "Accepted unknown species in seed_inventory"
+
+	# 10. Unknown bouquet in bouquet_inventory
+	var bad_bq := base_valid.duplicate(true)
+	bad_bq["data"]["bouquet_inventory"]["unknown_bq_xyz"] = 1
+	if SaveManager.validate_schema(bad_bq)["valid"]:
+		return "Accepted unknown bouquet ID in bouquet_inventory"
+
+	# 11. Unknown perfume in perfume_inventory
+	var bad_perf := base_valid.duplicate(true)
+	bad_perf["data"]["perfume_inventory"]["unknown_perf_xyz"] = 1
+	if SaveManager.validate_schema(bad_perf)["valid"]:
+		return "Accepted unknown perfume ID in perfume_inventory"
+
+	return ""
+
+
+# ------------------------------------------------------------------------------
+# 26. Unknown Legacy Species Rejection (Point 9)
+# ------------------------------------------------------------------------------
+func _test_unknown_legacy_species_rejection() -> String:
+	# 1. create_starter_specimen returns null for non-starters and unknowns
+	if GeneticsEngine.create_starter_specimen("velvet_dusk") != null:
+		return "create_starter_specimen should return null for hybrid 'velvet_dusk'"
+	if GeneticsEngine.create_starter_specimen("alien_orchid") != null:
+		return "create_starter_specimen should return null for unknown species 'alien_orchid'"
+
+	# 2. create_reconstructed_legacy_specimen returns null for unknown legacy species
+	if GeneticsEngine.create_reconstructed_legacy_specimen("alien_orchid") != null:
+		return "create_reconstructed_legacy_specimen should return null for unknown species 'alien_orchid'"
+
+	# 3. Migration of legacy save cleanly rejects unknown species
+	var legacy_save := {
+		"version": 1,
+		"data": {
+			"coins": 50,
+			"inventory": {"rose": 2},
+			"unknown_hybrid_seeds": ["alien_orchid", "velvet_dusk", "mythical_lily"]
+		}
+	}
+	var migrated := SaveManager.migrate_to_latest(legacy_save)
+	if migrated.is_empty():
+		return "Migration failed for legacy save containing mixed species"
+
+	var pending: Array = migrated.get("data", {}).get("pending_hybrid_seeds", [])
+	if pending.size() != 1:
+		return "Expected exactly 1 valid pending hybrid seed (velvet_dusk), got %d" % pending.size()
+
+	var rec_spec: Dictionary = pending[0]
+	if rec_spec.get("species_id", "") != "velvet_dusk":
+		return "Expected velvet_dusk hybrid, got '%s'" % rec_spec.get("species_id", "")
+	if rec_spec.get("parent_a_id", "") != "legacy_reconstructed" or rec_spec.get("parent_b_id", "") != "legacy_reconstructed":
+		return "Expected legacy_reconstructed pedigree"
 
 	return ""
 
