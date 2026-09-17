@@ -46,6 +46,11 @@ const TEST_SUITES: Array[Dictionary] = [
 		"name": "Breeding System Lifecycle Suite",
 		"path": "scripts/tests/test_breeding_system.gd",
 		"description": "Hybrid Breeding, Mystery Seeds, Plot Blooming & Rejection Lifecycles"
+	},
+	{
+		"name": "Visual Resolution Suite",
+		"path": "scripts/tests/test_flower_visual_characterization.gd",
+		"description": "Visual Profile Resolution, Stage Heights, Pruning Differentiation & Fallbacks"
 	}
 ]
 
