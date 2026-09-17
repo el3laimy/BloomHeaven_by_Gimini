@@ -44,6 +44,7 @@ func _run_characterization_suite() -> void:
 	_test_base_species_growth_textures()
 	_test_pruning_differentiation()
 	_test_target_heights_contract()
+	_test_red_rose_lifecycle_visuals()
 	_test_procedural_fallback_hybrids()
 	_test_legacy_flower_mappings()
 	_test_seed_contract()
@@ -55,11 +56,32 @@ func _test_visual_state_resolver() -> void:
 	print(">>> [TEST] FlowerVisualStateResolver...")
 	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SEED, false), "seed", "Stage SEED maps to 'seed'")
 	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SPROUT, false), "sprout", "Stage SPROUT maps to 'sprout'")
-	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false), "vegetative_branching", "Veg unpruned maps to 'vegetative_branching'")
-	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, true), "vegetative_single", "Veg pruned maps to 'vegetative_single'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.60), "vegetative_branching", "Veg unpruned in prune window maps to 'vegetative_branching'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.86), "vegetative_late_unpruned", "Veg unpruned after prune window maps to 'vegetative_late_unpruned'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, true, "", 0.65), "vegetative_single", "Veg pruned in window maps to 'vegetative_single'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, true, "", 0.90), "vegetative_single", "Veg pruned after window remains 'vegetative_single'")
 	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, false), "bloom_standard", "Bloom unpruned standard maps to 'bloom_standard'")
 	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, true), "bloom_hero", "Bloom pruned maps to 'bloom_hero'")
 	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, false, "hero"), "bloom_hero", "Bloom unpruned with quality='hero' maps to 'bloom_hero'")
+
+	# Boundary progression checks: 0.24, 0.25, 0.59, 0.60, 0.85, 0.86, 0.99, 1.0
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SEED, false, "", 0.24), "seed", "Progress 0.24 maps to 'seed'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SPROUT, false, "", 0.25), "sprout", "Progress 0.25 maps to 'sprout'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.59), "vegetative_branching", "Progress 0.59 unpruned maps to 'vegetative_branching'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.60), "vegetative_branching", "Progress 0.60 (prune start) unpruned maps to 'vegetative_branching'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.85), "vegetative_branching", "Progress 0.85 (prune end) unpruned maps to 'vegetative_branching'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.86), "vegetative_late_unpruned", "Progress 0.86 (late unpruned) maps to 'vegetative_late_unpruned'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", 0.99), "vegetative_late_unpruned", "Progress 0.99 unpruned maps to 'vegetative_late_unpruned'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, false, "", 1.0), "bloom_standard", "Progress 1.0 unpruned maps to 'bloom_standard'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, true, "", 1.0), "bloom_hero", "Progress 1.0 pruned maps to 'bloom_hero'")
+
+	# Pruning window contract with GardenPlot
+	var garden_plot_script = load("res://scripts/garden/garden_plot.gd")
+	if garden_plot_script != null:
+		var prune_end: float = garden_plot_script.PRUNE_WINDOW_END
+		_assert_eq(prune_end, 0.85, "GardenPlot.PRUNE_WINDOW_END is canonical 0.85")
+		_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", prune_end), "vegetative_branching", "At exact PRUNE_WINDOW_END, state is still vegetative_branching")
+		_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false, "", prune_end + 0.01), "vegetative_late_unpruned", "Just past PRUNE_WINDOW_END, state becomes vegetative_late_unpruned")
 
 func _test_asset_resolver_diagnostics() -> void:
 	print(">>> [TEST] FlowerAssetResolver Safety & Diagnostics...")
@@ -67,11 +89,17 @@ func _test_asset_resolver_diagnostics() -> void:
 	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("velvet_dusk", "sprout").is_empty(), "Procedural hybrid returns empty dict")
 	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("rose", "").is_empty(), "Empty state key returns empty dict")
 
-	# Active profile resolution test
+	# Active profile resolution test: Rose
 	var rose_sprout: Dictionary = FlowerAssetResolver.resolve_visual_stage_asset("rose", "sprout")
 	_assert_true(not rose_sprout.is_empty(), "Rose sprout asset resolved from profile")
 	_assert_eq(rose_sprout.get("target_height"), 38.0, "Rose sprout target height is 38.0")
-	_assert_true(rose_sprout.get("texture") != null and (rose_sprout.get("texture") as Texture2D).resource_path.ends_with("rose_crimson_sprout.png"), "Rose sprout texture is rose_crimson_sprout.png")
+	_assert_true(rose_sprout.get("texture") != null and (rose_sprout.get("texture") as Texture2D).resource_path.ends_with("plant_rose_shared_young.png"), "Rose sprout texture is plant_rose_shared_young.png")
+
+	# Rose icon resolution
+	var rose_icon: Texture2D = FlowerAssetResolver.resolve_flower_icon("rose")
+	_assert_true(rose_icon != null and rose_icon.resource_path.ends_with("icon_rose_red.png"), "Rose icon resolved to icon_rose_red.png")
+	var rose_tex: Texture2D = FlowerAssetResolver.resolve_flower_texture("rose")
+	_assert_true(rose_tex != null and rose_tex.resource_path.ends_with("icon_rose_red.png"), "Rose flower texture prefers icon_rose_red.png")
 
 	var daisy_hero: Dictionary = FlowerAssetResolver.resolve_visual_stage_asset("daisy", "bloom_hero")
 	_assert_true(not daisy_hero.is_empty(), "Daisy bloom hero asset resolved from profile")
@@ -80,7 +108,7 @@ func _test_asset_resolver_diagnostics() -> void:
 
 func _test_base_species_growth_textures() -> void:
 	print(">>> [TEST] Base CVP Species Growth Textures...")
-	var species_list := ["rose", "lavender", "tulip", "daisy", "rose_cream", "rose_crimson"]
+	var species_list := ["rose", "lavender", "tulip", "daisy", "rose_cream"]
 	
 	for sp in species_list:
 		var visual := FlowerVisualScript.new()
@@ -91,27 +119,55 @@ func _test_base_species_growth_textures() -> void:
 		var has_sprite := visual._update_branching_sprite()
 		_assert_true(has_sprite, "%s sprout has branching sprite" % sp)
 		var tex: Texture2D = visual._branch_sprite.texture
-		var expected_key: String = "rose_crimson" if sp in ["rose", "rose_crimson"] else sp
-		_assert_true(tex != null and tex.resource_path.ends_with("%s_sprout.png" % expected_key), 
-			"%s sprout texture is %s_sprout.png (got %s)" % [sp, expected_key, tex.resource_path if tex else "null"])
+		if sp == "rose":
+			_assert_true(tex != null and tex.resource_path.ends_with("plant_rose_shared_young.png"),
+				"rose sprout texture is plant_rose_shared_young.png")
+		else:
+			_assert_true(tex != null and tex.resource_path.ends_with("%s_sprout.png" % sp), 
+				"%s sprout texture is %s_sprout.png (got %s)" % [sp, sp, tex.resource_path if tex else "null"])
 		
-		# VEGETATIVE UNPRUNED
+		# VEGETATIVE UNPRUNED (within prune window, e.g. progress 0.60)
 		visual.is_pruned = false
+		visual.growth_progress = 0.60
 		visual.current_stage = FlowerVisual.Stage.VEGETATIVE
 		has_sprite = visual._update_branching_sprite()
 		_assert_true(has_sprite, "%s veg unpruned has branching sprite" % sp)
 		tex = visual._branch_sprite.texture
-		_assert_true(tex != null and tex.resource_path.ends_with("%s_veg_bush.png" % expected_key),
-			"%s veg unpruned texture is %s_veg_bush.png" % [sp, expected_key])
+		if sp == "rose":
+			_assert_true(tex != null and tex.resource_path.ends_with("plant_rose_shared_branching.png"),
+				"rose veg unpruned texture is plant_rose_shared_branching.png")
+		else:
+			_assert_true(tex != null and tex.resource_path.ends_with("%s_veg_bush.png" % sp),
+				"%s veg unpruned texture is %s_veg_bush.png" % [sp, sp])
+
+		# VEGETATIVE LATE UNPRUNED (after prune window, e.g. progress 0.86)
+		visual.is_pruned = false
+		visual.growth_progress = 0.86
+		visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+		has_sprite = visual._update_branching_sprite()
+		_assert_true(has_sprite, "%s veg late unpruned has branching sprite" % sp)
+		tex = visual._branch_sprite.texture
+		if sp == "rose":
+			_assert_true(tex != null and tex.resource_path.ends_with("plant_rose_red_cluster_buds.png"),
+				"rose veg late unpruned texture is plant_rose_red_cluster_buds.png")
+		else:
+			# Non-rose flowers explicitly map vegetative_late_unpruned to their veg_bush sprite
+			_assert_true(tex != null and tex.resource_path.ends_with("%s_veg_bush.png" % sp),
+				"%s veg late unpruned maps to explicit configured asset %s_veg_bush.png" % [sp, sp])
 		
 		# BLOOMING UNPRUNED
 		visual.is_pruned = false
+		visual.growth_progress = 1.0
 		visual.current_stage = FlowerVisual.Stage.BLOOMING
 		has_sprite = visual._update_branching_sprite()
 		_assert_true(has_sprite, "%s bloom unpruned has branching sprite" % sp)
 		tex = visual._branch_sprite.texture
-		_assert_true(tex != null and tex.resource_path.ends_with("%s_bloom_standard.png" % expected_key),
-			"%s bloom unpruned texture is %s_bloom_standard.png" % [sp, expected_key])
+		if sp == "rose":
+			_assert_true(tex != null and tex.resource_path.ends_with("plant_rose_red_cluster_bloom.png"),
+				"rose bloom unpruned texture is plant_rose_red_cluster_bloom.png")
+		else:
+			_assert_true(tex != null and tex.resource_path.ends_with("%s_bloom_standard.png" % sp),
+				"%s bloom unpruned texture is %s_bloom_standard.png" % [sp, sp])
 		
 		visual.free()
 
@@ -122,23 +178,32 @@ func _test_pruning_differentiation() -> void:
 	for sp in species_list:
 		var visual := FlowerVisualScript.new()
 		visual.flower_id = sp
-		var expected_key: String = "rose_crimson" if sp == "rose" else sp
 		
-		# Vegetative pruned -> single stem
+		# Vegetative pruned -> single stem / prime bud
 		visual.current_stage = FlowerVisual.Stage.VEGETATIVE
 		visual.is_pruned = true
+		visual.growth_progress = 0.65
 		visual._update_branching_sprite()
 		var tex: Texture2D = visual._branch_sprite.texture
-		_assert_true(tex != null and tex.resource_path.ends_with("%s_veg_single.png" % expected_key),
-			"%s vegetative pruned produces veg_single" % sp)
+		if sp == "rose":
+			_assert_true(tex != null and tex.resource_path.ends_with("plant_rose_red_prime_bud.png"),
+				"rose vegetative pruned produces plant_rose_red_prime_bud.png")
+		else:
+			_assert_true(tex != null and tex.resource_path.ends_with("%s_veg_single.png" % sp),
+				"%s vegetative pruned produces veg_single" % sp)
 		
 		# Blooming pruned -> premium hero bloom
 		visual.current_stage = FlowerVisual.Stage.BLOOMING
 		visual.is_pruned = true
+		visual.growth_progress = 1.0
 		visual._update_branching_sprite()
 		tex = visual._branch_sprite.texture
-		_assert_true(tex != null and tex.resource_path.ends_with("%s_bloom_premium.png" % expected_key),
-			"%s blooming pruned produces bloom_premium" % sp)
+		if sp == "rose":
+			_assert_true(tex != null and tex.resource_path.ends_with("plant_rose_red_prime_bloom.png"),
+				"rose blooming pruned produces plant_rose_red_prime_bloom.png")
+		else:
+			_assert_true(tex != null and tex.resource_path.ends_with("%s_bloom_premium.png" % sp),
+				"%s blooming pruned produces bloom_premium" % sp)
 		
 		visual.free()
 
@@ -154,14 +219,33 @@ func _test_target_heights_contract() -> void:
 	_assert_true(abs(h - 38.0) < 0.1, "Sprout target height is 38.0px (got %.1f)" % h)
 	_assert_eq(visual._branch_sprite.position, Vector2(0, 2.0), "Ground position Y is 2.0")
 	
-	# Vegetative height: 52.0
+	# Vegetative branching height: 52.0
+	visual.is_pruned = false
+	visual.growth_progress = 0.60
 	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
 	visual._update_branching_sprite()
 	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
-	_assert_true(abs(h - 52.0) < 0.1, "Vegetative target height is 52.0px (got %.1f)" % h)
+	_assert_true(abs(h - 52.0) < 0.1, "Vegetative branching target height is 52.0px (got %.1f)" % h)
+
+	# Vegetative single (pruned bud) height: 52.0
+	visual.is_pruned = true
+	visual.growth_progress = 0.65
+	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+	visual._update_branching_sprite()
+	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
+	_assert_true(abs(h - 52.0) < 0.1, "Vegetative single target height is 52.0px (got %.1f)" % h)
+
+	# Vegetative late unpruned height: 54.0
+	visual.is_pruned = false
+	visual.growth_progress = 0.86
+	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+	visual._update_branching_sprite()
+	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
+	_assert_true(abs(h - 54.0) < 0.1, "Vegetative late unpruned target height is 54.0px (got %.1f)" % h)
 	
 	# Blooming unpruned height: 66.0
 	visual.is_pruned = false
+	visual.growth_progress = 1.0
 	visual.current_stage = FlowerVisual.Stage.BLOOMING
 	visual._update_branching_sprite()
 	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
@@ -169,12 +253,114 @@ func _test_target_heights_contract() -> void:
 	
 	# Blooming pruned (hero) height: 80.0
 	visual.is_pruned = true
+	visual.growth_progress = 1.0
 	visual.current_stage = FlowerVisual.Stage.BLOOMING
 	visual._update_branching_sprite()
 	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
 	_assert_true(abs(h - 80.0) < 0.1, "Blooming hero height is 80.0px (got %.1f)" % h)
 	
 	visual.free()
+
+func _test_red_rose_lifecycle_visuals() -> void:
+	print(">>> [TEST] Red Rose Production Lifecycle Visuals Contract...")
+	var visual := FlowerVisualScript.new()
+	visual.flower_id = "rose"
+
+	# 1. Sprout -> Young
+	visual.current_stage = FlowerVisual.Stage.SPROUT
+	visual.growth_progress = 0.30
+	visual.is_pruned = false
+	visual._update_branching_sprite()
+	_assert_true(visual._branch_sprite.texture.resource_path.ends_with("plant_rose_shared_young.png"),
+		"Rose Sprout resolves to plant_rose_shared_young.png")
+
+	# 2. Vegetative prune-window unpruned -> Branching
+	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+	visual.growth_progress = 0.65
+	visual.is_pruned = false
+	visual._update_branching_sprite()
+	_assert_true(visual._branch_sprite.texture.resource_path.ends_with("plant_rose_shared_branching.png"),
+		"Rose Veg in-window unpruned resolves to plant_rose_shared_branching.png")
+
+	# 3. Vegetative pruned -> Prime Bud
+	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+	visual.growth_progress = 0.70
+	visual.is_pruned = true
+	visual._update_branching_sprite()
+	_assert_true(visual._branch_sprite.texture.resource_path.ends_with("plant_rose_red_prime_bud.png"),
+		"Rose Veg pruned resolves to plant_rose_red_prime_bud.png")
+
+	# 4. Vegetative late unpruned -> Cluster Buds
+	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
+	visual.growth_progress = 0.88
+	visual.is_pruned = false
+	visual._update_branching_sprite()
+	_assert_true(visual._branch_sprite.texture.resource_path.ends_with("plant_rose_red_cluster_buds.png"),
+		"Rose Veg late unpruned resolves to plant_rose_red_cluster_buds.png")
+
+	# 5. Blooming unpruned -> Cluster Bloom
+	visual.current_stage = FlowerVisual.Stage.BLOOMING
+	visual.growth_progress = 1.0
+	visual.is_pruned = false
+	visual._update_branching_sprite()
+	_assert_true(visual._branch_sprite.texture.resource_path.ends_with("plant_rose_red_cluster_bloom.png"),
+		"Rose Blooming unpruned resolves to plant_rose_red_cluster_bloom.png")
+
+	# 6. Blooming pruned (Hero) -> Prime Bloom
+	visual.current_stage = FlowerVisual.Stage.BLOOMING
+	visual.growth_progress = 1.0
+	visual.is_pruned = true
+	visual._update_branching_sprite()
+	_assert_true(visual._branch_sprite.texture.resource_path.ends_with("plant_rose_red_prime_bloom.png"),
+		"Rose Blooming pruned resolves to plant_rose_red_prime_bloom.png")
+
+	# 7. Transition Stability: Ground Contact Point & Visual Center X
+	var stage_configs := [
+		{"stage": FlowerVisual.Stage.SPROUT, "progress": 0.30, "pruned": false, "name": "Young"},
+		{"stage": FlowerVisual.Stage.VEGETATIVE, "progress": 0.65, "pruned": false, "name": "Branching"},
+		{"stage": FlowerVisual.Stage.VEGETATIVE, "progress": 0.70, "pruned": true, "name": "Prime Bud"},
+		{"stage": FlowerVisual.Stage.VEGETATIVE, "progress": 0.88, "pruned": false, "name": "Cluster Buds"},
+		{"stage": FlowerVisual.Stage.BLOOMING, "progress": 1.0, "pruned": false, "name": "Cluster Bloom"},
+		{"stage": FlowerVisual.Stage.BLOOMING, "progress": 1.0, "pruned": true, "name": "Prime Bloom"}
+	]
+
+	var contact_points: Array[Vector2] = []
+	for cfg in stage_configs:
+		visual.current_stage = cfg["stage"]
+		visual.growth_progress = cfg["progress"]
+		visual.is_pruned = cfg["pruned"]
+		visual._update_branching_sprite()
+		# Contact point in local FlowerVisual coordinates
+		# Base anchor in texture coordinates is anchor_vec, local offset from center is (anchor_vec - 0.5) * size
+		# With _branch_sprite.offset = base_offset + offset_vec, contact point = _branch_sprite.position + offset_vec * scale
+		var contact := visual._branch_sprite.position
+		contact_points.append(contact)
+
+	for i in range(1, contact_points.size()):
+		var prev: Vector2 = contact_points[i - 1]
+		var curr: Vector2 = contact_points[i]
+		var dy: float = abs(curr.y - prev.y)
+		var dx: float = abs(curr.x - prev.x)
+		_assert_true(dy <= 1.0, "Transition %s -> %s delta Y <= 1.0px (got %.2f)" % [stage_configs[i - 1]["name"], stage_configs[i]["name"], dy])
+		_assert_true(dx <= 1.0, "Transition %s -> %s delta X <= 1.0px (got %.2f)" % [stage_configs[i - 1]["name"], stage_configs[i]["name"], dx])
+
+	# 8. Cleanliness Guard: Ensure NO hardcoded 'rose' conditional in flower_visual.gd
+	var fv_file := FileAccess.open("res://scripts/flowers/flower_visual.gd", FileAccess.READ)
+	if fv_file != null:
+		var fv_text := fv_file.get_as_text()
+		fv_file.close()
+		_assert_true(not fv_text.contains('flower_id == "rose"'), "flower_visual.gd contains NO hardcoded 'flower_id == \"rose\"' conditional")
+		_assert_true(not fv_text.contains('flower_id == "rose_crimson"'), "flower_visual.gd contains NO hardcoded 'flower_id == \"rose_crimson\"' conditional")
+
+	# 9. Cleanliness Guard: Ensure NO ArtSource paths in data/flowers.json
+	var fj_file := FileAccess.open("res://data/flowers.json", FileAccess.READ)
+	if fj_file != null:
+		var fj_text := fj_file.get_as_text()
+		fj_file.close()
+		_assert_true(not fj_text.contains("ArtSource"), "data/flowers.json contains NO references to 'ArtSource'")
+
+	visual.free()
+
 
 func _test_procedural_fallback_hybrids() -> void:
 	print(">>> [TEST] Procedural Fallback Hybrids...")
