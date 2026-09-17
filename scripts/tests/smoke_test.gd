@@ -20,8 +20,21 @@ const GardenEnvironmentScript := preload("res://scripts/garden/garden_environmen
 const GardenLayoutManagerScript := preload("res://scripts/garden/garden_layout_manager.gd")
 const AudioManagerScript := preload("res://scripts/core/audio_manager.gd")
 
+const SANDBOX_SAVE_PATH := "user://test_sandbox_smoke.json"
+
+static func _cleanup_sandbox() -> void:
+	var paths := [
+		SANDBOX_SAVE_PATH,
+		SANDBOX_SAVE_PATH.replace(".json", ".bak"),
+		SANDBOX_SAVE_PATH.replace(".json", ".tmp")
+	]
+	for p in paths:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+
 
 func _init() -> void:
+	_cleanup_sandbox()
 	print("==================================================")
 	print("FINEST GARDEN PROTOTYPE (P4.1) — VERIFICATION SUITE")
 	print("==================================================")
@@ -69,6 +82,7 @@ func _init() -> void:
 	if main_node == null:
 		_fail("Main scene is not of type MainGame.")
 
+	main_node.active_save_path = SANDBOX_SAVE_PATH
 	root.add_child(main_node)
 	if main_node.environment == null:
 		main_node.environment = main_node.get_node_or_null("GardenEnvironment") as GardenEnvironmentScript
@@ -366,7 +380,7 @@ func _init() -> void:
 		errors.append("OrderManager or UpgradeManager missing on MainGame.")
 	else:
 		# Verify OrderManager standalone methods
-		var test_inv: Dictionary = {"rose": 5, "lavender": 5, "sunflower": 5}
+		var test_inv: Dictionary = {"rose": 5, "lavender": 5, "daisy": 5, "sunflower": 5}
 		var test_b_inv: Dictionary = {"garden_harmony": 2}
 		var can_f := om.can_fulfill("order_1", test_inv, test_b_inv)
 		if not can_f.get("can_fulfill", false):
@@ -490,15 +504,18 @@ func _init() -> void:
 	if errors.is_empty():
 		print("ALL FIONA FINCH & P4.1/P4.2 VERIFICATION TESTS PASSED (100% OK)")
 		print("==================================================")
+		_cleanup_sandbox()
 		quit(0)
 	else:
 		printerr("VERIFICATION FAILURES (%d):" % errors.size())
 		for err in errors:
 			printerr("  - " + err)
 		print("==================================================")
+		_cleanup_sandbox()
 		quit(1)
 
 
 func _fail(msg: String) -> void:
 	printerr("FATAL: " + msg)
+	_cleanup_sandbox()
 	quit(1)

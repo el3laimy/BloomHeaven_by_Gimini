@@ -870,6 +870,37 @@ func _test_exact_breeding_specimen_identity_transaction() -> String:
 		main_node.free()
 		return "Zero mutation failure: rose count mutated on failed same-species breeding"
 
+	# Case 4: Inventory + Inventory (different species from inventory)
+	main_node.flower_inventory.clear()
+	main_node.flower_inventory.add_flower("rose", FlowerQuality.Tier.NORMAL, 1)
+	main_node.flower_inventory.add_flower("lavender", FlowerQuality.Tier.NORMAL, 1)
+	var seeds_before_inv_inv := main_node.pending_hybrid_seeds.size()
+	main_node._on_breed_requested("rose", "lavender", 0)
+	if main_node.pending_hybrid_seeds.size() != seeds_before_inv_inv + 1:
+		main_node.free()
+		return "Inventory+Inventory breeding failed to produce hybrid"
+	if main_node.flower_inventory.get_flower_count("rose") != 0 or main_node.flower_inventory.get_flower_count("lavender") != 0:
+		main_node.free()
+		return "Inventory+Inventory failed to deduct flowers (expected 0 for both)"
+
+	# Case 5: Two specimens of same species but different IDs (both in roster)
+	var sp_rose_x := GeneticsEngine.create_starter_specimen("rose", "SPEC-ROSE-X")
+	var sp_rose_y := GeneticsEngine.create_starter_specimen("rose", "SPEC-ROSE-Y")
+	main_node.breeding_roster.append(sp_rose_x)
+	main_node.breeding_roster.append(sp_rose_y)
+	var seeds_before_same_sp := main_node.pending_hybrid_seeds.size()
+	main_node._on_breed_requested("SPEC-ROSE-X", "SPEC-ROSE-Y", 0)
+	if main_node.pending_hybrid_seeds.size() != seeds_before_same_sp + 1:
+		main_node.free()
+		return "Two same-species specimens from roster failed to breed"
+	var hybrid5: FlowerSpecimen = main_node.pending_hybrid_seeds.back()
+	if hybrid5.parent_a_id != "SPEC-ROSE-X" or hybrid5.parent_b_id != "SPEC-ROSE-Y":
+		main_node.free()
+		return "Failed to preserve distinct parent IDs for same-species specimens: got (%s, %s)" % [hybrid5.parent_a_id, hybrid5.parent_b_id]
+	if main_node.flower_inventory.get_flower_count("rose") != 0:
+		main_node.free()
+		return "Roster breeding of same species unexpectedly mutated inventory"
+
 	# Cleanup
 	if FileAccess.file_exists("user://test_sandbox_ui.json"):
 		DirAccess.remove_absolute("user://test_sandbox_ui.json")

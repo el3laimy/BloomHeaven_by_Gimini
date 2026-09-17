@@ -49,8 +49,50 @@ const TEST_SUITES: Array[Dictionary] = [
 	}
 ]
 
+const REAL_SAVE_PATHS: Array[String] = [
+	"user://bloomhaven_save_v3.json",
+	"user://bloomhaven_save_v3.bak",
+	"user://bloomhaven_save_v3.tmp",
+	"user://bloomhaven_save_v2.json",
+	"user://bloomhaven_save_v2.bak",
+	"user://finest_garden_save_v1.json"
+]
+
+static func _snapshot_real_saves() -> Dictionary:
+	var snap: Dictionary = {}
+	for p in REAL_SAVE_PATHS:
+		if FileAccess.file_exists(p):
+			var f := FileAccess.open(p, FileAccess.READ)
+			if f != null:
+				var content := f.get_as_text()
+				f.close()
+				snap[p] = {"exists": true, "sha256": content.sha256_text()}
+			else:
+				snap[p] = {"exists": true, "sha256": "unreadable"}
+		else:
+			snap[p] = {"exists": false, "sha256": ""}
+	return snap
+
+static func _verify_real_saves_untouched(before_snap: Dictionary) -> String:
+	for p in REAL_SAVE_PATHS:
+		var b_info: Dictionary = before_snap.get(p, {"exists": false, "sha256": ""})
+		var now_exists := FileAccess.file_exists(p)
+		if b_info["exists"] != now_exists:
+			return "Real user save file existence changed for '%s': was %s, now %s" % [p, b_info["exists"], now_exists]
+		if now_exists:
+			var f := FileAccess.open(p, FileAccess.READ)
+			if f == null:
+				return "Real user save file '%s' unreadable after test runner" % p
+			var content := f.get_as_text()
+			f.close()
+			var now_hash := content.sha256_text()
+			if now_hash != b_info["sha256"]:
+				return "Real user save file '%s' was modified during test runner! SHA256 mismatch: %s vs %s" % [p, b_info["sha256"], now_hash]
+	return ""
+
 
 func _init() -> void:
+	var pre_snap := _snapshot_real_saves()
 	print("==================================================")
 	print("🌿 BLOOMHAVEN (FINEST GARDEN) — UNIFIED TEST RUNNER 🌿")
 	print("==================================================")
@@ -182,7 +224,13 @@ func _init() -> void:
 		var status_str := "PASS" if r["passed"] else "FAIL"
 		var code_str := "OK" if r["passed"] else ("Exit " + str(r["exit_code"]))
 		print("%-38s | %-8s | %-9.2fs | %s" % [r["name"], status_str, r["duration"], code_str])
-	print("========================================================================")
+	# 5. Verify real user save files remain 100% byte-exact untouched across all test suites
+	var save_integrity_err := _verify_real_saves_untouched(pre_snap)
+	if not save_integrity_err.is_empty():
+		printerr("\n❌ REAL USER SAVE VIOLATION DURING TEST RUNNER: %s" % save_integrity_err)
+		any_failed = true
+	else:
+		print("\n✓ [SAVE-GUARD] All canonical user save files verified byte-for-byte untouched during test run.")
 
 	if not any_failed:
 		print("\n🎉 ALL 8/8 SUITES PASSED CLEANLY (100% OK, 0 ERRORS)!")

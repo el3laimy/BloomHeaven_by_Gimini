@@ -7,9 +7,25 @@ var main_node: MainGame = null
 var test_executed: bool = false
 
 
+const SANDBOX_SAVE_PATH := "user://test_sandbox_breeding.json"
+
+
+static func _cleanup_sandbox() -> void:
+	var paths := [
+		SANDBOX_SAVE_PATH,
+		SANDBOX_SAVE_PATH.replace(".json", ".bak"),
+		SANDBOX_SAVE_PATH.replace(".json", ".tmp")
+	]
+	for p in paths:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+
+
 func _init() -> void:
+	_cleanup_sandbox()
 	var main_scene_res := load("res://scenes/main.tscn") as PackedScene
 	main_node = main_scene_res.instantiate() as MainGame
+	main_node.active_save_path = SANDBOX_SAVE_PATH
 	root.add_child(main_node)
 
 
@@ -127,10 +143,12 @@ func _run_all_tests() -> void:
 		printerr("\n❌ BREEDING SYSTEM TESTS FAILED WITH %d ERRORS:" % errors.size())
 		for e in errors:
 			printerr("  - " + e)
+		_cleanup_sandbox()
 		quit(1)
 		return
 
 	print("\n==================================================")
 	print("ALL BREEDING LIFECYCLE TESTS PASSED 100% OK!")
 	print("==================================================\n")
+	_cleanup_sandbox()
 	quit(0)

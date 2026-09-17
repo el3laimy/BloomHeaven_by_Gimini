@@ -175,7 +175,10 @@ static func validate_schema(root_dict: Dictionary) -> Dictionary:
 				return {"valid": false, "error": "discovered_flowers['%s'] must be boolean" % str(df_id)}
 
 	if data.has("active_upgrades") and (data["active_upgrades"] is Dictionary):
+		var valid_upgrades: Array[String] = ["swift_boots", "double_sprinkler", "enriched_soil", "fertilizer_box", "expanded_satchel"]
 		for u_id in data["active_upgrades"]:
+			if not (u_id is String) or not valid_upgrades.has(u_id):
+				return {"valid": false, "error": "active_upgrades contains unknown upgrade_id '%s'" % str(u_id)}
 			if not (data["active_upgrades"][u_id] is bool):
 				return {"valid": false, "error": "active_upgrades['%s'] must be boolean" % str(u_id)}
 
@@ -285,6 +288,9 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 		var converted_storage: Dictionary = {}
 		if d.has("inventory") and d["inventory"] is Dictionary:
 			for f_id in d["inventory"]:
+				if not (f_id is String) or FlowerData.get_flower(f_id).is_empty():
+					push_error("SaveManager: Cannot migrate legacy save with unknown flower species in inventory: '%s'." % str(f_id))
+					return {}
 				var count: int = int(d["inventory"][f_id])
 				if count > 0:
 					converted_storage[f_id] = { str(FlowerQuality.Tier.NORMAL): count }
@@ -304,6 +310,7 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 	# Historical genotype, phenotype, parents, and generation were not tracked in legacy schemas.
 	# We perform deterministic legacy reconstruction (preserving species_id with valid starter genetics),
 	# explicitly recording "legacy_reconstructed" for lineage and stable IDs derived from species & index.
+	# If any unknown or unsupported hybrid species is found, migration aborts completely.
 	if not d.has("pending_hybrid_seeds") or not (d["pending_hybrid_seeds"] is Array):
 		var pending: Array = []
 		if d.has("unknown_hybrid_seeds") and d["unknown_hybrid_seeds"] is Array:
@@ -316,8 +323,13 @@ static func migrate_v2_to_v3(raw_v2: Dictionary) -> Dictionary:
 					if starter_sp != null:
 						pending.append(starter_sp.serialize())
 					else:
-						push_warning("SaveManager: Unknown or unconstructible legacy species '%s' rejected during migration." % item)
+						push_error("SaveManager: Cannot migrate legacy save with unknown or unsupported hybrid species '%s'." % item)
+						return {}
 				elif item is Dictionary:
+					var spec_val := _validate_specimen_dict(item)
+					if not spec_val.get("valid", false):
+						push_error("SaveManager: Cannot migrate legacy save with invalid hybrid specimen: %s" % spec_val.get("error", ""))
+						return {}
 					pending.append(item)
 		d["pending_hybrid_seeds"] = pending
 
@@ -402,9 +414,13 @@ static func migrate_to_latest(root_dict: Dictionary) -> Dictionary:
 	var current: Dictionary = root_dict
 	if ver == 1:
 		current = migrate_v1_to_v2(current)
+		if current.is_empty():
+			return {}
 		ver = 2
 	if ver == 2:
 		current = migrate_v2_to_v3(current)
+		if current.is_empty():
+			return {}
 		ver = 3
 
 	# Requirement 5: Migrated payload must pass validate_schema
@@ -661,6 +677,10 @@ static func _ensure_canonical_data_shape(state_data: Dictionary) -> Dictionary:
 	return d
 
 
+# Test seams for failure injection during atomic promotion verification
+static var _test_inject_first_rename_failure: bool = false
+static var _test_inject_second_rename_failure: bool = false
+
 static func _promote_temp_to_primary(tmp_path: String, target_path: String, bak_path: String) -> bool:
 	if not FileAccess.file_exists(tmp_path):
 		printerr("SaveManager: Temp file %s does not exist for promotion." % tmp_path)
@@ -668,6 +688,8 @@ static func _promote_temp_to_primary(tmp_path: String, target_path: String, bak_
 
 	# 1. Try atomic rename directly
 	var err := DirAccess.rename_absolute(tmp_path, target_path)
+	if _test_inject_first_rename_failure:
+		err = FAILED
 	if err == OK:
 		return true
 
@@ -676,6 +698,8 @@ static func _promote_temp_to_primary(tmp_path: String, target_path: String, bak_
 		var remove_err := DirAccess.remove_absolute(target_path)
 		if remove_err == OK:
 			err = DirAccess.rename_absolute(tmp_path, target_path)
+			if _test_inject_second_rename_failure:
+				err = FAILED
 			if err == OK:
 				return true
 			# Promotion failed after removing target: restore from backup if available

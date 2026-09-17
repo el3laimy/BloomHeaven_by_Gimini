@@ -2,10 +2,26 @@ extends SceneTree
 
 ## Verification Test for Flower Stand Quick Sell Transactions
 
+const SANDBOX_SAVE_PATH := "user://test_sandbox_quick_sell.json"
+
+
+static func _cleanup_sandbox() -> void:
+	var paths := [
+		SANDBOX_SAVE_PATH,
+		SANDBOX_SAVE_PATH.replace(".json", ".bak"),
+		SANDBOX_SAVE_PATH.replace(".json", ".tmp")
+	]
+	for p in paths:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+
+
 func _init() -> void:
+	_cleanup_sandbox()
 	print("--- Testing Quick Sell Transactions ---")
 	var main_scene = load("res://scenes/main.tscn")
 	var main_node = main_scene.instantiate()
+	main_node.active_save_path = SANDBOX_SAVE_PATH
 	root.add_child(main_node)
 
 	for i in range(5):
@@ -57,4 +73,5 @@ func _init() -> void:
 	print("✓ Test 3 Passed: Batch sold all remaining flowers for 64 coins. Final coins: %d" % main_node.coins)
 
 	print("🎉 ALL QUICK SELL TESTS PASSED (100% OK)!")
+	_cleanup_sandbox()
 	quit(0)

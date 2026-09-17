@@ -65,6 +65,7 @@ func _init() -> void:
 	_run_suite("Atomic Promotion & Safe Replacement", _test_atomic_promotion_and_backup_recovery)
 	_run_suite("Tightened Domain Schema Validation", _test_tightened_domain_schema_validation)
 	_run_suite("Unknown Legacy Species Rejection", _test_unknown_legacy_species_rejection)
+	_run_suite("Atomic Promotion Second Rename Failure Injection", _test_atomic_promotion_second_rename_failure_injection)
 
 	print("\n==================================================")
 	print("RESULTS: %d PASSED, %d FAILED" % [_passed_tests, _failed_tests])
@@ -1328,11 +1329,59 @@ func _test_tightened_domain_schema_validation() -> String:
 	if SaveManager.validate_schema(bad_perf)["valid"]:
 		return "Accepted unknown perfume ID in perfume_inventory"
 
+	# 12. Unknown flower ID in flower_inventory_storage
+	var bad_inv_fid := base_valid.duplicate(true)
+	bad_inv_fid["data"]["flower_inventory_storage"]["unknown_flower_123"] = {"1": 2}
+	if SaveManager.validate_schema(bad_inv_fid)["valid"]:
+		return "Accepted unknown flower ID in flower_inventory_storage"
+
+	# 13. Invalid flower quality tier
+	var bad_qtier := base_valid.duplicate(true)
+	bad_qtier["data"]["flower_inventory_storage"]["rose"] = {"99": 2}
+	if SaveManager.validate_schema(bad_qtier)["valid"]:
+		return "Accepted invalid quality tier 99 in flower_inventory_storage"
+
+	# 14. Negative inventory count
+	var bad_inv_cnt := base_valid.duplicate(true)
+	bad_inv_cnt["data"]["flower_inventory_storage"]["rose"] = {"1": -5}
+	if SaveManager.validate_schema(bad_inv_cnt)["valid"]:
+		return "Accepted negative flower count in flower_inventory_storage"
+
+	# 15. Invalid upgrade type/value
+	var bad_upg := base_valid.duplicate(true)
+	bad_upg["data"]["active_upgrades"]["swift_boots"] = "NOT_A_BOOL"
+	if SaveManager.validate_schema(bad_upg)["valid"]:
+		return "Accepted non-boolean value in active_upgrades"
+
+	# 15b. Unknown upgrade ID with valid boolean value
+	var bad_upg_id := base_valid.duplicate(true)
+	bad_upg_id["data"]["active_upgrades"]["quantum_teleporter"] = true
+	if SaveManager.validate_schema(bad_upg_id)["valid"]:
+		return "Accepted unknown upgrade_id 'quantum_teleporter' with valid boolean value"
+
+	# 16. Invalid discovered flower type/value
+	var bad_disc := base_valid.duplicate(true)
+	bad_disc["data"]["discovered_flowers"]["rose"] = 12345
+	if SaveManager.validate_schema(bad_disc)["valid"]:
+		return "Accepted non-boolean value in discovered_flowers"
+
+	# 16b. Unknown discovered flower ID with valid boolean value
+	var bad_df_id := base_valid.duplicate(true)
+	bad_df_id["data"]["discovered_flowers"]["cosmic_orchid"] = true
+	if SaveManager.validate_schema(bad_df_id)["valid"]:
+		return "Accepted unknown flower_id 'cosmic_orchid' with valid boolean value in discovered_flowers"
+
+	# 17. Malformed specimen in breeding_roster
+	var bad_spec_mal := base_valid.duplicate(true)
+	bad_spec_mal["data"]["breeding_roster"].append("NOT_A_SPECIMEN_DICT")
+	if SaveManager.validate_schema(bad_spec_mal)["valid"]:
+		return "Accepted malformed non-dictionary specimen in breeding_roster"
+
 	return ""
 
 
 # ------------------------------------------------------------------------------
-# 26. Unknown Legacy Species Rejection (Point 9)
+# 26. Unknown Legacy Species Rejection (Point 9 & Point 3)
 # ------------------------------------------------------------------------------
 func _test_unknown_legacy_species_rejection() -> String:
 	# 1. create_starter_specimen returns null for non-starters and unknowns
@@ -1345,20 +1394,33 @@ func _test_unknown_legacy_species_rejection() -> String:
 	if GeneticsEngine.create_reconstructed_legacy_specimen("alien_orchid") != null:
 		return "create_reconstructed_legacy_specimen should return null for unknown species 'alien_orchid'"
 
-	# 3. Migration of legacy save cleanly rejects unknown species
-	var legacy_save := {
+	# 3. Migration of legacy save with unknown species is completely rejected (returns empty dict)
+	var legacy_save_bad := {
 		"version": 1,
 		"data": {
 			"coins": 50,
 			"inventory": {"rose": 2},
-			"unknown_hybrid_seeds": ["alien_orchid", "velvet_dusk", "mythical_lily"]
+			"unknown_hybrid_seeds": ["alien_orchid", "velvet_dusk"]
 		}
 	}
-	var migrated := SaveManager.migrate_to_latest(legacy_save)
-	if migrated.is_empty():
-		return "Migration failed for legacy save containing mixed species"
+	var migrated_bad := SaveManager.migrate_to_latest(legacy_save_bad)
+	if not migrated_bad.is_empty():
+		return "Expected complete migration rejection (empty dict) for legacy save containing 'alien_orchid', but got non-empty dict"
 
-	var pending: Array = migrated.get("data", {}).get("pending_hybrid_seeds", [])
+	# 4. Migration of valid legacy save succeeds cleanly
+	var legacy_save_ok := {
+		"version": 1,
+		"data": {
+			"coins": 50,
+			"inventory": {"rose": 2},
+			"unknown_hybrid_seeds": ["velvet_dusk"]
+		}
+	}
+	var migrated_ok := SaveManager.migrate_to_latest(legacy_save_ok)
+	if migrated_ok.is_empty():
+		return "Migration failed for valid legacy save containing velvet_dusk"
+
+	var pending: Array = migrated_ok.get("data", {}).get("pending_hybrid_seeds", [])
 	if pending.size() != 1:
 		return "Expected exactly 1 valid pending hybrid seed (velvet_dusk), got %d" % pending.size()
 
@@ -1368,5 +1430,80 @@ func _test_unknown_legacy_species_rejection() -> String:
 	if rec_spec.get("parent_a_id", "") != "legacy_reconstructed" or rec_spec.get("parent_b_id", "") != "legacy_reconstructed":
 		return "Expected legacy_reconstructed pedigree"
 
+	return ""
+
+
+# ------------------------------------------------------------------------------
+# 27. Atomic Promotion Second Rename Failure Injection (Point 5)
+# ------------------------------------------------------------------------------
+func _test_atomic_promotion_second_rename_failure_injection() -> String:
+	_cleanup_test_files()
+
+	# 1. Setup valid primary file with coins = 100
+	var primary_state := {
+		"coins": 100,
+		"inventory": {"rose": 2}
+	}
+	if not SaveManager.save_game(primary_state, TEST_SAVE_BASE):
+		return "Failed to establish initial primary save"
+
+	# 2. Establish valid backup file (.bak) with coins = 100
+	SaveManager._copy_file(TEST_SAVE_BASE, TEST_SAVE_BAK)
+	if not FileAccess.file_exists(TEST_SAVE_BAK):
+		return "Backup file does not exist"
+
+	# 3. Create temp file with new state (coins = 200)
+	var payload_tmp: Dictionary = {
+		"version": 3,
+		"timestamp": Time.get_unix_time_from_system(),
+		"game_title": "BloomHaven CVP",
+		"data": {
+			"coins": 200,
+			"specimen_counter": 100,
+			"flower_inventory_storage": {"rose": {"1": 2}},
+			"seed_inventory": {"rose": 5},
+			"bouquet_inventory": {},
+			"perfume_inventory": {},
+			"plots": [],
+			"breeding_roster": [],
+			"pending_hybrid_seeds": [],
+			"order_runtime": {}
+		}
+	}
+	var f_tmp := FileAccess.open(TEST_SAVE_TMP, FileAccess.WRITE)
+	if f_tmp == null: return "Could not open TEST_SAVE_TMP for writing"
+	f_tmp.store_string(JSON.stringify(payload_tmp))
+	f_tmp.close()
+
+	# 4. Inject failure seam: first rename fails -> primary removed -> second rename fails
+	SaveManager._test_inject_first_rename_failure = true
+	SaveManager._test_inject_second_rename_failure = true
+
+	var promote_result := SaveManager._promote_temp_to_primary(TEST_SAVE_TMP, TEST_SAVE_BASE, TEST_SAVE_BAK)
+
+	# Reset injection flags immediately
+	SaveManager._test_inject_first_rename_failure = false
+	SaveManager._test_inject_second_rename_failure = false
+
+	# 5. Assertions:
+	# A. Promotion function must return false
+	if promote_result != false:
+		return "Expected _promote_temp_to_primary to return false upon second rename failure"
+
+	# B. Backup must remain intact and valid
+	if not FileAccess.file_exists(TEST_SAVE_BAK):
+		return "Backup file was deleted or lost during failure"
+	var bak_val := SaveManager._try_read_and_validate_v3(TEST_SAVE_BAK)
+	if bak_val.is_empty() or bak_val.get("coins", 0) != 100:
+		return "Backup state was corrupted during failure"
+
+	# C. Primary file must be restored/recoverable with last valid game state (coins = 100)
+	if not FileAccess.file_exists(TEST_SAVE_BASE):
+		return "Primary file was not restored from backup after second rename failure"
+	var primary_recovered := SaveManager.load_game(TEST_SAVE_BASE)
+	if primary_recovered.get("coins", 0) != 100:
+		return "Primary file coins after recovery expected 100, got %s" % str(primary_recovered.get("coins"))
+
+	_cleanup_test_files()
 	return ""
 
