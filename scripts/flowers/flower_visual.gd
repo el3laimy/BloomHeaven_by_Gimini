@@ -46,6 +46,16 @@ var phenotype: FlowerPhenotype = null:
 		is_pruned = val
 		queue_redraw()
 
+@export var growth_progress: float = 0.0:
+	set(val):
+		growth_progress = val
+		queue_redraw()
+
+@export var is_late_unpruned: bool = false:
+	set(val):
+		is_late_unpruned = val
+		queue_redraw()
+
 @export var sway_enabled: bool = true
 
 var _data: Dictionary = {}
@@ -161,7 +171,8 @@ func _update_branching_sprite() -> bool:
 			_branch_sprite.visible = false
 		return false
 
-	var state_key := FlowerVisualStateResolver.resolve_visual_state(current_stage, is_pruned)
+	var q_str: String = "hero" if is_pruned else "standard"
+	var state_key := FlowerVisualStateResolver.resolve_visual_state(current_stage, is_pruned, q_str, growth_progress, is_late_unpruned)
 	if state_key.is_empty():
 		if is_instance_valid(_branch_sprite):
 			_branch_sprite.visible = false

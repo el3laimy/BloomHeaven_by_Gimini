@@ -36,7 +36,8 @@ static func resolve_flower_texture(flower_id: String) -> Texture2D:
 		return _texture_cache[canon_id]
 
 	var f_data := FlowerData.get_flower(canon_id)
-	var sprite_path: String = f_data.get("master_sprite", "")
+	var icon_path: String = f_data.get("visual_profile", {}).get("icon", {}).get("sprite", "")
+	var sprite_path: String = icon_path if (not icon_path.is_empty() and ResourceLoader.exists(icon_path)) else f_data.get("master_sprite", "")
 
 	if sprite_path.is_empty() or not ResourceLoader.exists(sprite_path):
 		push_warning("FlowerAssetResolver: Missing asset for '%s' at '%s'. Returning missing placeholder." % [canon_id, sprite_path])
@@ -49,6 +50,32 @@ static func resolve_flower_texture(flower_id: String) -> Texture2D:
 
 	_texture_cache[canon_id] = tex
 	return tex
+
+
+## Resolves the canonical UI icon for a flower species.
+## Returns the dedicated icon texture from visual_profile.icon if defined, else falls back to resolve_flower_texture.
+static func resolve_flower_icon(flower_id: String) -> Texture2D:
+	var canon_id := FlowerData.get_canonical_id(flower_id)
+	if canon_id.is_empty():
+		return get_missing_texture()
+
+	var icon_cache_key := "icon_" + canon_id
+	if _texture_cache.has(icon_cache_key):
+		return _texture_cache[icon_cache_key]
+
+	var f_data := FlowerData.get_flower(canon_id)
+	var icon_info: Dictionary = f_data.get("visual_profile", {}).get("icon", {})
+	var icon_path: String = icon_info.get("sprite", "")
+
+	if not icon_path.is_empty() and ResourceLoader.exists(icon_path):
+		var tex := load(icon_path) as Texture2D
+		if tex != null:
+			_texture_cache[icon_cache_key] = tex
+			return tex
+
+	var fallback_tex := resolve_flower_texture(canon_id)
+	_texture_cache[icon_cache_key] = fallback_tex
+	return fallback_tex
 
 
 ## Returns true ONLY if the flower ID is valid and its visual_profile is explicitly configured as procedural.
@@ -140,15 +167,14 @@ static func resolve_visual_stage_asset(flower_id: String, visual_state_key: Stri
 			offset_vec = raw_offset
 
 	var ground_anchor_vec := Vector2(0.5, 1.0)
-	if profile.has("ground_anchor"):
-		var raw_anchor = profile["ground_anchor"]
-		if raw_anchor is Array and raw_anchor.size() >= 2:
-			ground_anchor_vec = Vector2(float(raw_anchor[0]), float(raw_anchor[1]))
-		elif raw_anchor is Vector2:
-			ground_anchor_vec = raw_anchor
+	var raw_anchor = stage_info.get("ground_anchor", profile.get("ground_anchor", [0.5, 1.0]))
+	if raw_anchor is Array and raw_anchor.size() >= 2:
+		ground_anchor_vec = Vector2(float(raw_anchor[0]), float(raw_anchor[1]))
+	elif raw_anchor is Vector2:
+		ground_anchor_vec = raw_anchor
 
-	var ground_pos_y: float = float(profile.get("ground_position_y", 2.0))
-	var sway_intensity: float = float(profile.get("sway_intensity", 1.0))
+	var ground_pos_y: float = float(stage_info.get("ground_position_y", profile.get("ground_position_y", 2.0)))
+	var sway_intensity: float = float(stage_info.get("sway_intensity", profile.get("sway_intensity", 1.0)))
 
 	return {
 		"texture": tex,

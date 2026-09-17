@@ -79,6 +79,14 @@
               0.0
             ]
           },
+          "vegetative_late_unpruned": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
           "bloom_standard": {
             "sprite": "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png",
             "target_height": 66.0,
@@ -170,6 +178,14 @@
             ]
           },
           "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/lavender_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_late_unpruned": {
             "sprite": "res://assets/flowers/growth_stages/lavender_veg_bush.png",
             "target_height": 52.0,
             "offset": [
@@ -270,6 +286,14 @@
             ]
           },
           "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_late_unpruned": {
             "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
             "target_height": 52.0,
             "offset": [
@@ -381,6 +405,14 @@
               0.0
             ]
           },
+          "vegetative_late_unpruned": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
           "bloom_standard": {
             "sprite": "res://assets/flowers/master_roselight.png",
             "target_height": 66.0,
@@ -478,6 +510,14 @@
             ]
           },
           "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_late_unpruned": {
             "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
             "target_height": 52.0,
             "offset": [
@@ -589,6 +629,14 @@
               0.0
             ]
           },
+          "vegetative_late_unpruned": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
           "bloom_standard": {
             "sprite": "res://assets/flowers/master_sunflare_spike.png",
             "target_height": 66.0,
@@ -680,6 +728,14 @@
             ]
           },
           "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/tulip_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_late_unpruned": {
             "sprite": "res://assets/flowers/growth_stages/tulip_veg_bush.png",
             "target_height": 52.0,
             "offset": [
@@ -785,6 +841,14 @@
               0.0
             ]
           },
+          "vegetative_late_unpruned": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
           "bloom_standard": {
             "sprite": "res://assets/flowers/growth_stages/daisy_bloom_standard.png",
             "target_height": 66.0,
@@ -876,6 +940,14 @@
             ]
           },
           "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/rose_cream_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_late_unpruned": {
             "sprite": "res://assets/flowers/growth_stages/rose_cream_veg_bush.png",
             "target_height": 52.0,
             "offset": [

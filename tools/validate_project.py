@@ -131,6 +131,10 @@ if flowers:
                                 off = sdef["offset"]
                                 if not (isinstance(off, list) and len(off) == 2 and all(isinstance(x, (int, float)) for x in off)):
                                     log_err(f"Flower '{fid}' stage '{sname}' offset must be a 2-element numeric array: {off}")
+                            if "ground_anchor" in sdef:
+                                sga = sdef["ground_anchor"]
+                                if not (isinstance(sga, list) and len(sga) == 2 and all(isinstance(x, (int, float)) for x in sga)):
+                                    log_err(f"Flower '{fid}' stage '{sname}' ground_anchor must be a 2-element numeric array: {sga}")
                 elif vmode == "procedural":
                     pstyle = vprof.get("procedural_style")
                     if pstyle is not None and pstyle not in {"rose", "lavender", "sunflower", "roselight", "golden_rose", "sunflare_spike"}:
@@ -145,7 +149,7 @@ if flowers:
                 log_err(f"CVP base flower '{expected}' missing visual_profile")
             else:
                 vstages = fdef["visual_profile"].get("stages", {})
-                for req_stage in ["sprout", "vegetative_single", "vegetative_branching", "bloom_standard", "bloom_hero"]:
+                for req_stage in ["sprout", "vegetative_single", "vegetative_branching", "vegetative_late_unpruned", "bloom_standard", "bloom_hero"]:
                     if req_stage not in vstages:
                         log_err(f"CVP base flower '{expected}' missing required visual stage '{req_stage}'")
 

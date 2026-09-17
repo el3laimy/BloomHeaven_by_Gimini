@@ -224,6 +224,8 @@ func _process(delta: float) -> void:
 func _update_growth_stage() -> void:
 	if not is_instance_valid(_flower_visual):
 		return
+	_flower_visual.growth_progress = growth_progress
+	_flower_visual.is_late_unpruned = (growth_progress > PRUNE_WINDOW_END and not is_pruned)
 	var stage_idx := get_growth_stage_index(growth_progress, state == State.MATURE)
 	match stage_idx:
 		0: _flower_visual.current_stage = FlowerVisual.Stage.SEED
