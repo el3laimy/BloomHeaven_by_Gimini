@@ -72,7 +72,12 @@ if flowers:
             
             # Check master sprite for every non-alias flower
             if "master_sprite" in fdef:
-                rel = fdef["master_sprite"].replace("res://", "")
+                ms = fdef["master_sprite"]
+                if not ms.startswith("res://"):
+                    log_err(f"Flower '{fid}' master_sprite must start with 'res://': {ms}")
+                if "ArtSource" in ms:
+                    log_err(f"Flower '{fid}' master_sprite references ArtSource: {ms}")
+                rel = ms.replace("res://", "")
                 full = os.path.join(ROOT_DIR, rel)
                 if not os.path.exists(full):
                     log_err(f"Flower '{fid}' master_sprite missing on disk: {full}")
@@ -84,6 +89,22 @@ if flowers:
                 if vmode not in {"sprite", "procedural"}:
                     log_err(f"Flower '{fid}' visual_profile has invalid mode '{vmode}'")
                 elif vmode == "sprite":
+                    # Validate ground_anchor
+                    if "ground_anchor" in vprof:
+                        ga = vprof["ground_anchor"]
+                        if not (isinstance(ga, list) and len(ga) == 2 and all(isinstance(x, (int, float)) for x in ga)):
+                            log_err(f"Flower '{fid}' visual_profile ground_anchor must be a 2-element numeric array: {ga}")
+                    # Validate ground_position_y
+                    if "ground_position_y" in vprof:
+                        gpy = vprof["ground_position_y"]
+                        if not isinstance(gpy, (int, float)):
+                            log_err(f"Flower '{fid}' visual_profile ground_position_y must be numeric: {gpy}")
+                    # Validate sway_intensity
+                    if "sway_intensity" in vprof:
+                        si = vprof["sway_intensity"]
+                        if not isinstance(si, (int, float)):
+                            log_err(f"Flower '{fid}' visual_profile sway_intensity must be numeric: {si}")
+
                     if "stages" not in vprof or not isinstance(vprof["stages"], dict):
                         log_err(f"Flower '{fid}' visual_profile (sprite mode) missing 'stages' dict")
                     else:
@@ -95,12 +116,25 @@ if flowers:
                             if "sprite" not in sdef:
                                 log_err(f"Flower '{fid}' stage '{sname}' missing 'sprite'")
                             else:
-                                rel = sdef["sprite"].replace("res://", "")
+                                sp = sdef["sprite"]
+                                if not sp.startswith("res://"):
+                                    log_err(f"Flower '{fid}' stage '{sname}' sprite path must start with 'res://': {sp}")
+                                if "ArtSource" in sp:
+                                    log_err(f"Flower '{fid}' stage '{sname}' sprite references ArtSource: {sp}")
+                                rel = sp.replace("res://", "")
                                 full = os.path.join(ROOT_DIR, rel)
                                 if not os.path.exists(full):
                                     log_err(f"Flower '{fid}' stage '{sname}' sprite missing: {full}")
                             if "target_height" not in sdef or not isinstance(sdef["target_height"], (int, float)) or sdef["target_height"] <= 0:
                                 log_err(f"Flower '{fid}' stage '{sname}' missing or invalid target_height")
+                            if "offset" in sdef:
+                                off = sdef["offset"]
+                                if not (isinstance(off, list) and len(off) == 2 and all(isinstance(x, (int, float)) for x in off)):
+                                    log_err(f"Flower '{fid}' stage '{sname}' offset must be a 2-element numeric array: {off}")
+                elif vmode == "procedural":
+                    pstyle = vprof.get("procedural_style")
+                    if pstyle is not None and pstyle not in {"rose", "lavender", "sunflower", "roselight", "golden_rose", "sunflare_spike"}:
+                        log_err(f"Flower '{fid}' visual_profile has unknown procedural_style '{pstyle}'")
 
     for expected in EXPECTED_CVP_BASE:
         if expected not in flowers or flowers[expected].get("status") != "cvp_base":

@@ -46,6 +46,10 @@ func _run_characterization_suite() -> void:
 	_test_target_heights_contract()
 	_test_procedural_fallback_hybrids()
 	_test_legacy_flower_mappings()
+	_test_seed_contract()
+	_test_procedural_fallback_gate()
+	_test_sprite_flower_null_presentation()
+	_test_runtime_metadata_fixture()
 
 func _test_visual_state_resolver() -> void:
 	print(">>> [TEST] FlowerVisualStateResolver...")
@@ -204,3 +208,100 @@ func _test_legacy_flower_mappings() -> void:
 		"Roselight blooming maps to master_roselight.png")
 		
 	visual.free()
+	
+func _test_seed_contract() -> void:
+	print(">>> [TEST] Universal Seed Procedural Contract...")
+	# Stage.SEED maps to "seed" state
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SEED, false), "seed", "Stage.SEED maps to 'seed'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SEED, true), "seed", "Stage.SEED pruned still maps to 'seed'")
+
+	# Seed stage asset resolution universally returns empty dict cleanly without warnings
+	var rose_seed := FlowerAssetResolver.resolve_visual_stage_asset("rose", "seed")
+	_assert_true(rose_seed.is_empty(), "Rose seed asset cleanly returns empty dict (no stage PNG required)")
+	var lavender_seed := FlowerAssetResolver.resolve_visual_stage_asset("lavender", "seed")
+	_assert_true(lavender_seed.is_empty(), "Lavender seed asset cleanly returns empty dict")
+
+	# FlowerVisual at Stage.SEED does not create or display a branching sprite
+	var visual := FlowerVisualScript.new()
+	visual.flower_id = "rose"
+	visual.current_stage = FlowerVisual.Stage.SEED
+	var has_sprite := visual._update_branching_sprite()
+	_assert_true(not has_sprite, "FlowerVisual at Stage.SEED returns false for branching sprite")
+	visual.free()
+
+func _test_procedural_fallback_gate() -> void:
+	print(">>> [TEST] Procedural Fallback Gate...")
+	var procedural_hybrids := ["blushbell", "velvet_dusk", "twilight_bell", "sunburst_daisy", "crown_petal", "meadow_mist"]
+	for hb in procedural_hybrids:
+		_assert_true(FlowerAssetResolver.is_procedural_flower(hb), "Hybrid '%s' is recognized as procedural flower" % hb)
+		var f_data := FlowerData.get_flower(hb)
+		var pstyle: String = f_data.get("visual_profile", {}).get("procedural_style", "")
+		_assert_true(not pstyle.is_empty(), "Hybrid '%s' has explicit procedural_style ('%s')" % [hb, pstyle])
+
+	var sprite_flowers := ["rose", "lavender", "tulip", "daisy", "sunflower", "roselight", "golden_rose", "sunflare_spike"]
+	for sp in sprite_flowers:
+		_assert_true(not FlowerAssetResolver.is_procedural_flower(sp), "Sprite flower '%s' is NOT marked as procedural" % sp)
+
+	_assert_true(not FlowerAssetResolver.is_procedural_flower("unknown_orchid"), "Unknown flower is NOT marked as procedural")
+
+func _test_sprite_flower_null_presentation() -> void:
+	print(">>> [TEST] Sprite Flowers Null Presentation on Resolution Failure...")
+	# Verify that a non-procedural flower cannot fall back to drawing procedural petals
+	var visual := FlowerVisualScript.new()
+	visual.flower_id = "nonexistent_flower"
+	visual.current_stage = FlowerVisual.Stage.BLOOMING
+	var has_sprite := visual._update_branching_sprite()
+	_assert_true(not has_sprite, "Unknown flower sprite resolution fails")
+	_assert_true(not FlowerAssetResolver.is_procedural_flower(visual.flower_id), "Unknown flower fails procedural gate")
+	visual.free()
+
+func _test_runtime_metadata_fixture() -> void:
+	print(">>> [TEST] Runtime Metadata Application Extreme Fixture...")
+	FlowerData._ensure_initialized()
+	FlowerData._cached_flowers["test_extreme"] = {
+		"id": "test_extreme",
+		"display_name": "Test Extreme",
+		"status": "cvp_base",
+		"visual_profile": {
+			"ground_anchor": [0.25, 0.75],
+			"ground_position_y": -15.0,
+			"sway_intensity": 2.5,
+			"stages": {
+				"sprout": {
+					"sprite": "res://assets/flowers/growth_stages/rose_crimson_sprout.png",
+					"target_height": 120.0,
+					"offset": [14.0, -9.0]
+				}
+			}
+		}
+	}
+
+	var res := FlowerAssetResolver.resolve_visual_stage_asset("test_extreme", "sprout")
+	_assert_eq(res.get("target_height"), 120.0, "Extreme fixture target height resolved")
+	_assert_eq(res.get("offset"), Vector2(14.0, -9.0), "Extreme fixture offset resolved")
+	_assert_eq(res.get("ground_anchor"), Vector2(0.25, 0.75), "Extreme fixture ground_anchor resolved")
+	_assert_eq(res.get("ground_position_y"), -15.0, "Extreme fixture ground_position_y resolved")
+	_assert_eq(res.get("sway_intensity"), 2.5, "Extreme fixture sway_intensity resolved")
+
+	var visual := FlowerVisualScript.new()
+	visual.flower_id = "test_extreme"
+	visual.current_stage = FlowerVisual.Stage.SPROUT
+	var ok := visual._update_branching_sprite()
+	_assert_true(ok, "Extreme fixture sprite applied")
+
+	var tex: Texture2D = visual._branch_sprite.texture
+	var expected_scale := 120.0 / float(tex.get_height())
+	_assert_true(abs(visual._branch_sprite.scale.y - expected_scale) < 0.001, "Branch sprite scale reflects target_height: 120.0")
+
+	var base_offset := Vector2((0.5 - 0.25) * tex.get_width(), (0.5 - 0.75) * tex.get_height())
+	var expected_offset := base_offset + Vector2(14.0, -9.0)
+	_assert_eq(visual._branch_sprite.offset, expected_offset, "Branch sprite offset reflects ground_anchor and custom offset")
+	_assert_eq(visual._branch_sprite.position.y, -15.0, "Branch sprite position.y reflects ground_position_y: -15.0")
+	_assert_eq(visual._sway_intensity, 2.5, "Visual _sway_intensity reflects sway_intensity: 2.5")
+
+	visual.sway_enabled = true
+	visual.current_stage = FlowerVisual.Stage.BLOOMING
+	visual._process(0.1)
+
+	visual.free()
+	FlowerData._cached_flowers.erase("test_extreme")

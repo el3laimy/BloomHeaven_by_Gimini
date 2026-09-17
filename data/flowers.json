@@ -243,7 +243,9 @@
       "master_sprite": "res://assets/flowers/master_sunflower.png",
       "description": "A tall, cheerful sunflower that turns its radiant face toward warm daylight.",
       "status": "legacy",
+      "visual_status": "legacy_shared_profile",
       "visual_profile": {
+        "visual_status": "legacy_shared_profile",
         "ground_anchor": [
           0.5,
           1.0
@@ -345,7 +347,9 @@
       "master_sprite": "res://assets/flowers/master_roselight.png",
       "description": "An ethereal hybrid combining velvety rose petals with fragrant lavender hues and a subtle luminescent glow.",
       "status": "legacy",
+      "visual_status": "legacy_shared_profile",
       "visual_profile": {
+        "visual_status": "legacy_shared_profile",
         "ground_anchor": [
           0.5,
           1.0
@@ -447,7 +451,9 @@
       "master_sprite": "res://assets/flowers/master_golden_rose.png",
       "description": "A breathtaking cross between red rose elegance and solar sunflower energy, shimmering with golden amber warmth.",
       "status": "legacy",
+      "visual_status": "legacy_shared_profile",
       "visual_profile": {
+        "visual_status": "legacy_shared_profile",
         "ground_anchor": [
           0.5,
           1.0
@@ -549,7 +555,9 @@
       "master_sprite": "res://assets/flowers/master_sunflare_spike.png",
       "description": "A towering floral spike ablaze with fiery golden florets and calming herbal fragrance.",
       "status": "legacy",
+      "visual_status": "legacy_shared_profile",
       "visual_profile": {
+        "visual_status": "legacy_shared_profile",
         "ground_anchor": [
           0.5,
           1.0
@@ -1154,7 +1162,8 @@
       "master_sprite": "res://assets/flowers/master_roselight.png",
       "description": "A charming bell-shaped pink bloom blending the elegance of a rose with the cheer of a daisy.",
       "visual_profile": {
-        "mode": "procedural"
+        "mode": "procedural",
+        "procedural_style": "roselight"
       }
     },
     "velvet_dusk": {
@@ -1209,7 +1218,8 @@
       "master_sprite": "res://assets/flowers/master_roselight.png",
       "description": "An enchanting deep-violet bloom with velvet petals and a soothing evening scent.",
       "visual_profile": {
-        "mode": "procedural"
+        "mode": "procedural",
+        "procedural_style": "roselight"
       }
     },
     "twilight_bell": {
@@ -1264,7 +1274,8 @@
       "master_sprite": "res://assets/flowers/master_lavender.png",
       "description": "A slender bell-shaped indigo blossom carrying a whisper of twilight breeze.",
       "visual_profile": {
-        "mode": "procedural"
+        "mode": "procedural",
+        "procedural_style": "lavender"
       }
     },
     "sunburst_daisy": {
@@ -1319,7 +1330,8 @@
       "master_sprite": "res://assets/flowers/master_sunflower.png",
       "description": "A brilliant golden-yellow daisy with fiery orange petal tips radiating like a miniature sun.",
       "visual_profile": {
-        "mode": "procedural"
+        "mode": "procedural",
+        "procedural_style": "sunflower"
       }
     },
     "crown_petal": {
@@ -1374,7 +1386,8 @@
       "master_sprite": "res://assets/flowers/master_rose.png",
       "description": "A majestic regal blossom whose layered cupped petals form an exquisite royal coronet.",
       "visual_profile": {
-        "mode": "procedural"
+        "mode": "procedural",
+        "procedural_style": "rose"
       }
     },
     "meadow_mist": {
@@ -1429,7 +1442,8 @@
       "master_sprite": "res://assets/flowers/master_lavender.png",
       "description": "A delicate, airy cluster of pale misty-blue florets that glisten like early morning meadow dew.",
       "visual_profile": {
-        "mode": "procedural"
+        "mode": "procedural",
+        "procedural_style": "lavender"
       }
     }
   }

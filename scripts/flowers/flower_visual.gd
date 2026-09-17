@@ -51,6 +51,7 @@ var phenotype: FlowerPhenotype = null:
 var _data: Dictionary = {}
 var _sway_time: float = 0.0
 var _sway_offset: float = 0.0
+var _sway_intensity: float = 1.0
 var _branch_sprite: Sprite2D = null
 
 
@@ -74,9 +75,8 @@ func _process(delta: float) -> void:
 	rotation = 0.0
 	if sway_enabled and (current_stage == Stage.VEGETATIVE or current_stage == Stage.BLOOMING):
 		_sway_time += delta * 1.8
-		var sway_skew: float = sin(_sway_time + _sway_offset) * 0.05
-		if current_stage == Stage.BLOOMING:
-			sway_skew = sin(_sway_time + _sway_offset) * 0.075
+		var base_skew: float = 0.075 if current_stage == Stage.BLOOMING else 0.05
+		var sway_skew: float = sin(_sway_time + _sway_offset) * base_skew * _sway_intensity
 		if is_instance_valid(_branch_sprite):
 			_branch_sprite.skew = sway_skew
 			_branch_sprite.rotation = 0.0
@@ -97,7 +97,12 @@ func _draw() -> void:
 	if _data.is_empty():
 		_data = FlowerData.get_flower(flower_id)
 
-	# If flower has dedicated branching stage textures from BloomHeaven
+	# Architectural Contract: Stage.SEED is universally procedural across all species
+	if current_stage == Stage.SEED:
+		_draw_seed_stage()
+		return
+
+	# If flower has dedicated branching stage textures from data-driven visual profile
 	if _update_branching_sprite():
 		_draw_custom_ellipse(Vector2(0, 4), 16.0, 8.0, Color(0.04, 0.08, 0.05, 0.35))
 		if is_pruned and current_stage == Stage.BLOOMING:
@@ -108,6 +113,14 @@ func _draw() -> void:
 			draw_circle(Vector2(26, -42), 2.2, Color(1.0, 0.95, 0.6, 0.9))
 			draw_circle(Vector2(-18, -16), 1.8, Color(1.0, 0.95, 0.6, 0.85))
 			draw_circle(Vector2(22, -18), 2.0, Color(1.0, 0.95, 0.6, 0.85))
+		return
+
+	# Explicit Procedural Fallback Gate:
+	# Procedural drawing is allowed ONLY if the flower's visual_profile explicitly specifies mode == "procedural"
+	if not FlowerAssetResolver.is_procedural_flower(flower_id):
+		# Non-procedural flower failed sprite resolution: safe null presentation (do NOT draw procedural flower)
+		if is_instance_valid(_branch_sprite):
+			_branch_sprite.visible = false
 		return
 
 	var primary_col: Color = _data.get("primary_color", Color.RED)
@@ -169,11 +182,15 @@ func _update_branching_sprite() -> bool:
 		var s: float = target_height / float(tex.get_height())
 		_branch_sprite.scale = Vector2(s, s)
 
+		var anchor_vec: Vector2 = asset_dict.get("ground_anchor", Vector2(0.5, 1.0))
+		var base_offset := Vector2((0.5 - anchor_vec.x) * tex.get_width(), (0.5 - anchor_vec.y) * tex.get_height())
 		var offset_vec: Vector2 = asset_dict.get("offset", Vector2.ZERO)
-		_branch_sprite.offset = Vector2(0, -tex.get_height() * 0.5) + offset_vec
+		_branch_sprite.offset = base_offset + offset_vec
 
 		var ground_y: float = float(asset_dict.get("ground_position_y", 2.0))
 		_branch_sprite.position = Vector2(0, ground_y)
+
+		_sway_intensity = float(asset_dict.get("sway_intensity", 1.0))
 		return true
 
 	if is_instance_valid(_branch_sprite):
@@ -310,22 +327,23 @@ func _draw_blooming_stage(
 	if is_instance_valid(_branch_sprite):
 		_branch_sprite.visible = false
 
-	# Fallback to procedural vector rendering
-		match flower_id:
-			"rose":
-				_draw_blooming_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
-			"lavender":
-				_draw_blooming_lavender(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
-			"sunflower":
-				_draw_blooming_sunflower(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
-			"roselight":
-				_draw_blooming_roselight(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
-			"golden_rose":
-				_draw_blooming_golden_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
-			"sunflare_spike":
-				_draw_blooming_sunflare_spike(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
-			_:
-				_draw_blooming_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+	# Procedural vector rendering style from data-driven visual profile
+	var style: String = _data.get("visual_profile", {}).get("procedural_style", "rose")
+	match style:
+		"rose":
+			_draw_blooming_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+		"lavender":
+			_draw_blooming_lavender(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+		"sunflower":
+			_draw_blooming_sunflower(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+		"roselight":
+			_draw_blooming_roselight(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+		"golden_rose":
+			_draw_blooming_golden_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+		"sunflare_spike":
+			_draw_blooming_sunflare_spike(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
+		_:
+			_draw_blooming_rose(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale)
 
 	# Mature Aroma Shimmer Particles (Fragrance >= 3)
 	if fragrance_rating >= 3 and (not is_mystery or is_revealed):

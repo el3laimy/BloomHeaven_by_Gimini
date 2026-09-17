@@ -12,6 +12,9 @@ enum Stage {
 	BLOOMING = 3
 }
 
+## Architectural Contract: Stage.SEED is intentionally and universally procedural across all flower species.
+## It renders a contextual soil mound with organic soil crumbs, seed marker, and mystery shimmer.
+## It does not require or load a sprite asset stage.
 const STATE_SEED := "seed"
 const STATE_SPROUT := "sprout"
 const STATE_VEG_SINGLE := "vegetative_single"

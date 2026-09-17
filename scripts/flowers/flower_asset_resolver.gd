@@ -51,47 +51,82 @@ static func resolve_flower_texture(flower_id: String) -> Texture2D:
 	return tex
 
 
+## Returns true ONLY if the flower ID is valid and its visual_profile is explicitly configured as procedural.
+static func is_procedural_flower(flower_id: String) -> bool:
+	var canon_id := FlowerData.get_canonical_id(flower_id)
+	if canon_id.is_empty():
+		return false
+	var f_data := FlowerData.get_flower(canon_id)
+	if f_data.is_empty():
+		return false
+	var profile: Dictionary = f_data.get("visual_profile", {})
+	return profile.get("mode", "") == "procedural"
+
+
 ## Resolves stage-specific visual assets and configuration from the flower's visual_profile.
 ## Returns Dictionary with { texture: Texture2D, target_height: float, offset: Vector2, ground_anchor: Vector2, ground_position_y: float, sway_intensity: float }
 ## or {} if procedural or missing. Never falls back to Rose or silent default flowers.
 static func resolve_visual_stage_asset(flower_id: String, visual_state_key: String) -> Dictionary:
 	if visual_state_key.is_empty():
+		push_warning("FlowerAssetResolver: Empty visual_state_key requested for '%s'." % flower_id)
+		return {}
+
+	# Stage.SEED is by contract universally procedural across all flowers; returns {} cleanly without warning.
+	if visual_state_key == FlowerVisualStateResolver.STATE_SEED:
 		return {}
 
 	var canon_id := FlowerData.get_canonical_id(flower_id)
 	if canon_id.is_empty():
+		push_warning("FlowerAssetResolver: Unknown flower ID '%s'. Resolution failed." % flower_id)
 		return {}
 
 	var f_data := FlowerData.get_flower(canon_id)
 	if f_data.is_empty():
+		push_warning("FlowerAssetResolver: No flower data found for '%s'. Resolution failed." % canon_id)
 		return {}
 
 	var profile: Dictionary = f_data.get("visual_profile", {})
-	if profile.is_empty() or profile.get("mode") == "procedural":
+	if profile.is_empty():
+		push_warning("FlowerAssetResolver: Missing visual_profile for flower '%s'. Resolution failed." % canon_id)
+		return {}
+
+	var mode: String = profile.get("mode", "sprite")
+	if mode == "procedural":
+		# Explicit procedural mode: expected to return empty stage asset so procedural renderer draws it.
+		return {}
+	elif mode != "sprite":
+		push_warning("FlowerAssetResolver: Invalid visual_profile mode '%s' for flower '%s'." % [mode, canon_id])
 		return {}
 
 	var stages: Dictionary = profile.get("stages", {})
 	if not stages.has(visual_state_key):
+		push_warning("FlowerAssetResolver: Stage '%s' not defined in visual_profile for flower '%s'." % [visual_state_key, canon_id])
 		return {}
 
 	var stage_info = stages[visual_state_key]
 	if stage_info is not Dictionary:
+		push_warning("FlowerAssetResolver: Stage '%s' definition for flower '%s' is not a dictionary." % [visual_state_key, canon_id])
 		return {}
 
 	var sprite_path: String = stage_info.get("sprite", "")
 	if sprite_path.is_empty():
+		push_warning("FlowerAssetResolver: Empty sprite path for flower '%s' stage '%s'." % [canon_id, visual_state_key])
+		return {}
+
+	if not ResourceLoader.exists(sprite_path):
+		push_warning("FlowerAssetResolver: Sprite path '%s' missing on disk for flower '%s' stage '%s'." % [sprite_path, canon_id, visual_state_key])
 		return {}
 
 	var tex: Texture2D = null
 	if _texture_cache.has(sprite_path):
 		tex = _texture_cache[sprite_path]
-	elif ResourceLoader.exists(sprite_path):
+	else:
 		tex = load(sprite_path) as Texture2D
 		if tex != null:
 			_texture_cache[sprite_path] = tex
 
 	if tex == null:
-		push_warning("FlowerAssetResolver: Missing stage asset for '%s' (%s) at '%s'." % [canon_id, visual_state_key, sprite_path])
+		push_warning("FlowerAssetResolver: Failed to load texture at '%s' for flower '%s' at stage '%s'." % [sprite_path, canon_id, visual_state_key])
 		return {}
 
 	var target_height: float = float(stage_info.get("target_height", 64.0))

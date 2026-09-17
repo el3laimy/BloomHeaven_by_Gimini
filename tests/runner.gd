@@ -237,11 +237,17 @@ func _init() -> void:
 	else:
 		print("\n✓ [SAVE-GUARD] All canonical user save files verified byte-for-byte untouched during test run.")
 
+	var total_suites: int = 1 + suite_results.size()
+	var passed_suites: int = 1
+	for r in suite_results:
+		if r["passed"]:
+			passed_suites += 1
+
 	if not any_failed:
-		print("\n🎉 ALL 8/8 SUITES PASSED CLEANLY (100% OK, 0 ERRORS)!")
+		print("\n🎉 ALL %d/%d SUITES PASSED CLEANLY (100%% OK, 0 ERRORS)!" % [passed_suites, total_suites])
 		print("========================================================================\n")
 		quit(0)
 	else:
-		printerr("\n❌ ONE OR MORE TEST SUITES FAILED!")
+		printerr("\n❌ %d OF %d TEST SUITES FAILED!" % [total_suites - passed_suites, total_suites])
 		print("========================================================================\n")
 		quit(1)
