@@ -1,4 +1,10 @@
 # 🔍 BloomHaven Master Asset Audit (Phase 0)
+
+> [!NOTE]
+> **Archival Notice:**
+> الأصول المسجلة كـ`Unused / Archive` أو من مجلد `assets/BloomHeaven/` و `assets/ui/orders/customers/` تم أرشفتها رسميًا ونقلها إلى المستودع الخارجي `BloomHaven-ArtSource` في المرحلة 1A.
+> جميع الأصول الأصلية مفهرسة ومحققة بالـSHA-256 في [`docs/ARCHIVE_MANIFEST.json`](ARCHIVE_MANIFEST.json) و [`docs/ARCHIVE_MANIFEST.md`](ARCHIVE_MANIFEST.md).
+
 | Path | Resolution | Size (KB) | In-Engine Status | Classification |
 |---|---|---|---|---|
 | `assets/BloomHeaven/1.png` | 1254x1254 | 1971.0 | Missing .import | **Approved** |

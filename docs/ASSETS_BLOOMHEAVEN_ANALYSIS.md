@@ -1,5 +1,10 @@
 # 🎨 فحص وتحليل الأصول الفنية في `assets/BloomHeaven` وخطة توظيفها
 
+> [!NOTE]
+> **Archived Source Asset Collection:**
+> تم أرشفة مجلد `assets/BloomHeaven/` رسميًا ونقله إلى المستودع الخارجي `BloomHaven-ArtSource/BloomHeaven_raw/` في المرحلة 1A لتقليل حجم الـRuntime Repo.
+> جميع الأصول الأصلية محفوظة ومفهرسة تشفيريًا بالـSHA-256 في [`docs/ARCHIVE_MANIFEST.json`](ARCHIVE_MANIFEST.json) و [`docs/ARCHIVE_MANIFEST.md`](ARCHIVE_MANIFEST.md).
+
 > **الهدف:** فحص شامل ودقيق لكافة الصور والمستندات الفنية في مجلد `assets/BloomHeaven`، استخلاص القواعد الفنية والأسلوب البصري، وتحديد كيفية استخدامها وتعديلها واستكمالها داخل مشروع **Finest Garden** على محرك **Godot 4.7.1** بأعلى درجات التناسق والجودة.
 
 ---
