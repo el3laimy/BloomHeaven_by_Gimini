@@ -46,7 +46,57 @@
       ],
       "master_sprite": "res://assets/flowers/master_rose.png",
       "description": "A fragrant, classic crimson rose with velvety petals and emerald foliage.",
-      "status": "cvp_base"
+      "status": "cvp_base",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_bloom_standard.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_bloom_premium.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "lavender": {
       "id": "lavender",
@@ -94,7 +144,57 @@
       ],
       "master_sprite": "res://assets/flowers/master_lavender.png",
       "description": "Calming, aromatic lavender stalks that sway gently in the afternoon breeze.",
-      "status": "cvp_base"
+      "status": "cvp_base",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/lavender_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/lavender_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/lavender_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/growth_stages/lavender_bloom_standard.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/growth_stages/lavender_bloom_premium.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "sunflower": {
       "id": "sunflower",
@@ -142,7 +242,57 @@
       ],
       "master_sprite": "res://assets/flowers/master_sunflower.png",
       "description": "A tall, cheerful sunflower that turns its radiant face toward warm daylight.",
-      "status": "legacy"
+      "status": "legacy",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/master_sunflower.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/master_sunflower.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "roselight": {
       "id": "roselight",
@@ -194,7 +344,57 @@
       "botanical_clue": "One parent is a classic crimson bloom with velvety petals. The other is a soothing aromatic stalk.",
       "master_sprite": "res://assets/flowers/master_roselight.png",
       "description": "An ethereal hybrid combining velvety rose petals with fragrant lavender hues and a subtle luminescent glow.",
-      "status": "legacy"
+      "status": "legacy",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/master_roselight.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/master_roselight.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "golden_rose": {
       "id": "golden_rose",
@@ -246,7 +446,57 @@
       "botanical_clue": "A union between the garden's classic red queen and a tall seeker of the warm golden sun.",
       "master_sprite": "res://assets/flowers/master_golden_rose.png",
       "description": "A breathtaking cross between red rose elegance and solar sunflower energy, shimmering with golden amber warmth.",
-      "status": "legacy"
+      "status": "legacy",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/rose_crimson_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/master_golden_rose.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/master_golden_rose.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "sunflare_spike": {
       "id": "sunflare_spike",
@@ -298,7 +548,57 @@
       "botanical_clue": "Slender aromatic purple stalks touched by the fiery golden brilliance of solar florets.",
       "master_sprite": "res://assets/flowers/master_sunflare_spike.png",
       "description": "A towering floral spike ablaze with fiery golden florets and calming herbal fragrance.",
-      "status": "legacy"
+      "status": "legacy",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/master_sunflare_spike.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/master_sunflare_spike.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "tulip": {
       "id": "tulip",
@@ -346,7 +646,57 @@
       ],
       "description": "A regal spring tulip with cupped golden-orange petals and smooth emerald lanceolate leaves.",
       "master_sprite": "res://assets/flowers/growth_stages/tulip_bloom_standard.png",
-      "status": "cvp_base"
+      "status": "cvp_base",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/tulip_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/tulip_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/tulip_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/growth_stages/tulip_bloom_standard.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/growth_stages/tulip_bloom_premium.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "daisy": {
       "id": "daisy",
@@ -394,7 +744,57 @@
       ],
       "description": "A cheerful cottage garden daisy with radiant white ray petals surrounding a sunny golden central disc.",
       "master_sprite": "res://assets/flowers/growth_stages/daisy_bloom_standard.png",
-      "status": "cvp_base"
+      "status": "cvp_base",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_bloom_standard.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/growth_stages/daisy_bloom_premium.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "rose_cream": {
       "id": "rose_cream",
@@ -442,7 +842,57 @@
       ],
       "description": "An exquisite heirloom tea rose with layered porcelain-cream petals and a delicate sweet honey fragrance.",
       "master_sprite": "res://assets/flowers/growth_stages/rose_cream_bloom_standard.png",
-      "status": "legacy"
+      "status": "legacy",
+      "visual_profile": {
+        "ground_anchor": [
+          0.5,
+          1.0
+        ],
+        "ground_position_y": 2.0,
+        "sway_intensity": 1.0,
+        "stages": {
+          "sprout": {
+            "sprite": "res://assets/flowers/growth_stages/rose_cream_sprout.png",
+            "target_height": 38.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_single": {
+            "sprite": "res://assets/flowers/growth_stages/rose_cream_veg_single.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "vegetative_branching": {
+            "sprite": "res://assets/flowers/growth_stages/rose_cream_veg_bush.png",
+            "target_height": 52.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_standard": {
+            "sprite": "res://assets/flowers/growth_stages/rose_cream_bloom_standard.png",
+            "target_height": 66.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          },
+          "bloom_hero": {
+            "sprite": "res://assets/flowers/growth_stages/rose_cream_bloom_premium.png",
+            "target_height": 80.0,
+            "offset": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
     },
     "crimson_rose": {
       "id": "crimson_rose",
@@ -702,7 +1152,10 @@
       ],
       "botanical_clue": "A graceful union of velvety crimson petals and cheerful meadow sunshine.",
       "master_sprite": "res://assets/flowers/master_roselight.png",
-      "description": "A charming bell-shaped pink bloom blending the elegance of a rose with the cheer of a daisy."
+      "description": "A charming bell-shaped pink bloom blending the elegance of a rose with the cheer of a daisy.",
+      "visual_profile": {
+        "mode": "procedural"
+      }
     },
     "velvet_dusk": {
       "id": "velvet_dusk",
@@ -754,7 +1207,10 @@
       ],
       "botanical_clue": "Rich velvety crimson softened by calming twilight purple.",
       "master_sprite": "res://assets/flowers/master_roselight.png",
-      "description": "An enchanting deep-violet bloom with velvet petals and a soothing evening scent."
+      "description": "An enchanting deep-violet bloom with velvet petals and a soothing evening scent.",
+      "visual_profile": {
+        "mode": "procedural"
+      }
     },
     "twilight_bell": {
       "id": "twilight_bell",
@@ -806,7 +1262,10 @@
       ],
       "botanical_clue": "Scented purple spikes crossed with graceful cupped spring petals.",
       "master_sprite": "res://assets/flowers/master_lavender.png",
-      "description": "A slender bell-shaped indigo blossom carrying a whisper of twilight breeze."
+      "description": "A slender bell-shaped indigo blossom carrying a whisper of twilight breeze.",
+      "visual_profile": {
+        "mode": "procedural"
+      }
     },
     "sunburst_daisy": {
       "id": "sunburst_daisy",
@@ -858,7 +1317,10 @@
       ],
       "botanical_clue": "White ray petals enriched with vibrant golden-orange morning warmth.",
       "master_sprite": "res://assets/flowers/master_sunflower.png",
-      "description": "A brilliant golden-yellow daisy with fiery orange petal tips radiating like a miniature sun."
+      "description": "A brilliant golden-yellow daisy with fiery orange petal tips radiating like a miniature sun.",
+      "visual_profile": {
+        "mode": "procedural"
+      }
     },
     "crown_petal": {
       "id": "crown_petal",
@@ -910,7 +1372,10 @@
       ],
       "botanical_clue": "The stately form of a royal tulip joined with lush layered crimson rose petals.",
       "master_sprite": "res://assets/flowers/master_rose.png",
-      "description": "A majestic regal blossom whose layered cupped petals form an exquisite royal coronet."
+      "description": "A majestic regal blossom whose layered cupped petals form an exquisite royal coronet.",
+      "visual_profile": {
+        "mode": "procedural"
+      }
     },
     "meadow_mist": {
       "id": "meadow_mist",
@@ -962,7 +1427,10 @@
       ],
       "botanical_clue": "Delicate meadow daisies kissed by the cool violet dew of the morning.",
       "master_sprite": "res://assets/flowers/master_lavender.png",
-      "description": "A delicate, airy cluster of pale misty-blue florets that glisten like early morning meadow dew."
+      "description": "A delicate, airy cluster of pale misty-blue florets that glisten like early morning meadow dew.",
+      "visual_profile": {
+        "mode": "procedural"
+      }
     }
   }
 }

@@ -77,22 +77,51 @@ if flowers:
                 if not os.path.exists(full):
                     log_err(f"Flower '{fid}' master_sprite missing on disk: {full}")
             
-            # Check branching stage sprites
-            if "branching_stages" in fdef:
-                bstages = fdef["branching_stages"]
-                for sname, spath in bstages.items():
-                    rel = spath.replace("res://", "")
-                    full = os.path.join(ROOT_DIR, rel)
-                    if not os.path.exists(full):
-                        log_err(f"Flower '{fid}' branching stage '{sname}' sprite missing: {full}")
+            # Check visual_profile
+            if "visual_profile" in fdef:
+                vprof = fdef["visual_profile"]
+                vmode = vprof.get("mode", "sprite")
+                if vmode not in {"sprite", "procedural"}:
+                    log_err(f"Flower '{fid}' visual_profile has invalid mode '{vmode}'")
+                elif vmode == "sprite":
+                    if "stages" not in vprof or not isinstance(vprof["stages"], dict):
+                        log_err(f"Flower '{fid}' visual_profile (sprite mode) missing 'stages' dict")
+                    else:
+                        vstages = vprof["stages"]
+                        for sname, sdef in vstages.items():
+                            if not isinstance(sdef, dict):
+                                log_err(f"Flower '{fid}' stage '{sname}' is not a dict")
+                                continue
+                            if "sprite" not in sdef:
+                                log_err(f"Flower '{fid}' stage '{sname}' missing 'sprite'")
+                            else:
+                                rel = sdef["sprite"].replace("res://", "")
+                                full = os.path.join(ROOT_DIR, rel)
+                                if not os.path.exists(full):
+                                    log_err(f"Flower '{fid}' stage '{sname}' sprite missing: {full}")
+                            if "target_height" not in sdef or not isinstance(sdef["target_height"], (int, float)) or sdef["target_height"] <= 0:
+                                log_err(f"Flower '{fid}' stage '{sname}' missing or invalid target_height")
 
     for expected in EXPECTED_CVP_BASE:
         if expected not in flowers or flowers[expected].get("status") != "cvp_base":
             log_err(f"Expected CVP base flower '{expected}' missing or not classified as cvp_base")
+        else:
+            fdef = flowers[expected]
+            if "visual_profile" not in fdef:
+                log_err(f"CVP base flower '{expected}' missing visual_profile")
+            else:
+                vstages = fdef["visual_profile"].get("stages", {})
+                for req_stage in ["sprout", "vegetative_single", "vegetative_branching", "bloom_standard", "bloom_hero"]:
+                    if req_stage not in vstages:
+                        log_err(f"CVP base flower '{expected}' missing required visual stage '{req_stage}'")
 
     for expected in EXPECTED_CVP_HYBRID:
         if expected not in flowers or flowers[expected].get("status") != "cvp_hybrid":
             log_err(f"Expected CVP hybrid flower '{expected}' missing or not classified as cvp_hybrid")
+        else:
+            fdef = flowers[expected]
+            if "visual_profile" not in fdef or fdef["visual_profile"].get("mode") != "procedural":
+                log_err(f"CVP hybrid flower '{expected}' missing procedural visual_profile")
 
     if status_counts["unclassified"] > 0:
         log_err(f"Found {status_counts['unclassified']} unclassified flowers!")

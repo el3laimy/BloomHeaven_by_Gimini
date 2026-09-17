@@ -63,6 +63,17 @@ func _test_asset_resolver_diagnostics() -> void:
 	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("velvet_dusk", "sprout").is_empty(), "Procedural hybrid returns empty dict")
 	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("rose", "").is_empty(), "Empty state key returns empty dict")
 
+	# Active profile resolution test
+	var rose_sprout: Dictionary = FlowerAssetResolver.resolve_visual_stage_asset("rose", "sprout")
+	_assert_true(not rose_sprout.is_empty(), "Rose sprout asset resolved from profile")
+	_assert_eq(rose_sprout.get("target_height"), 38.0, "Rose sprout target height is 38.0")
+	_assert_true(rose_sprout.get("texture") != null and (rose_sprout.get("texture") as Texture2D).resource_path.ends_with("rose_crimson_sprout.png"), "Rose sprout texture is rose_crimson_sprout.png")
+
+	var daisy_hero: Dictionary = FlowerAssetResolver.resolve_visual_stage_asset("daisy", "bloom_hero")
+	_assert_true(not daisy_hero.is_empty(), "Daisy bloom hero asset resolved from profile")
+	_assert_eq(daisy_hero.get("target_height"), 80.0, "Daisy bloom hero target height is 80.0")
+	_assert_true(daisy_hero.get("texture") != null and (daisy_hero.get("texture") as Texture2D).resource_path.ends_with("daisy_bloom_premium.png"), "Daisy bloom hero texture is daisy_bloom_premium.png")
+
 func _test_base_species_growth_textures() -> void:
 	print(">>> [TEST] Base CVP Species Growth Textures...")
 	var species_list := ["rose", "lavender", "tulip", "daisy", "rose_cream", "rose_crimson"]
