@@ -271,6 +271,7 @@ scripts_to_check = [
     "scripts/garden/garden_layout_manager.gd",
     "scripts/flowers/flower_data.gd",
     "scripts/flowers/flower_asset_resolver.gd",
+    "scripts/flowers/flower_visual_state_resolver.gd",
     "scripts/flowers/flower_visual.gd",
     "scripts/flowers/modular_flower_visual.gd",
     "scripts/crafting/bouquet_data.gd",

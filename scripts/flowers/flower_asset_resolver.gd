@@ -51,6 +51,81 @@ static func resolve_flower_texture(flower_id: String) -> Texture2D:
 	return tex
 
 
+## Resolves stage-specific visual assets and configuration from the flower's visual_profile.
+## Returns Dictionary with { texture: Texture2D, target_height: float, offset: Vector2, ground_anchor: Vector2, ground_position_y: float, sway_intensity: float }
+## or {} if procedural or missing. Never falls back to Rose or silent default flowers.
+static func resolve_visual_stage_asset(flower_id: String, visual_state_key: String) -> Dictionary:
+	if visual_state_key.is_empty():
+		return {}
+
+	var canon_id := FlowerData.get_canonical_id(flower_id)
+	if canon_id.is_empty():
+		return {}
+
+	var f_data := FlowerData.get_flower(canon_id)
+	if f_data.is_empty():
+		return {}
+
+	var profile: Dictionary = f_data.get("visual_profile", {})
+	if profile.is_empty() or profile.get("mode") == "procedural":
+		return {}
+
+	var stages: Dictionary = profile.get("stages", {})
+	if not stages.has(visual_state_key):
+		return {}
+
+	var stage_info = stages[visual_state_key]
+	if stage_info is not Dictionary:
+		return {}
+
+	var sprite_path: String = stage_info.get("sprite", "")
+	if sprite_path.is_empty():
+		return {}
+
+	var tex: Texture2D = null
+	if _texture_cache.has(sprite_path):
+		tex = _texture_cache[sprite_path]
+	elif ResourceLoader.exists(sprite_path):
+		tex = load(sprite_path) as Texture2D
+		if tex != null:
+			_texture_cache[sprite_path] = tex
+
+	if tex == null:
+		push_warning("FlowerAssetResolver: Missing stage asset for '%s' (%s) at '%s'." % [canon_id, visual_state_key, sprite_path])
+		return {}
+
+	var target_height: float = float(stage_info.get("target_height", 64.0))
+
+	var offset_vec := Vector2.ZERO
+	if stage_info.has("offset"):
+		var raw_offset = stage_info["offset"]
+		if raw_offset is Array and raw_offset.size() >= 2:
+			offset_vec = Vector2(float(raw_offset[0]), float(raw_offset[1]))
+		elif raw_offset is Vector2:
+			offset_vec = raw_offset
+
+	var ground_anchor_vec := Vector2(0.5, 1.0)
+	if profile.has("ground_anchor"):
+		var raw_anchor = profile["ground_anchor"]
+		if raw_anchor is Array and raw_anchor.size() >= 2:
+			ground_anchor_vec = Vector2(float(raw_anchor[0]), float(raw_anchor[1]))
+		elif raw_anchor is Vector2:
+			ground_anchor_vec = raw_anchor
+
+	var ground_pos_y: float = float(profile.get("ground_position_y", 2.0))
+	var sway_intensity: float = float(profile.get("sway_intensity", 1.0))
+
+	return {
+		"texture": tex,
+		"target_height": target_height,
+		"offset": offset_vec,
+		"ground_anchor": ground_anchor_vec,
+		"ground_position_y": ground_pos_y,
+		"sway_intensity": sway_intensity
+	}
+
+
 ## Clears runtime texture cache (useful during testing/reloads)
 static func clear_cache() -> void:
 	_texture_cache.clear()
+

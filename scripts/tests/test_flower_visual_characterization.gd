@@ -6,6 +6,7 @@ extends SceneTree
 ## prior to Data-Driven Art Pipeline refactoring.
 
 const FlowerVisualScript := preload("res://scripts/flowers/flower_visual.gd")
+const FlowerVisualStateResolverScript := preload("res://scripts/flowers/flower_visual_state_resolver.gd")
 
 var _passed: int = 0
 var _failed: int = 0
@@ -38,11 +39,29 @@ func _assert_true(cond: bool, msg: String) -> void:
 		printerr("FAIL: %s" % msg)
 
 func _run_characterization_suite() -> void:
+	_test_visual_state_resolver()
+	_test_asset_resolver_diagnostics()
 	_test_base_species_growth_textures()
 	_test_pruning_differentiation()
 	_test_target_heights_contract()
 	_test_procedural_fallback_hybrids()
 	_test_legacy_flower_mappings()
+
+func _test_visual_state_resolver() -> void:
+	print(">>> [TEST] FlowerVisualStateResolver...")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SEED, false), "seed", "Stage SEED maps to 'seed'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.SPROUT, false), "sprout", "Stage SPROUT maps to 'sprout'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, false), "vegetative_branching", "Veg unpruned maps to 'vegetative_branching'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.VEGETATIVE, true), "vegetative_single", "Veg pruned maps to 'vegetative_single'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, false), "bloom_standard", "Bloom unpruned standard maps to 'bloom_standard'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, true), "bloom_hero", "Bloom pruned maps to 'bloom_hero'")
+	_assert_eq(FlowerVisualStateResolver.resolve_visual_state(FlowerVisual.Stage.BLOOMING, false, "hero"), "bloom_hero", "Bloom unpruned with quality='hero' maps to 'bloom_hero'")
+
+func _test_asset_resolver_diagnostics() -> void:
+	print(">>> [TEST] FlowerAssetResolver Safety & Diagnostics...")
+	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("nonexistent_flower", "sprout").is_empty(), "Unknown flower returns empty dict")
+	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("velvet_dusk", "sprout").is_empty(), "Procedural hybrid returns empty dict")
+	_assert_true(FlowerAssetResolver.resolve_visual_stage_asset("rose", "").is_empty(), "Empty state key returns empty dict")
 
 func _test_base_species_growth_textures() -> void:
 	print(">>> [TEST] Base CVP Species Growth Textures...")
