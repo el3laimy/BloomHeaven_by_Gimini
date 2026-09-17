@@ -115,14 +115,6 @@ func _draw() -> void:
 	# If flower has dedicated branching stage textures from data-driven visual profile
 	if _update_branching_sprite():
 		_draw_custom_ellipse(Vector2(0, 4), 16.0, 8.0, Color(0.04, 0.08, 0.05, 0.35))
-		if is_pruned and current_stage == Stage.BLOOMING:
-			# Golden Shimmer Aura for Pruned Hero Bloom
-			_draw_custom_ellipse(Vector2(0, -32), 34.0, 34.0, Color(1.0, 0.88, 0.35, 0.22))
-			_draw_custom_ellipse(Vector2(0, -32), 24.0, 24.0, Color(1.0, 0.95, 0.55, 0.25))
-			draw_circle(Vector2(-24, -48), 2.5, Color(1.0, 0.95, 0.6, 0.9))
-			draw_circle(Vector2(26, -42), 2.2, Color(1.0, 0.95, 0.6, 0.9))
-			draw_circle(Vector2(-18, -16), 1.8, Color(1.0, 0.95, 0.6, 0.85))
-			draw_circle(Vector2(22, -18), 2.0, Color(1.0, 0.95, 0.6, 0.85))
 		return
 
 	# Explicit Procedural Fallback Gate:

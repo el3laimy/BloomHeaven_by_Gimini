@@ -61,7 +61,7 @@
         "stages": {
           "sprout": {
             "sprite": "res://assets/flowers/rose/shared/plant_rose_shared_young.png",
-            "target_height": 38.0,
+            "target_height": 42.0,
             "ground_anchor": [
               0.5029,
               0.9199
@@ -85,7 +85,7 @@
           },
           "vegetative_single": {
             "sprite": "res://assets/flowers/rose/red/plant_rose_red_prime_bud.png",
-            "target_height": 52.0,
+            "target_height": 56.0,
             "ground_anchor": [
               0.4941,
               0.9785

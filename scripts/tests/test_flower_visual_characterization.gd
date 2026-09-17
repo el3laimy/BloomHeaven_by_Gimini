@@ -92,8 +92,13 @@ func _test_asset_resolver_diagnostics() -> void:
 	# Active profile resolution test: Rose
 	var rose_sprout: Dictionary = FlowerAssetResolver.resolve_visual_stage_asset("rose", "sprout")
 	_assert_true(not rose_sprout.is_empty(), "Rose sprout asset resolved from profile")
-	_assert_eq(rose_sprout.get("target_height"), 38.0, "Rose sprout target height is 38.0")
+	_assert_eq(rose_sprout.get("target_height"), 42.0, "Rose sprout target height is 42.0")
 	_assert_true(rose_sprout.get("texture") != null and (rose_sprout.get("texture") as Texture2D).resource_path.ends_with("plant_rose_shared_young.png"), "Rose sprout texture is plant_rose_shared_young.png")
+
+	var rose_prime_bud: Dictionary = FlowerAssetResolver.resolve_visual_stage_asset("rose", "vegetative_single")
+	_assert_true(not rose_prime_bud.is_empty(), "Rose prime bud asset resolved from profile")
+	_assert_eq(rose_prime_bud.get("target_height"), 56.0, "Rose prime bud target height is 56.0")
+	_assert_true(rose_prime_bud.get("texture") != null and (rose_prime_bud.get("texture") as Texture2D).resource_path.ends_with("plant_rose_red_prime_bud.png"), "Rose prime bud texture is plant_rose_red_prime_bud.png")
 
 	# Rose icon resolution
 	var rose_icon: Texture2D = FlowerAssetResolver.resolve_flower_icon("rose")
@@ -212,11 +217,11 @@ func _test_target_heights_contract() -> void:
 	var visual := FlowerVisualScript.new()
 	visual.flower_id = "rose"
 	
-	# Sprout height: 38.0
+	# Sprout height: 42.0
 	visual.current_stage = FlowerVisual.Stage.SPROUT
 	visual._update_branching_sprite()
 	var h: float = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
-	_assert_true(abs(h - 38.0) < 0.1, "Sprout target height is 38.0px (got %.1f)" % h)
+	_assert_true(abs(h - 42.0) < 0.1, "Sprout target height is 42.0px (got %.1f)" % h)
 	_assert_eq(visual._branch_sprite.position, Vector2(0, 2.0), "Ground position Y is 2.0")
 	
 	# Vegetative branching height: 52.0
@@ -227,13 +232,13 @@ func _test_target_heights_contract() -> void:
 	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
 	_assert_true(abs(h - 52.0) < 0.1, "Vegetative branching target height is 52.0px (got %.1f)" % h)
 
-	# Vegetative single (pruned bud) height: 52.0
+	# Vegetative single (pruned bud) height: 56.0
 	visual.is_pruned = true
 	visual.growth_progress = 0.65
 	visual.current_stage = FlowerVisual.Stage.VEGETATIVE
 	visual._update_branching_sprite()
 	h = visual._branch_sprite.scale.y * visual._branch_sprite.texture.get_height()
-	_assert_true(abs(h - 52.0) < 0.1, "Vegetative single target height is 52.0px (got %.1f)" % h)
+	_assert_true(abs(h - 56.0) < 0.1, "Vegetative single target height is 56.0px (got %.1f)" % h)
 
 	# Vegetative late unpruned height: 54.0
 	visual.is_pruned = false

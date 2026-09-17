@@ -18,8 +18,11 @@ __pycache__/
 # Temporary test captures & debug crops
 tools/*.png
 tools/*.png.import
+tools/visual_qa/*.png
+tools/visual_qa/*.png.import
 tools/portraits_crop_test/
 tools/portraits_inspect/
+artifacts/
 
 # OS & Editor generated files
 .DS_Store
