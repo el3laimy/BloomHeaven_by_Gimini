@@ -1,5 +1,13 @@
 # FlowerRush asset reuse in BloomHeaven by Gemini
 
+## Transfer status (2026-10-13)
+
+Verified in the GitHub branch: **130 / 131** pinned assets, all retaining the exact source Git blob SHA: 100 Flora-C flower PNGs, 7/8 garden PNGs, 15 HUD icons, and 8 tool sprites.
+
+**One missing source image:** `assets/environment/integrated_garden_v1/garden_grass_owner_v1.png` (2,661,166 bytes, source blob `2e4e4c7a05b0ba814e0859e60acbdf476c851a40`). GitHub's contents interface exposes its SHA but no base64 body because this binary exceeds the small-file Contents API representation limit. It has **not** been copied, and should never be replaced with an empty or approximate image.
+
+The documented local importer will copy this last file from the private source checkout in an opt-in run, validating bytes and Git SHA before writing. Do not mark the migration as fully finished until the 131/131 comparison passes. The target public repository and its branches expose copied artwork; review redistribution and release rights before merge.
+
 Source: private el3laimy/FlowerRush at 7560d08460cfbf9fa84bfd58c55219898d3646f4
 Destination: public el3laimy/BloomHeaven_by_Gimini. Candidate assets only; not cleared for commercial release.
 
