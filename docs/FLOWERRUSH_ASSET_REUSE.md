@@ -6,10 +6,10 @@ Verified in the GitHub branch: **130 / 131** pinned assets, all retaining the ex
 
 **One missing source image:** `assets/environment/integrated_garden_v1/garden_grass_owner_v1.png` (2,661,166 bytes, source blob `2e4e4c7a05b0ba814e0859e60acbdf476c851a40`). GitHub's contents interface exposes its SHA but no base64 body because this binary exceeds the small-file Contents API representation limit. It has **not** been copied, and should never be replaced with an empty or approximate image.
 
-The documented local importer will copy this last file from the private source checkout in an opt-in run, validating bytes and Git SHA before writing. Do not mark the migration as fully finished until the 131/131 comparison passes. The target public repository and its branches expose copied artwork; review redistribution and release rights before merge.
+The documented local importer will copy this last file from the private source checkout in an opt-in run, validating bytes and Git SHA before writing. Do not mark the migration as fully finished until the 131/131 comparison passes. The destination is public. The owner has explicitly authorized use of these newly created, wholly owner-owned image assets across the two projects. This ownership declaration is distinct from technical and visual acceptance.
 
 Source: private el3laimy/FlowerRush at 7560d08460cfbf9fa84bfd58c55219898d3646f4
-Destination: public el3laimy/BloomHeaven_by_Gimini. Candidate assets only; not cleared for commercial release.
+Destination: public el3laimy/BloomHeaven_by_Gimini. These are owner-created artwork assets under visual/technical review, not awaiting a third-party art license.
 
 ## Selection
 
@@ -41,6 +41,10 @@ The Gemini prototype currently has 6 procedurally represented hybrids that have 
 
 Only after visual QA, review an explicit mapping from the Flora-C growth roles to the 6-stage visual_profile structure in data/flowers.json. Candidate mapping to inspect (not approved or activated): sprout=seedling, vegetative_branching=young, vegetative_single=buds, vegetative_late_unpruned=buds, bloom_standard=cluster, bloom_hero=single. Confirm image transparency, foot anchor, target height, and consistency on the phone. No sunflower image is supplied by FlowerRush and Lily's character art is intentionally unchanged.
 
-## Publication and rights
+## Asset ownership declaration (product owner, 2026-10-13)
 
-Important: this GitHub repository is public, including its branches. Source art in FlowerRush is identified as development candidates, not release-cleared. Check author rights, provenance, redistribution scope and appropriate notices before promoting or publishing additional images. An asset copied into a project is not automatically licensed for commercial release.
+The product owner explicitly states that **all selected art assets are 100% owned by the product owner, newly created for these projects, and do not reuse any earlier third-party or external artwork**. The owner has requested copying these original assets from FlowerRush into BloomHeaven by Gemini for use in the game. This is a recorded owner statement; it is not an independent legal provenance audit.
+
+Accordingly, **there is no third-party artwork licensing review gate for the 131 PNGs in this transfer manifest**, on the basis of the owner's declaration. Do not infer the same statement about unrelated files (for example, third-party fonts), which are excluded from this transfer. The destination repository is public, including this branch; the product owner has been made aware of that visibility.
+
+The outstanding acceptance work is **technical/visual**, not an asserted ownership blocker: import and test the assets in Godot, check mobile quality and performance, finish the one oversized background file, and wire the selected art into the game's existing flower resolver only after visual review. No gameplay code has been modified by this transfer.
