@@ -1,0 +1,20 @@
+name: Verify FlowerRush asset import tooling
+on:
+  push:
+    branches:
+      - assets/reuse-flowerrush-runtime-candidates
+  pull_request:
+    paths:
+      - tools/import_flowerrush_runtime.py
+      - tools/flowerrush_asset_inventory.json
+      - tests/tools/test_import_flowerrush_runtime.py
+      - .github/workflows/asset-import-check.yml
+jobs:
+  validate-importer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run audited import regression tests
+        run: python3 -m unittest discover -s tests/tools -p 'test_import_flowerrush_runtime.py' -v
