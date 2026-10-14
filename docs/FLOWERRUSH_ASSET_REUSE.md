@@ -1,12 +1,12 @@
 # FlowerRush asset reuse in BloomHeaven by Gemini
 
-## Transfer status (2026-10-13)
+## Transfer status (2026-10-14)
 
-Verified in the GitHub branch: **130 / 131** pinned assets, all retaining the exact source Git blob SHA: 100 Flora-C flower PNGs, 7/8 garden PNGs, 15 HUD icons, and 8 tool sprites.
+Verified in this branch: **131 / 131** pinned assets, all retaining the exact source Git blob SHA: 100 Flora-C flower PNGs, 8 garden PNGs, 15 HUD icons, and 8 tool sprites.
 
-**One missing source image:** `assets/environment/integrated_garden_v1/garden_grass_owner_v1.png` (2,661,166 bytes, source blob `2e4e4c7a05b0ba814e0859e60acbdf476c851a40`). GitHub's contents interface exposes its SHA but no base64 body because this binary exceeds the small-file Contents API representation limit. It has **not** been copied, and should never be replaced with an empty or approximate image.
+The final garden image, `assets/environment/integrated_garden_v1/garden_grass_owner_v1.png` (2,661,166 bytes, source blob `2e4e4c7a05b0ba814e0859e60acbdf476c851a40`), was copied directly from the pinned FlowerRush source commit and verified before staging. The separately uploaded preview has different encoded bytes and was not substituted for the pinned original.
 
-The documented local importer will copy this last file from the private source checkout in an opt-in run, validating bytes and Git SHA before writing. Do not mark the migration as fully finished until the 131/131 comparison passes. The destination is public. The owner has explicitly authorized use of these newly created, wholly owner-owned image assets across the two projects. This ownership declaration is distinct from technical and visual acceptance.
+This completes the byte-verified image transfer. Technical and visual approval of the art in Godot and Android remains a separate step. The destination is public. The owner has explicitly authorized use of these newly created, wholly owner-owned image assets across the two projects.
 
 Source: private el3laimy/FlowerRush at 7560d08460cfbf9fa84bfd58c55219898d3646f4
 Destination: public el3laimy/BloomHeaven_by_Gimini. These are owner-created artwork assets under visual/technical review, not awaiting a third-party art license.
@@ -47,4 +47,4 @@ The product owner explicitly states that **all selected art assets are 100% owne
 
 Accordingly, **there is no third-party artwork licensing review gate for the 131 PNGs in this transfer manifest**, on the basis of the owner's declaration. Do not infer the same statement about unrelated files (for example, third-party fonts), which are excluded from this transfer. The destination repository is public, including this branch; the product owner has been made aware of that visibility.
 
-The outstanding acceptance work is **technical/visual**, not an asserted ownership blocker: import and test the assets in Godot, check mobile quality and performance, finish the one oversized background file, and wire the selected art into the game's existing flower resolver only after visual review. No gameplay code has been modified by this transfer.
+The outstanding acceptance work is **technical/visual**, not an asserted ownership blocker: import and test the assets in Godot, check mobile quality and performance, and wire the selected art into the game's existing flower resolver only after visual review. No gameplay code has been modified by this transfer.
