@@ -118,6 +118,7 @@ var _completed_requests: Dictionary = {}
 var _daily_goal: int = 6
 
 var _cards: Array[Control] = []
+var order_manager: OrderManager = null
 
 
 func _ready() -> void:
@@ -144,16 +145,20 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not visible:
+	if not is_visible_in_tree():
 		return
 	_update_live_timers()
 
 
 func update_state(inventory: Dictionary, bouquet_inv: Dictionary, patience: Dictionary, completed: Dictionary) -> void:
-	_inventory = inventory
-	_bouquet_inventory = bouquet_inv
+	var structure_changed := _ticket_cards.is_empty() or _inventory != inventory or _bouquet_inventory != bouquet_inv or _completed_requests != completed
+	_inventory = inventory.duplicate()
+	_bouquet_inventory = bouquet_inv.duplicate()
 	_patience_data = patience
-	_completed_requests = completed
+	_completed_requests = completed.duplicate()
+	if not structure_changed:
+		_update_live_timers()
+		return
 	_refresh_tickets()
 	_update_ui()
 
@@ -370,7 +375,7 @@ func _update_card(card: Control, order_id: String, _card_index: int) -> void:
 				max_pat = float(req["patience_max_seconds"])
 			else:
 				push_warning("OrderBoardContent: Request '%s' missing canonical 'patience_max_seconds'." % order_id)
-			var pat: float = float(_patience_data.get(order_id, max_pat))
+			var pat := _get_live_patience(order_id, max_pat)
 			var ratio: float = clampf(pat / max(1.0, max_pat), 0.0, 1.0) if max_pat > 0.0 else 0.0
 			var timer_color: Color
 			var wedge_ratio: float = 0.25
@@ -391,6 +396,13 @@ func _update_card(card: Control, order_id: String, _card_index: int) -> void:
 		coins_label.text = "+%dg" % int(req.get("coin_reward", 25))
 
 
+func _get_live_patience(order_id: String, fallback: float) -> float:
+	var patience: float = order_manager.get_patience(order_id) if order_manager != null else float(_patience_data.get(order_id, fallback))
+	if _ticket_cards.has(order_id):
+		_ticket_cards[order_id]["patience"] = patience
+	return patience
+
+
 func _update_live_timers() -> void:
 	for i in range(min(3, _active_orders.size())):
 		var card_node := _cards[i]
@@ -407,7 +419,7 @@ func _update_live_timers() -> void:
 				max_pat = float(req["patience_max_seconds"])
 			else:
 				push_warning("OrderBoardContent: Request '%s' missing canonical 'patience_max_seconds'." % o_id)
-			var pat: float = float(_patience_data.get(o_id, max_pat))
+			var pat := _get_live_patience(o_id, max_pat)
 			var ratio: float = clampf(pat / max(1.0, max_pat), 0.0, 1.0) if max_pat > 0.0 else 0.0
 			var timer_color: Color
 			var wedge_ratio: float = 0.25

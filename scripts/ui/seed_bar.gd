@@ -38,7 +38,7 @@ func update_counts(inventory: Dictionary, mystery_count: int = 0) -> void:
 			if s_id == "mystery_seed":
 				count_lbl.text = "★ %d" % mystery_count
 			else:
-				var count: int = inventory.get(s_id, 10) # default starter stock
+				var count: int = inventory.get(s_id, 0)
 				count_lbl.text = "🍃 %d" % count
 
 
@@ -118,7 +118,7 @@ func _create_seed_packet_card(seed_id: String) -> Control:
 
 	var count_lbl := Label.new()
 	count_lbl.name = "CountLabel"
-	count_lbl.text = "🍃 %d" % _seed_inventory.get(seed_id, 12)
+	count_lbl.text = "🍃 %d" % _seed_inventory.get(seed_id, 0)
 	count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	count_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	count_lbl.add_theme_font_size_override("font_size", 10)

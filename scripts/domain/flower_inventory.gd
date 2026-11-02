@@ -113,39 +113,36 @@ func get_all_flowers() -> Dictionary:
 
 func can_consume_requirements(requirements: Dictionary, policy = ConsumptionPolicy.LOWEST_QUALITY_FIRST) -> bool:
 	## Requirements can be { flower_id: count } or { flower_id: { tier: count } }
-	if requirements.is_empty():
-		return true
-
-	for flower_id in requirements:
-		var req_val = requirements[flower_id]
-		if req_val is int or req_val is float:
-			var req_count: int = int(req_val)
-			if req_count <= 0:
-				continue
-			if get_flower_count(flower_id) < req_count:
-				return false
-		elif req_val is Dictionary:
-			var tier_reqs: Dictionary = req_val
-			for tier_key in tier_reqs:
-				var tier: int = int(tier_key)
-				var req_count: int = int(tier_reqs[tier_key])
-				if req_count <= 0:
-					continue
-				if get_flower_count_by_quality(flower_id, tier) < req_count:
-					return false
-		else:
-			return false
-
-	return true
+	return _build_consumption_plan(requirements, policy).get("valid", false)
 
 
 func consume_requirements(requirements: Dictionary, policy = ConsumptionPolicy.LOWEST_QUALITY_FIRST) -> bool:
-	## Transactional requirement consumption: validate all first, then commit deductions.
-	## If any check fails: zero mutation.
-	if not can_consume_requirements(requirements, policy):
+	## Commit every deduction before notifying synchronous signal listeners.
+	var plan := _build_consumption_plan(requirements, policy)
+	if not plan.get("valid", false):
 		return false
+	var deductions: Array = plan["deductions"]
+	for deduction in deductions:
+		var flower_id: String = deduction["flower_id"]
+		var tier: int = deduction["tier"]
+		var remaining: int = int(_storage[flower_id][tier]) - int(deduction["count"])
+		if remaining > 0:
+			_storage[flower_id][tier] = remaining
+		else:
+			_storage[flower_id].erase(tier)
+			if _storage[flower_id].is_empty():
+				_storage.erase(flower_id)
 
-	# Order of tiers depending on policy (LOWEST_QUALITY_FIRST vs HIGHEST_QUALITY_FIRST)
+	for deduction in deductions:
+		flower_removed.emit(deduction["flower_id"], deduction["tier"], deduction["count"])
+	if not deductions.is_empty():
+		inventory_changed.emit()
+	return true
+
+
+func _build_consumption_plan(requirements: Dictionary, policy) -> Dictionary:
+	var deductions: Array[Dictionary] = []
+
 	var tier_order: Array[int] = [
 		FlowerQuality.Tier.NORMAL,
 		FlowerQuality.Tier.FINE,
@@ -157,7 +154,11 @@ func consume_requirements(requirements: Dictionary, policy = ConsumptionPolicy.L
 
 	for flower_id in requirements:
 		var req_val = requirements[flower_id]
+		if not (flower_id is String) or flower_id.is_empty():
+			return {"valid": false}
 		if req_val is int or req_val is float:
+			if not _is_valid_requirement_count(req_val) or req_val > get_flower_count(flower_id):
+				return {"valid": false}
 			var remaining_needed: int = int(req_val)
 			for tier in tier_order:
 				if remaining_needed <= 0:
@@ -166,17 +167,35 @@ func consume_requirements(requirements: Dictionary, policy = ConsumptionPolicy.L
 				if avail <= 0:
 					continue
 				var to_take: int = mini(avail, remaining_needed)
-				remove_flower(flower_id, tier, to_take)
+				deductions.append({"flower_id": flower_id, "tier": tier, "count": to_take})
 				remaining_needed -= to_take
 		elif req_val is Dictionary:
-			var tier_reqs: Dictionary = req_val
-			for tier_key in tier_reqs:
-				var tier: int = int(tier_key)
-				var req_count: int = int(tier_reqs[tier_key])
-				if req_count > 0:
-					remove_flower(flower_id, tier, req_count)
+			var normalized: Dictionary = {}
+			for tier_key in req_val:
+				if not (tier_key is int or (tier_key is String and tier_key.is_valid_int())):
+					return {"valid": false}
+				var tier := int(tier_key)
+				var count = req_val[tier_key]
+				if not FlowerQuality.is_valid(tier) or not _is_valid_requirement_count(count):
+					return {"valid": false}
+				# JSON string keys and integer keys may address the same tier.
+				var planned: int = normalized.get(tier, 0)
+				if count > get_flower_count_by_quality(flower_id, tier) - planned:
+					return {"valid": false}
+				normalized[tier] = planned + int(count)
+			for tier in normalized:
+				if normalized[tier] > 0:
+					deductions.append({"flower_id": flower_id, "tier": tier, "count": normalized[tier]})
+		else:
+			return {"valid": false}
 
-	return true
+	return {"valid": true, "deductions": deductions}
+
+
+func _is_valid_requirement_count(value) -> bool:
+	if value is int:
+		return value >= 0
+	return value is float and is_finite(value) and value >= 0.0 and value == floor(value)
 
 
 func clear() -> void:

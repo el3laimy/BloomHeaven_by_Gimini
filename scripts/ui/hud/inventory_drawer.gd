@@ -26,6 +26,12 @@ const BTN_WOOD_PRESS: Texture2D = preload("res://assets/ui/flower_stand/ui_btn_s
 const BTN_BRASS_TEX: Texture2D = preload("res://assets/ui/flower_stand/ui_btn_sell_all_brass.png")
 
 
+var _flower_crates: Dictionary = {}
+var _bouquet_crates: Dictionary = {}
+var _last_inventory: Dictionary = {}
+var _last_bouquets: Dictionary = {}
+var _inventory_initialized: bool = false
+
 func _ready() -> void:
 	hide()
 	if close_btn:
@@ -85,8 +91,14 @@ func update_inventory(inventory: Dictionary, bouquet_inventory: Dictionary) -> v
 	if crate_grid == null:
 		return
 
-	for child in crate_grid.get_children():
-		child.queue_free()
+	if _inventory_initialized and inventory == _last_inventory and bouquet_inventory == _last_bouquets:
+		return
+	_last_inventory = inventory.duplicate()
+	_last_bouquets = bouquet_inventory.duplicate()
+	_inventory_initialized = true
+	var desired_flowers: Dictionary = {}
+	var desired_bouquets: Dictionary = {}
+	var position_index := 0
 
 	var total_flowers_to_sell: int = 0
 	var total_coin_value: int = 0
@@ -115,16 +127,32 @@ func update_inventory(inventory: Dictionary, bouquet_inventory: Dictionary) -> v
 
 		# Display if in inventory or if one of the core base species
 		if count > 0 or base_species.has(f_id):
-			var crate := _create_flower_crate(f_id, f_data.get("display_name", f_id.capitalize()), count, _get_flower_icon(f_id), base_val)
-			crate_grid.add_child(crate)
+			desired_flowers[f_id] = true
+			if not _flower_crates.has(f_id):
+				var crate := _create_flower_crate(f_id, f_data.get("display_name", f_id.capitalize()), count, _get_flower_icon(f_id), base_val)
+				_flower_crates[f_id] = crate
+				crate_grid.add_child(crate)
+			_update_flower_crate(_flower_crates[f_id], count)
+			crate_grid.move_child(_flower_crates[f_id], position_index)
+			position_index += 1
 
 	# 2. Display Bouquets
 	for b_id in bouquet_inventory:
 		var b_count: int = int(bouquet_inventory[b_id])
 		if b_count > 0:
 			var b_data := BouquetData.get_bouquet(b_id)
-			var b_crate := _create_bouquet_crate(b_data.get("display_name", b_id), b_count)
-			crate_grid.add_child(b_crate)
+			desired_bouquets[b_id] = true
+			if not _bouquet_crates.has(b_id):
+				var b_crate := _create_bouquet_crate(b_data.get("display_name", b_id), b_count)
+				_bouquet_crates[b_id] = b_crate
+				crate_grid.add_child(b_crate)
+			var b_crate: Control = _bouquet_crates[b_id]
+			b_crate.get_node("CountLabel").text = "Bouquets: %d" % b_count
+			crate_grid.move_child(b_crate, position_index)
+			position_index += 1
+
+	_remove_absent_crates(_flower_crates, desired_flowers)
+	_remove_absent_crates(_bouquet_crates, desired_bouquets)
 
 	# 3. Update Footer
 	if total_flowers_to_sell > 0:
@@ -141,6 +169,30 @@ func update_inventory(inventory: Dictionary, bouquet_inventory: Dictionary) -> v
 			empty_label.visible = true
 
 
+func _remove_absent_crates(crates: Dictionary, desired: Dictionary) -> void:
+	for id in crates.keys():
+		if not desired.has(id):
+			var crate: Control = crates[id]
+			crate_grid.remove_child(crate)
+			crate.queue_free()
+			crates.erase(id)
+
+
+func _update_flower_crate(crate: Control, count: int) -> void:
+	if crate.has_meta("count") and int(crate.get_meta("count")) == count:
+		return
+	crate.set_meta("count", count)
+	crate.get_node("Background").modulate = Color.WHITE if count > 0 else Color(0.55, 0.55, 0.55, 0.70)
+	crate.get_node("NameLabel").add_theme_color_override("font_color", Color(1.0, 0.96, 0.88) if count > 0 else Color(0.65, 0.60, 0.55))
+	var count_label: Label = crate.get_node("CountLabel")
+	count_label.text = "In Stock: %d" % count if count > 0 else "Out of Stock"
+	count_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.40) if count > 0 else Color(0.55, 0.50, 0.45))
+	crate.get_node("SellOne").visible = count > 0
+	crate.get_node("SellOne").disabled = count <= 0
+	crate.get_node("SellAll").visible = count > 1
+	crate.get_node("SellAll").disabled = count <= 1
+
+
 func _create_flower_crate(flower_id: String, name_str: String, count: int, icon: String, base_val: int) -> Control:
 	var crate := Control.new()
 	crate.set_meta("flower_id", flower_id)
@@ -148,6 +200,7 @@ func _create_flower_crate(flower_id: String, name_str: String, count: int, icon:
 
 	# 1. Crate Graphic
 	var c_bg := TextureRect.new()
+	c_bg.name = "Background"
 	c_bg.texture = CRATE_TEX
 	c_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	c_bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -165,6 +218,7 @@ func _create_flower_crate(flower_id: String, name_str: String, count: int, icon:
 
 	# 3. Flower Name with dark outline
 	var name_lbl := Label.new()
+	name_lbl.name = "NameLabel"
 	name_lbl.text = name_str
 	name_lbl.position = Vector2(68, 30)
 	name_lbl.add_theme_font_size_override("font_size", 12)
@@ -178,6 +232,7 @@ func _create_flower_crate(flower_id: String, name_str: String, count: int, icon:
 
 	# 4. Count Badge
 	var count_lbl := Label.new()
+	count_lbl.name = "CountLabel"
 	count_lbl.text = "In Stock: %d" % count if count > 0 else "Out of Stock"
 	count_lbl.position = Vector2(68, 48)
 	count_lbl.add_theme_font_size_override("font_size", 10)
@@ -209,59 +264,60 @@ func _create_flower_crate(flower_id: String, name_str: String, count: int, icon:
 	tag.add_child(price_val)
 
 	# 6. Action Buttons
-	if count > 0:
-		# Sell 1 Button
-		var s1_btn := TextureButton.new()
-		s1_btn.texture_normal = BTN_WOOD_NORM
-		s1_btn.texture_pressed = BTN_WOOD_PRESS
-		s1_btn.ignore_texture_size = true
-		s1_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		s1_btn.size = Vector2(68, 30)
-		s1_btn.position = Vector2(128, 74)
-		s1_btn.pressed.connect(func():
-			_play_click()
-			quick_sell_requested.emit(flower_id, 1)
-		)
-		crate.add_child(s1_btn)
+	# Sell 1 Button
+	var s1_btn := TextureButton.new()
+	s1_btn.name = "SellOne"
+	s1_btn.texture_normal = BTN_WOOD_NORM
+	s1_btn.texture_pressed = BTN_WOOD_PRESS
+	s1_btn.ignore_texture_size = true
+	s1_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	s1_btn.size = Vector2(68, 30)
+	s1_btn.position = Vector2(128, 74)
+	s1_btn.pressed.connect(func():
+		_play_click()
+		quick_sell_requested.emit(flower_id, 1)
+	)
+	crate.add_child(s1_btn)
 
-		var s1_lbl := Label.new()
-		s1_lbl.text = "Sell 1"
-		s1_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		s1_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		s1_lbl.size = Vector2(68, 30)
-		s1_lbl.add_theme_font_size_override("font_size", 10)
-		s1_lbl.add_theme_color_override("font_color", Color(0.98, 0.94, 0.85))
-		s1_lbl.add_theme_color_override("font_shadow_color", Color(0.12, 0.08, 0.04, 1.0))
-		s1_lbl.add_theme_constant_override("shadow_offset_x", 1)
-		s1_lbl.add_theme_constant_override("shadow_offset_y", 1)
-		s1_btn.add_child(s1_lbl)
+	var s1_lbl := Label.new()
+	s1_lbl.text = "Sell 1"
+	s1_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	s1_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	s1_lbl.size = Vector2(68, 30)
+	s1_lbl.add_theme_font_size_override("font_size", 10)
+	s1_lbl.add_theme_color_override("font_color", Color(0.98, 0.94, 0.85))
+	s1_lbl.add_theme_color_override("font_shadow_color", Color(0.12, 0.08, 0.04, 1.0))
+	s1_lbl.add_theme_constant_override("shadow_offset_x", 1)
+	s1_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	s1_btn.add_child(s1_lbl)
 
-		if count > 1:
-			# Sell All Button
-			var sa_btn := TextureButton.new()
-			sa_btn.texture_normal = BTN_BRASS_TEX
-			sa_btn.ignore_texture_size = true
-			sa_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-			sa_btn.size = Vector2(62, 30)
-			sa_btn.position = Vector2(200, 74)
-			sa_btn.pressed.connect(func():
-				_play_click()
-				quick_sell_requested.emit(flower_id, count)
-			)
-			crate.add_child(sa_btn)
+	# Sell All Button
+	var sa_btn := TextureButton.new()
+	sa_btn.name = "SellAll"
+	sa_btn.texture_normal = BTN_BRASS_TEX
+	sa_btn.ignore_texture_size = true
+	sa_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	sa_btn.size = Vector2(62, 30)
+	sa_btn.position = Vector2(200, 74)
+	sa_btn.pressed.connect(func():
+		_play_click()
+		quick_sell_requested.emit(flower_id, int(crate.get_meta("count", 0)))
+	)
+	crate.add_child(sa_btn)
 
-			var sa_lbl := Label.new()
-			sa_lbl.text = "All"
-			sa_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			sa_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			sa_lbl.size = Vector2(62, 30)
-			sa_lbl.add_theme_font_size_override("font_size", 10)
-			sa_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.55))
-			sa_lbl.add_theme_color_override("font_shadow_color", Color(0.12, 0.08, 0.04, 1.0))
-			sa_lbl.add_theme_constant_override("shadow_offset_x", 1)
-			sa_lbl.add_theme_constant_override("shadow_offset_y", 1)
-			sa_btn.add_child(sa_lbl)
+	var sa_lbl := Label.new()
+	sa_lbl.text = "All"
+	sa_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sa_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	sa_lbl.size = Vector2(62, 30)
+	sa_lbl.add_theme_font_size_override("font_size", 10)
+	sa_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.55))
+	sa_lbl.add_theme_color_override("font_shadow_color", Color(0.12, 0.08, 0.04, 1.0))
+	sa_lbl.add_theme_constant_override("shadow_offset_x", 1)
+	sa_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	sa_btn.add_child(sa_lbl)
 
+	_update_flower_crate(crate, count)
 	return crate
 
 
@@ -294,6 +350,7 @@ func _create_bouquet_crate(name_str: String, count: int) -> Control:
 	crate.add_child(name_lbl)
 
 	var count_lbl := Label.new()
+	count_lbl.name = "CountLabel"
 	count_lbl.text = "Bouquets: %d" % count
 	count_lbl.position = Vector2(68, 50)
 	count_lbl.add_theme_font_size_override("font_size", 10)

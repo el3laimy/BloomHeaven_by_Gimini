@@ -15,6 +15,33 @@ var completed_status: Dictionary = {}
 var flower_inventory: Dictionary = {}
 var bouquet_inventory: Dictionary = {}
 var combo_count: int = 0
+var order_manager: OrderManager = null
+var _patience_rows: Dictionary = {}
+var _timer_elapsed: float = 0.0
+
+
+func _process(delta: float) -> void:
+	if not is_visible_in_tree() or order_manager == null:
+		return
+	_timer_elapsed += delta
+	if _timer_elapsed < 0.1:
+		return
+	_timer_elapsed = 0.0
+	combo_count = order_manager.combo_count
+	_update_header_combo()
+	for order_id in _patience_rows:
+		var max_pat: float = float(order_manager.order_runtime.get(order_id, {}).get("max_patience", 0.0))
+		var remaining := order_manager.get_patience(order_id)
+		live_patience[order_id] = remaining
+		var ratio := clampf(remaining / maxf(max_pat, 0.001), 0.0, 1.0)
+		var row: Dictionary = _patience_rows[order_id]
+		row["bar"].value = ratio * 100.0
+		row["label"].text = _patience_label(ratio)
+
+
+func _patience_label(ratio: float) -> String:
+	var tier := "🥇 Gold (+50% Tip)" if ratio >= 0.70 else ("🥈 Silver (+25% Tip)" if ratio >= 0.40 else "🥉 Bronze")
+	return "Patience (%s):" % tier
 
 
 func _ready() -> void:
@@ -50,7 +77,9 @@ func _populate_orders() -> void:
 	if _card_container == null:
 		return
 
+	_patience_rows.clear()
 	for child in _card_container.get_children():
+		_card_container.remove_child(child)
 		child.queue_free()
 
 	for o_id in FloristRequestData.get_all_request_ids():
@@ -141,9 +170,8 @@ func _create_order_card(order_id: String) -> PanelContainer:
 		pat_hbox.add_theme_constant_override("separation", 8)
 		vbox.add_child(pat_hbox)
 
-		var tier_str: String = "🥇 Gold (+50% Tip)" if pat_ratio > 0.65 else ("🥈 Silver (+25% Tip)" if pat_ratio > 0.30 else "🥉 Bronze")
 		var tier_lbl := Label.new()
-		tier_lbl.text = "Patience (%s):" % tier_str
+		tier_lbl.text = _patience_label(pat_ratio)
 		tier_lbl.add_theme_font_size_override("font_size", 10)
 		pat_hbox.add_child(tier_lbl)
 
@@ -153,6 +181,7 @@ func _create_order_card(order_id: String) -> PanelContainer:
 		pbar.show_percentage = false
 		pbar.value = pat_ratio * 100.0
 		pat_hbox.add_child(pbar)
+		_patience_rows[order_id] = {"bar": pbar, "label": tier_lbl}
 
 	return card
 

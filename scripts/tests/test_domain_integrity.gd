@@ -22,6 +22,7 @@ func _init() -> void:
 	
 	_run_suite("FlowerQuality Enum & Value Object", _test_flower_quality)
 	_run_suite("FlowerInventory Canonical SSoT & Atomic Ops", _test_flower_inventory)
+	_run_suite("Inventory Consumption Notifications & Validation", _test_consumption_notifications)
 	_run_suite("SeedInventory Canonical SSoT & Consumption", _test_seed_inventory)
 	_run_suite("GardenPlot Growth & Action Guards", _test_garden_plot_guards)
 	_run_suite("OrderManager Unified State & Atomic Fulfillment", _test_order_manager)
@@ -145,6 +146,66 @@ func _test_flower_inventory() -> String:
 	if inv_restored.get_flower_count_by_quality("rose", FlowerQuality.Tier.PERFECT) != 1: return "Deserialized perfect rose mismatch"
 	if inv_restored.get_flower_count("lavender") != 4: return "Deserialized lavender count mismatch"
 	
+	return ""
+
+
+func _test_consumption_notifications() -> String:
+	var inv := FlowerInventory.new()
+	inv.add_flower("rose", FlowerQuality.Tier.NORMAL, 2)
+	inv.add_flower("rose", FlowerQuality.Tier.FINE, 2)
+	inv.add_flower("lavender", FlowerQuality.Tier.NORMAL, 1)
+	var observations: Array[Dictionary] = []
+	var changes: Array[int] = []
+	inv.flower_removed.connect(func(_id: String, _tier: int, _count: int) -> void:
+		observations.append(inv.get_legacy_view())
+	)
+	inv.inventory_changed.connect(func() -> void: changes.append(1))
+	if not inv.consume_requirements({"rose": 3, "lavender": 1}):
+		return "Valid multi-item consumption failed"
+	if changes.size() != 1:
+		return "One transaction must emit one inventory_changed, got %d" % changes.size()
+	if observations.size() != 3:
+		return "Expected one removal notification for each consumed quality bucket"
+	for snapshot in observations:
+		if snapshot != {"rose": 1}:
+			return "Removal listener observed partially committed inventory: %s" % snapshot
+
+	# Numeric and serialized tier keys name the same stock bucket.
+	var before := inv.serialize()
+	var invalid_requirements: Array[Dictionary] = [
+		{"rose": {2: 1, "2": 1}},
+		{"rose": {"invalid": 1}},
+		{"rose": {2: "one"}},
+		{"rose": 0.5},
+		{"rose": -1},
+		{"rose": INF},
+		{"rose": NAN},
+		{1: 1}
+	]
+	for requirements in invalid_requirements:
+		if inv.can_consume_requirements(requirements) or inv.consume_requirements(requirements):
+			return "Accepted malformed or insufficient requirements: %s" % requirements
+		if inv.serialize() != before or changes.size() != 1:
+			return "Rejected consumption mutated stock or emitted a change"
+	if not inv.consume_requirements({}) or not inv.consume_requirements({"rose": 0}):
+		return "Empty and zero requirements must remain valid no-ops"
+	if changes.size() != 1:
+		return "No-op consumption emitted an inventory change"
+
+	# A synchronous listener may consume other stock, but only after every
+	# deduction of the outer transaction has committed.
+	var reentrant := FlowerInventory.new()
+	reentrant.add_flower("rose", FlowerQuality.Tier.NORMAL, 1)
+	reentrant.add_flower("lavender", FlowerQuality.Tier.NORMAL, 1)
+	var nested_results: Array[bool] = []
+	reentrant.flower_removed.connect(func(id: String, _tier: int, _count: int) -> void:
+		if id == "rose":
+			nested_results.append(reentrant.consume_requirements({"lavender": 1}))
+	)
+	if not reentrant.consume_requirements({"rose": 1, "lavender": 1}):
+		return "Outer consumption failed"
+	if nested_results != [false] or reentrant.get_total_flower_count() != 0:
+		return "Reentrant listener consumed stock reserved by the outer transaction"
 	return ""
 
 
