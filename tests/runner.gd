@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Unified Headless Test Runner for Finest Garden Prototype (BloomHaven).
-## Executes inline core smoke checks, then orchestrates and aggregates all 7
+## Executes inline core smoke checks, then orchestrates and aggregates
 ## domain, save, catalog, UI/input, quick-sell, vertical-slice, and breeding test suites.
 
 const FlowerDataScript := preload("res://scripts/flowers/flower_data.gd")
@@ -51,6 +51,11 @@ const TEST_SUITES: Array[Dictionary] = [
 		"name": "Visual Resolution Suite",
 		"path": "scripts/tests/test_flower_visual_characterization.gd",
 		"description": "Visual Profile Resolution, Stage Heights, Pruning Differentiation & Fallbacks"
+	},
+	{
+		"name": "Flower Redraw Budget Suite",
+		"path": "scripts/tests/test_flower_redraw_budget.gd",
+		"description": "Growth redraw budget and visual boundary transitions"
 	}
 ]
 

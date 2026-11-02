@@ -14,25 +14,32 @@ enum Stage {
 
 @export var flower_id: String = "rose":
 	set(val):
+		if flower_id == val:
+			return
 		flower_id = val
 		_data = FlowerData.get_flower(flower_id)
 		queue_redraw()
 
 @export var current_stage: Stage = Stage.SEED:
 	set(val):
-		if current_stage != val:
-			var prev := current_stage
-			current_stage = val
-			_on_stage_changed(prev, val)
+		if current_stage == val:
+			return
+		var prev := current_stage
+		current_stage = val
+		_on_stage_changed(prev, val)
 		queue_redraw()
 
 @export var is_mystery: bool = false:
 	set(val):
+		if is_mystery == val:
+			return
 		is_mystery = val
 		queue_redraw()
 
 @export var is_revealed: bool = true:
 	set(val):
+		if is_revealed == val:
+			return
 		is_revealed = val
 		queue_redraw()
 
@@ -43,18 +50,28 @@ var phenotype: FlowerPhenotype = null:
 
 @export var is_pruned: bool = false:
 	set(val):
+		if is_pruned == val:
+			return
 		is_pruned = val
 		queue_redraw()
 
 @export var growth_progress: float = 0.0:
 	set(val):
+		var previous_state := _get_visual_state_key()
 		growth_progress = val
-		queue_redraw()
+		# The artwork changes at state boundaries; sway animates the Sprite2D
+		# transform independently and does not need to rebuild drawing commands.
+		if _get_visual_state_key() != previous_state:
+			queue_redraw()
 
 @export var is_late_unpruned: bool = false:
 	set(val):
+		if is_late_unpruned == val:
+			return
+		var previous_state := _get_visual_state_key()
 		is_late_unpruned = val
-		queue_redraw()
+		if _get_visual_state_key() != previous_state:
+			queue_redraw()
 
 @export var sway_enabled: bool = true
 
@@ -154,6 +171,11 @@ func _draw() -> void:
 			_draw_blooming_stage(primary_col, secondary_col, accent_col, stem_col, leaf_col, petal_form, vigor_scale, fragrance_rating)
 
 
+func _get_visual_state_key() -> String:
+	var quality_key := "hero" if is_pruned else "standard"
+	return FlowerVisualStateResolver.resolve_visual_state(current_stage, is_pruned, quality_key, growth_progress, is_late_unpruned)
+
+
 func _update_branching_sprite() -> bool:
 	if not is_instance_valid(_branch_sprite):
 		_setup_branch_sprite()
@@ -163,8 +185,7 @@ func _update_branching_sprite() -> bool:
 			_branch_sprite.visible = false
 		return false
 
-	var q_str: String = "hero" if is_pruned else "standard"
-	var state_key := FlowerVisualStateResolver.resolve_visual_state(current_stage, is_pruned, q_str, growth_progress, is_late_unpruned)
+	var state_key := _get_visual_state_key()
 	if state_key.is_empty():
 		if is_instance_valid(_branch_sprite):
 			_branch_sprite.visible = false
