@@ -13,6 +13,16 @@ const SaveManagerScript := preload("res://scripts/core/save_manager.gd")
 
 const TEST_SUITES: Array[Dictionary] = [
 	{
+		"name": "Benchmark Report Suite",
+		"path": "scripts/tests/test_benchmark_report.gd",
+		"description": "Shared performance limits, truthful outcomes and headless limitations"
+	},
+	{
+		"name": "Runtime Maintenance Suite",
+		"path": "scripts/tests/test_runtime_maintenance.gd",
+		"description": "Save outcomes and batching, seed stock, live timers, plot visibility, retained inventory cards"
+	},
+	{
 		"name": "Domain Integrity Suite",
 		"path": "scripts/tests/test_domain_integrity.gd",
 		"description": "FlowerQuality, Inventories SSoT, Plot Actions, Order SSoT"

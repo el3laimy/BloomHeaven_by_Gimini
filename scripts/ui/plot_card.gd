@@ -25,8 +25,11 @@ func _ready() -> void:
 	hide()
 
 
-func display_plot(plot_data: Dictionary) -> void:
-	show()
+func display_plot(plot_data: Dictionary, open_card: bool = true) -> void:
+	if open_card:
+		show()
+	elif not is_visible_in_tree():
+		return
 	var plot_index: int = plot_data.get("index", 0)
 	var flower_id: String = plot_data.get("flower_id", "")
 	var state_name: String = plot_data.get("state", "Empty")

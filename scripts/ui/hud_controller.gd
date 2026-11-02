@@ -1909,11 +1909,21 @@ func toggle_beauty_mode() -> void:
 # STATE UPDATES & TOASTS
 # =========================================================================
 
+func bind_order_manager(manager: OrderManager) -> void:
+	if is_instance_valid(_side_order_rail):
+		var board := _side_order_rail._get_order_board()
+		if is_instance_valid(board):
+			board.order_manager = manager
+	if is_instance_valid(_requests_modal_instance):
+		_requests_modal_instance.order_manager = manager
+
+
 func update_inventory(
 	flowers: Dictionary,
 	bouquets: Dictionary,
 	coins: int,
-	unknown_seeds_count: int
+	unknown_seeds_count: int,
+	seeds: Dictionary = {}
 ) -> void:
 	_cached_inventory = flowers
 	_cached_bouquets = bouquets
@@ -1930,7 +1940,7 @@ func update_inventory(
 		_top_left_cluster.update_values(coins, total_fl)
 
 	if is_instance_valid(_seed_bar_instance):
-		_seed_bar_instance.update_counts(flowers, unknown_seeds_count)
+		_seed_bar_instance.update_counts(seeds, unknown_seeds_count)
 
 	if is_instance_valid(_inventory_drawer):
 		_inventory_drawer.update_inventory(flowers, bouquets)
@@ -1989,7 +1999,9 @@ func update_requests(completed_requests: Dictionary) -> void:
 	_update_requests_cards()
 
 
-func update_plot_info(plot: GardenPlot) -> void:
+func update_plot_info(plot: GardenPlot, open_card: bool = true) -> void:
+	if not open_card and (not is_instance_valid(_plot_card_instance) or not _plot_card_instance.is_visible_in_tree()):
+		return
 	_selected_plot_ref = plot
 	_plot_info_title.text = "Garden Plot #%d" % (plot.plot_index + 1)
 
@@ -2003,7 +2015,7 @@ func update_plot_info(plot: GardenPlot) -> void:
 			"quality": plot.quality,
 			"is_pruned": plot.is_pruned
 		}
-		_plot_card_instance.display_plot(plot_data)
+		_plot_card_instance.display_plot(plot_data, open_card and not _is_beauty_mode)
 
 	match plot.state:
 		GardenPlot.State.EMPTY:

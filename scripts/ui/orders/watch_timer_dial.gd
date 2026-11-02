@@ -10,6 +10,8 @@ extends Control
 
 
 func set_timer(ratio: float, completed: bool, color: Color) -> void:
+	if progress_ratio == ratio and is_completed == completed and pie_color == color:
+		return
 	progress_ratio = ratio
 	is_completed = completed
 	pie_color = color

@@ -51,3 +51,36 @@ godot --headless --path . -s tests/runner.gd
 The existing domain test process still prints resource/RID teardown warnings;
 its assertions and exit status pass. These warnings also appeared before the
 maintenance changes and have not been resolved in this pass.
+
+
+## Runtime fixes and follow-up verification
+
+- Manual Save reports the actual result; a failed save keeps the game open when
+  returning to the main menu, with a visible retry instruction.
+- Gameplay save requests within a 0.25-second window are coalesced. Manual Save,
+  return to menu, application suspension, and desktop close use immediate saves.
+  The timer runs during pause and ignores gameplay speed. Failed saves retain
+  pending state; `last_save_duration_usec` records actual synchronous save cost.
+  File writing remains synchronous; no Android latency improvement is claimed.
+- Seed packets use `SeedInventory` rather than harvested flower counts. Missing
+  seed IDs show zero instead of invented starter values.
+- Both the side board and standalone requests modal read live order patience.
+  Timer updates preserve existing cards; identical dial states skip redraws.
+- Periodic plot refresh runs at most ten times per second and never opens a
+  closed card. Selection opens it explicitly, respecting beauty mode.
+- Flower and bouquet crates persist across count updates. Only newly visible
+  catalog entries are created, and exhausted optional entries are removed.
+  Sell All reads current stock instead of a count captured at construction.
+- Performance reports share their displayed/evaluated thresholds, distinguish
+  wall-clock intervals from CPU time, record runtime metadata, and never approve
+  rendering budgets in headless mode. The historical report retains its values
+  with corrected labels and conclusions.
+
+Validation after these changes: all **12/12** unified groups pass, including
+runtime tests reproducing the four reported bugs, save batching while paused,
+failed save retry, suspension flush, retained card identity and live sale counts.
+Budget report tests check every exact limit and just-failing value, missing and
+non-finite data, and headless incompleteness. The project validator and whitespace
+check pass. The benchmark headless smoke run produces **INCOMPLETE**, correctly
+leaving rendering budgets unmeasured. Earlier resource/RID teardown warnings
+remain outside this change's scope.

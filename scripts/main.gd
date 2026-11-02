@@ -144,6 +144,12 @@ var _pause_menu: PauseMenu = null
 var _settings_menu: SettingsMenu = null
 var _tutorial_overlay: TutorialOverlay = null
 var _auto_save_timer: float = 0.0
+var _save_debounce_timer: Timer = null
+var _save_pending: bool = false
+var _game_ready: bool = false
+var last_save_duration_usec: int = 0
+var _plot_info_update_timer: float = 0.0
+const SAVE_BATCH_SECONDS: float = 0.25
 var tutorial_completed: bool = false
 var _rmb_down: bool = false
 var _rmb_dragged: bool = false
@@ -151,6 +157,13 @@ var _rmb_press_pos: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	_save_debounce_timer = Timer.new()
+	_save_debounce_timer.one_shot = true
+	_save_debounce_timer.wait_time = SAVE_BATCH_SECONDS
+	_save_debounce_timer.ignore_time_scale = true
+	_save_debounce_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_save_debounce_timer.timeout.connect(_flush_pending_save)
+	add_child(_save_debounce_timer)
 	if not InputMap.has_action("cancel_action_queue"):
 		InputMap.add_action("cancel_action_queue")
 		var key_ev := InputEventKey.new()
@@ -163,12 +176,14 @@ func _ready() -> void:
 	_init_starter_breeding_stock()
 	_setup_menus()
 	_connect_signals()
+	hud.bind_order_manager(order_manager)
 	_sync_hud_state()
 	_apply_all_active_upgrades()
 	hud.update_discoveries(discovered_flowers)
 	hud.update_requests(completed_requests)
 	hud.update_breeding_roster(breeding_roster)
 	_start_ambient_music()
+	_game_ready = true
 	
 	if not loaded and not tutorial_completed and _tutorial_overlay != null:
 		_tutorial_overlay.show_step(0)
@@ -180,8 +195,11 @@ func _process(delta: float) -> void:
 	if not can_process():
 		return
 
-	if is_instance_valid(garden_grid) and is_instance_valid(garden_grid.selected_plot):
-		hud.update_plot_info(garden_grid.selected_plot)
+	_plot_info_update_timer += delta
+	if _plot_info_update_timer >= 0.1:
+		_plot_info_update_timer = 0.0
+		if is_instance_valid(garden_grid) and is_instance_valid(garden_grid.selected_plot):
+			hud.update_plot_info(garden_grid.selected_plot, false)
 
 	# Order patience and combo decay managed by OrderManager
 	# During FTUE onboarding, patience decay is paused to eliminate stress
@@ -194,7 +212,7 @@ func _process(delta: float) -> void:
 	_auto_save_timer += delta
 	if _auto_save_timer >= 30.0:
 		_auto_save_timer = 0.0
-		_save_game_state()
+		_request_save()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -285,15 +303,8 @@ func _setup_menus() -> void:
 		if _settings_menu:
 			_settings_menu.show()
 	)
-	_pause_menu.save_requested.connect(func():
-		_save_game_state()
-		hud.show_toast("💾 Game saved successfully!", Color(0.6, 1.0, 0.7))
-	)
-	_pause_menu.main_menu_requested.connect(func():
-		get_tree().paused = false
-		_save_game_state()
-		get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
-	)
+	_pause_menu.save_requested.connect(_on_manual_save_requested)
+	_pause_menu.main_menu_requested.connect(_on_main_menu_requested)
 	hud.add_child(_pause_menu)
 
 	# Instantiate Settings Menu
@@ -421,9 +432,53 @@ func apply_save_data(data: Dictionary) -> void:
 	GeneticsEngine.scan_and_register_ids(all_loaded_ids)
 
 
-func _save_game_state() -> void:
+func _save_game_state() -> bool:
+	if is_instance_valid(_save_debounce_timer):
+		_save_debounce_timer.stop()
 	var path := active_save_path if not active_save_path.is_empty() else SaveManagerScript.SAVE_PATH_V3
-	SaveManagerScript.save_game(get_save_data(), path)
+	var started := Time.get_ticks_usec()
+	var success := SaveManagerScript.save_game(get_save_data(), path)
+	last_save_duration_usec = Time.get_ticks_usec() - started
+	_save_pending = not success
+	return success
+
+
+func _request_save() -> void:
+	_save_pending = true
+	if is_instance_valid(_save_debounce_timer) and _save_debounce_timer.is_stopped():
+		_save_debounce_timer.start()
+
+
+func _flush_pending_save() -> void:
+	if _save_pending and not _save_game_state():
+		_show_save_failure()
+
+
+func _show_save_failure() -> void:
+	if is_instance_valid(hud):
+		hud.show_toast("Could not save your game. Please try Save again.", Color(1.0, 0.5, 0.4))
+
+
+func _on_manual_save_requested() -> void:
+	if _save_game_state():
+		hud.show_toast("💾 Game saved successfully!", Color(0.6, 1.0, 0.7))
+	else:
+		_show_save_failure()
+
+
+func _on_main_menu_requested() -> void:
+	if not _save_game_state():
+		_show_save_failure()
+		return
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+func _notification(what: int) -> void:
+	# Commit the latest state before Android suspension or a desktop close.
+	if _game_ready and (what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST):
+		if not _save_game_state():
+			_show_save_failure()
 
 
 func _load_game_state() -> bool:
@@ -510,7 +565,7 @@ func _connect_signals() -> void:
 
 func _sync_hud_state() -> void:
 	if is_instance_valid(hud):
-		hud.update_inventory(inventory, bouquet_inventory, coins, pending_hybrid_seeds.size())
+		hud.update_inventory(inventory, bouquet_inventory, coins, pending_hybrid_seeds.size(), seed_inventory.get_all_seeds())
 		hud.update_requests(completed_requests)
 		hud.update_breeding_roster(breeding_roster)
 		if hud.has_method("update_upgrades"):
@@ -656,7 +711,7 @@ func _on_upgrade_purchased(upgrade_id: String) -> void:
 		_play_sfx("upgrade")
 		var up_data: Dictionary = res.get("upgrade_data", {})
 		hud.show_toast("🛠️ Upgraded: %s!" % up_data.get("name", upgrade_id), Color(0.4, 1.0, 0.6))
-		_save_game_state()
+		_request_save()
 	else:
 		_play_sfx("error")
 		hud.show_toast(res.get("error", "Cannot purchase upgrade!"), Color(0.9, 0.4, 0.4))
@@ -679,7 +734,7 @@ func _handle_planting_action(plot: GardenPlot) -> void:
 			pending_hybrid_seeds.pop_front()
 			hud.show_toast("Planted an Unknown Mystery Hybrid Seed!", Color(1.0, 0.9, 0.4))
 			_sync_hud_state()
-			_save_game_state()
+			_request_save()
 	else:
 		var flower_data: Dictionary = FlowerData.get_flower(current_seed)
 		if flower_data.is_empty():
@@ -695,13 +750,13 @@ func _handle_planting_action(plot: GardenPlot) -> void:
 			seed_inventory.consume_seed(current_seed)
 			hud.show_toast("Planted %s." % flower_data.get("display_name", "Flower"), Color(0.6, 0.9, 0.6))
 			_sync_hud_state()
-			_save_game_state()
+			_request_save()
 
 
 func _on_flower_harvested(flower_id: String, count: int, quality: int = FlowerQuality.Tier.NORMAL) -> void:
 	flower_inventory.add_flower(flower_id, quality, count)
 	_sync_hud_state()
-	_save_game_state()
+	_request_save()
 
 
 func _on_preserve_plot_requested(plot: GardenPlot) -> void:
@@ -717,7 +772,7 @@ func _on_preserve_plot_requested(plot: GardenPlot) -> void:
 		breeding_roster.append(preserved)
 		hud.show_toast("Preserved %s to Breeding Stock!" % preserved.nickname, Color(0.65, 0.95, 0.75))
 		_sync_hud_state()
-		_save_game_state()
+		_request_save()
 
 
 func _on_harvest_plot_requested(plot: GardenPlot) -> void:
@@ -736,7 +791,7 @@ func _on_release_specimen_requested(specimen_id: String) -> void:
 		breeding_roster.remove_at(idx)
 		hud.show_toast("Released %s from Breeding Stock." % removed.specimen_id, Color(0.8, 0.8, 0.8))
 		_sync_hud_state()
-		_save_game_state()
+		_request_save()
 
 
 func _on_flower_revealed(flower_id: String, plot: GardenPlot) -> void:
@@ -750,7 +805,7 @@ func _on_flower_revealed(flower_id: String, plot: GardenPlot) -> void:
 		var f_data := FlowerData.get_flower(flower_id)
 		var sp_id := plot.current_specimen.specimen_id if plot.current_specimen != null else ""
 		hud.show_toast("Harvested %s (%s)" % [f_data.get("display_name", flower_id), sp_id], Color(0.7, 0.95, 0.7))
-	_save_game_state()
+	_request_save()
 
 
 func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int) -> void:
@@ -839,7 +894,7 @@ func _on_breed_requested(parent_a_id: String, parent_b_id: String, rng_seed: int
 			offspring.specimen_id,
 			FlowerData.get_flower(hybrid_species).get("display_name", hybrid_species)
 		], Color(0.95, 0.88, 0.45))
-	_save_game_state()
+	_request_save()
 
 
 func _on_craft_bouquet_requested(bouquet_id: String) -> void:
@@ -854,7 +909,7 @@ func _on_craft_bouquet_requested(bouquet_id: String) -> void:
 	_sync_hud_state()
 	if is_instance_valid(hud):
 		hud.show_toast("💐 Crafted 1 %s!" % res.get("display_name", bouquet_id), Color(0.95, 0.80, 0.90))
-	_save_game_state()
+	_request_save()
 
 
 func _on_fulfill_request_requested(order_id: String) -> void:
@@ -891,7 +946,7 @@ func _on_fulfill_request_requested(order_id: String) -> void:
 			spawn_p = character.get_global_transform_with_canvas().origin + Vector2(0, -50)
 		hud.show_floating_reward(reward_str, spawn_p, Color(1.0, 0.9, 0.3))
 
-	_save_game_state()
+	_request_save()
 
 
 ## Quick Sell foundation for BloomHaven CVP Flower Stand economy.
@@ -925,7 +980,7 @@ func quick_sell_flower(flower_id: String, count: int = 1, quality: int = FlowerQ
 
 	coins += total_earned
 	_sync_hud_state()
-	_save_game_state()
+	_request_save()
 
 	_play_sfx("coin")
 	var disp_name: String = flower_data.get("display_name", flower_id.capitalize())
@@ -1005,7 +1060,7 @@ func quick_sell_all_flowers() -> int:
 
 	_play_sfx("coin")
 	_sync_hud_state()
-	_save_game_state()
+	_request_save()
 
 	if is_instance_valid(hud):
 		hud.show_toast("🌸 Sold all %d flowers for +%d Coins!" % [total_flowers_sold, total_earned], Color(0.98, 0.88, 0.35))
